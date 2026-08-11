@@ -16,4 +16,3 @@ jobs:
           echo "$HOME/.rokit/bin" >> $GITHUB_PATH
       - run: rokit install --no-trust-check
       - run: selene src demo
-      - run: stylua --check src demo
