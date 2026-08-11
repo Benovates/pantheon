@@ -1,0 +1,13 @@
+[package]
+name = "koterahq/estuary-ui"
+version = "0.1.0"
+license = "MIT"
+author = ["7kayoh"]
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+description = "Estuary UI primitives — Fusion + Iona, Cadence/Tithe MD3 language"
+
+[dependencies]
+# Iona is not published yet — path-link ../iona/src in Rojo (see demo.project.json).
+Fusion = "elttob/fusion@0.3.0"
+Lucide = "latte-soft/lucide-icons@0.1.3"

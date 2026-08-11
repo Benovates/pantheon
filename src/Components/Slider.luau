@@ -1,0 +1,229 @@
+--!strict
+local Packages = script.Parent.Parent.Parent
+local Fusion = require(Packages.Fusion)
+local Types = require(script.Parent.Parent.Types)
+local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Interaction = require(script.Parent.Parent.Internal.Interaction)
+
+local Children = Fusion.Children
+local peek = Fusion.peek
+local UserInputService = game:GetService("UserInputService")
+
+local THUMB = 16
+local STRETCH_MAX = 10 -- hard limit on velocity stretch (px)
+-- Keep thumb (incl. hover/press grow) inside the control bounds.
+local EDGE = math.ceil(THUMB * 0.85)
+
+return function(scope: Types.Scope, props: Types.SliderProps): Frame
+	local theme = resolveTheme(props)
+	local minV = props.Min or 0
+	local maxV = props.Max or 1
+	local step = props.Step or 0.01
+	local value = scope:Value(peek(props.Value) or minV)
+	local dragging = scope:Value(0)
+	local draggingS = scope:Spring(dragging, theme.Motion.SpringSpeed, theme.Motion.SpringDamping)
+	local stretch = scope:Value(0)
+	local stretchS = scope:Spring(stretch, theme.Motion.SpringSpeed * 1.6, 0.85)
+	local disabled = peek(props.Disabled) == true
+	local ix = Interaction.bind(scope, theme, {
+		Disabled = disabled,
+		StateColor = theme.Colors.OnPrimary,
+	})
+
+	local range = math.max(maxV - minV, 1e-6)
+	local stepCount = math.floor(range / step + 0.5)
+	local showSteps = stepCount >= 1 and stepCount <= 24
+
+	local function fraction(use: any): number
+		return math.clamp((use(value) - minV) / range, 0, 1)
+	end
+
+	local ticks = {}
+	if showSteps then
+		for i = 0, stepCount do
+			table.insert(
+				ticks,
+				scope:Frame({
+					Name = "Tick",
+					Size = UDim2.fromOffset(2, 6),
+					BackgroundColor3 = theme.Colors.Outline,
+					BackgroundTransparency = scope:Computed(function(use)
+						return if use(draggingS) > 0.2 then 0.2 else 1
+					end),
+					BorderSizePixel = 0,
+					LayoutOrder = i + 1,
+				})
+			)
+		end
+	end
+
+	local thumbSize = scope:Computed(function(use)
+		local hoverN = use(ix.Hover) :: number
+		local pressN = use(ix.Press) :: number
+		local dragN = use(draggingS) :: number
+		local grow = 1 + hoverN * 0.12 + pressN * 0.18 + dragN * 0.15
+		local base = THUMB * grow
+		local sx = use(stretchS) :: number
+		return UDim2.fromOffset(base + sx, math.max(base - sx * 0.35, base * 0.7))
+	end)
+
+	local bar = scope:TextButton({
+		Name = "Track",
+		Text = "",
+		Size = UDim2.new(1, 0, 0, 40),
+		BackgroundTransparency = 1,
+		LayoutOrder = 2,
+		AutoButtonColor = false,
+		Active = not disabled,
+		[Children] = {
+			scope:Frame({
+				Name = "TrackInner",
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1, -EDGE * 2, 1, 0),
+				Position = UDim2.fromOffset(EDGE, 0),
+				[Children] = {
+					scope:Frame({
+						Name = "Rail",
+						Size = UDim2.new(1, 0, 0, 4),
+						AnchorPoint = Vector2.new(0, 0.5),
+						Position = UDim2.new(0, 0, 0.5, 0),
+						BackgroundColor3 = theme.Colors.SurfaceContainerHigh,
+						BorderSizePixel = 0,
+						CornerRadius = theme.Metrics.RadiusPill,
+					}),
+					scope:Frame({
+						Name = "Fill",
+						Size = scope:Computed(function(use)
+							return UDim2.new(fraction(use), 0, 0, 4)
+						end),
+						AnchorPoint = Vector2.new(0, 0.5),
+						Position = UDim2.new(0, 0, 0.5, 0),
+						BackgroundColor3 = theme.Colors.Primary,
+						BorderSizePixel = 0,
+						CornerRadius = theme.Metrics.RadiusPill,
+					}),
+					if showSteps
+						then scope:Frame({
+							Name = "Ticks",
+							BackgroundTransparency = 1,
+							Size = UDim2.new(1, 0, 0, 8),
+							AnchorPoint = Vector2.new(0, 0.5),
+							Position = UDim2.new(0, 0, 0.5, 14),
+							[Children] = {
+								scope:New("UIListLayout")({
+									FillDirection = Enum.FillDirection.Horizontal,
+									HorizontalFlex = Enum.UIFlexAlignment.SpaceBetween,
+									VerticalAlignment = Enum.VerticalAlignment.Center,
+									SortOrder = Enum.SortOrder.LayoutOrder,
+								}),
+								ticks,
+							},
+						})
+						else nil,
+					scope:Frame({
+						Name = "Thumb",
+						Size = thumbSize,
+						AnchorPoint = Vector2.new(0.5, 0.5),
+						Position = scope:Computed(function(use)
+							return UDim2.new(fraction(use), 0, 0.5, 0)
+						end),
+						BackgroundColor3 = scope:Computed(function(use)
+							return Interaction.lerpColor(theme.Colors.Primary, theme.Colors.OnPrimary, ix.alpha(use))
+						end),
+						CornerRadius = theme.Metrics.RadiusPill,
+						ZIndex = 2,
+					}),
+				},
+			}),
+		},
+	}) :: TextButton
+	ix.wire(bar)
+
+	local trackInner = bar:FindFirstChild("TrackInner") :: Frame
+
+	table.insert(
+		scope,
+		bar.InputBegan:Connect(function(input)
+			if disabled then
+				return
+			end
+			if
+				input.UserInputType ~= Enum.UserInputType.MouseButton1
+				and input.UserInputType ~= Enum.UserInputType.Touch
+			then
+				return
+			end
+			dragging:set(1)
+			local lastX = input.Position.X
+			local lastT = os.clock()
+
+			local function apply(pos: Vector3)
+				local now = os.clock()
+				local dt = math.max(now - lastT, 1 / 240)
+				local vel = (pos.X - lastX) / dt
+				lastX = pos.X
+				lastT = now
+				stretch:set(math.clamp(math.abs(vel) * 0.01, 0, STRETCH_MAX))
+
+				local target = trackInner
+				local rel = math.clamp((pos.X - target.AbsolutePosition.X) / math.max(target.AbsoluteSize.X, 1), 0, 1)
+				local raw = minV + rel * range
+				local stepped = math.floor(raw / step + 0.5) * step
+				stepped = math.clamp(stepped, minV, maxV)
+				value:set(stepped)
+				if props.OnChanged then
+					props.OnChanged(stepped)
+				end
+			end
+			apply(input.Position)
+			local move = UserInputService.InputChanged:Connect(function(changed)
+				if
+					changed.UserInputType == Enum.UserInputType.MouseMovement
+					or changed.UserInputType == Enum.UserInputType.Touch
+				then
+					apply(changed.Position)
+				end
+			end)
+			local ended
+			ended = UserInputService.InputEnded:Connect(function(endedInput)
+				if
+					endedInput.UserInputType == Enum.UserInputType.MouseButton1
+					or endedInput.UserInputType == Enum.UserInputType.Touch
+				then
+					dragging:set(0)
+					stretch:set(0)
+					move:Disconnect()
+					ended:Disconnect()
+				end
+			end)
+			table.insert(scope, move)
+			table.insert(scope, ended)
+		end)
+	)
+
+	return scope:Frame({
+		Name = "Slider",
+		BackgroundTransparency = 1,
+		Size = props.Size or UDim2.new(1, 0, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		LayoutOrder = props.LayoutOrder or 0,
+		Layout = { Kind = "List", Padding = theme.Metrics.Space2xs, SortOrder = Enum.SortOrder.LayoutOrder },
+		[Children] = {
+			if props.Label
+				then scope:TextLabel({
+					BackgroundTransparency = 1,
+					FontFace = theme.Typography.Label.Font,
+					TextSize = theme.Typography.Label.Size,
+					TextColor3 = theme.Colors.OnSurfaceVariant,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					Text = scope:Computed(function(use)
+						return `{peek(props.Label) or ""} ({string.format("%.2f", use(value))})`
+					end),
+					Size = UDim2.new(1, 0, 0, 16),
+					LayoutOrder = 1,
+				})
+				else nil,
+			bar,
+		},
+	}) :: Frame
+end

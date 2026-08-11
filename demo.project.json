@@ -1,0 +1,37 @@
+{
+  "name": "estuary-ui-demo",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "Packages": {
+        "$className": "Folder",
+        "EstuaryUI": {
+          "$path": "src"
+        },
+        "Fusion": {
+          "$path": "Packages/Fusion.lua"
+        },
+        "Lucide": {
+          "$path": "Packages/Lucide.lua"
+        },
+        "Iona": {
+          "$path": "../iona/src"
+        },
+        "_Index": {
+          "$className": "Folder",
+          "$path": "Packages/_Index"
+        }
+      }
+    },
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "EstuaryUIDemo": {
+          "$path": "demo"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,207 @@
+--!strict
+--[[
+	Cadence dialog: scrim + centered surface.
+	Actions: 2 → full-width horizontal; 3+ → stacked vertical.
+	Pass Layer (top UI frame) so the modal does not shift content layout.
+	Optional Icon appears above the title (alerts / confirms).
+]]
+local Packages = script.Parent.Parent.Parent
+local Fusion = require(Packages.Fusion)
+local Types = require(script.Parent.Parent.Types)
+local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Layer = require(script.Parent.Parent.Internal.Layer)
+local Overlay = require(script.Parent.Overlay)
+local Button = require(script.Parent.Button)
+local Icon = require(script.Parent.Icon)
+
+local Children = Fusion.Children
+local peek = Fusion.peek
+
+return function(scope: Types.Scope, props: Types.DialogProps): Frame
+	local theme = resolveTheme(props)
+	local openRef = props.Open
+	local open = scope:Computed(function(use)
+		if openRef == nil then
+			return true
+		end
+		return (if typeof(openRef) == "table" then use(openRef) else openRef) ~= false
+	end)
+	local openS = scope:Spring(
+		scope:Computed(function(use)
+			return if use(open) then 1 else 0
+		end),
+		theme.Motion.SpringSpeed,
+		theme.Motion.SpringDamping
+	)
+
+	local actions: { Types.DialogAction } = props.Actions or {}
+	if props.OnClose and #actions == 0 then
+		actions = {
+			{
+				Text = "Close",
+				Variant = "Text" :: Types.ButtonVariant,
+				OnClick = props.OnClose,
+			},
+		}
+	end
+
+	local actionCount = #actions
+	local horizontal = actionCount > 0 and actionCount <= 2
+	local actionRow = {}
+	for i, action in actions do
+		local variant: Types.ButtonVariant = action.Variant
+			or (if i == actionCount then "Primary" else (if horizontal then "Tonal" else "Text"))
+		local btn = Button(scope, {
+			Theme = theme,
+			Text = action.Text,
+			Variant = variant,
+			OnClick = action.OnClick,
+			LayoutOrder = i,
+			Size = if horizontal then UDim2.new(1, 0, 0, 40) else UDim2.new(1, 0, 0, 40),
+		})
+		if horizontal then
+			local flex = Instance.new("UIFlexItem")
+			flex.FlexMode = Enum.UIFlexMode.Fill
+			flex.Parent = btn
+		end
+		table.insert(actionRow, btn)
+	end
+
+	local hasIcon = props.Icon ~= nil and props.Icon ~= ""
+	local iconSize = props.IconSize or 28
+	local titleAlign = if hasIcon then Enum.TextXAlignment.Center else Enum.TextXAlignment.Left
+
+	local panel = scope:Frame({
+		Name = "DialogPanel",
+		BackgroundColor3 = theme.Colors.Surface,
+		Size = props.Size or UDim2.fromOffset(320, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BorderSizePixel = 0,
+		LayoutOrder = 2,
+		CornerRadius = theme.Metrics.RadiusPanel,
+		Padding = { theme.Metrics.SpaceLg },
+		Layout = {
+			Kind = "List",
+			Padding = theme.Metrics.SpaceMd,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		},
+		[Children] = {
+			if hasIcon
+				then scope:Frame({
+					Name = "IconWell",
+					BackgroundTransparency = 1,
+					Size = UDim2.new(1, 0, 0, iconSize + 4),
+					LayoutOrder = 0,
+					Layout = {
+						Kind = "List",
+						FillDirection = Enum.FillDirection.Horizontal,
+						HorizontalAlignment = Enum.HorizontalAlignment.Center,
+						VerticalAlignment = Enum.VerticalAlignment.Center,
+					},
+					[Children] = {
+						Icon(scope, {
+							Theme = theme,
+							Name = props.Icon,
+							IconSize = iconSize,
+							Color = props.IconColor or theme.Colors.OnSurfaceVariant,
+						}),
+					},
+				})
+				else nil,
+			scope:TextLabel({
+				BackgroundTransparency = 1,
+				FontFace = theme.Typography.Headline.Font,
+				TextSize = theme.Typography.Title.Size,
+				TextColor3 = theme.Colors.OnSurface,
+				TextXAlignment = titleAlign,
+				Text = props.Title,
+				Size = UDim2.new(1, 0, 0, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				LayoutOrder = 1,
+			}),
+			if props.Body
+				then scope:TextLabel({
+					BackgroundTransparency = 1,
+					FontFace = theme.Typography.Body.Font,
+					TextSize = theme.Typography.Body.Size,
+					TextColor3 = theme.Colors.OnSurfaceVariant,
+					TextWrapped = true,
+					TextXAlignment = titleAlign,
+					Text = props.Body,
+					Size = UDim2.new(1, 0, 0, 0),
+					AutomaticSize = Enum.AutomaticSize.Y,
+					LayoutOrder = 2,
+				})
+				else nil,
+			if props.Children then props.Children else nil,
+			scope:Frame({
+				Name = "Actions",
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1, 0, 0, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				LayoutOrder = 10,
+				Layout = {
+					Kind = "List",
+					FillDirection = if horizontal
+						then Enum.FillDirection.Horizontal
+						else Enum.FillDirection.Vertical,
+					HorizontalFlex = if horizontal then Enum.UIFlexAlignment.Fill else nil,
+					HorizontalAlignment = Enum.HorizontalAlignment.Center,
+					Padding = theme.Metrics.SpaceXs,
+					SortOrder = Enum.SortOrder.LayoutOrder,
+				},
+				[Children] = actionRow,
+			}),
+		},
+	})
+
+	local scale = Instance.new("UIScale")
+	scale.Parent = panel
+	table.insert(
+		scope,
+		scope:Observer(openS):onBind(function()
+			local t = peek(openS)
+			scale.Scale = 0.94 + 0.06 * t
+			panel.BackgroundTransparency = 1 - t
+		end)
+	)
+
+	local root = scope:Frame({
+		Name = "Dialog",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 1),
+		Position = UDim2.fromScale(0, 0),
+		Visible = scope:Computed(function(use)
+			return use(openS) > 0.02 and (props.Visible ~= false)
+		end),
+		ZIndex = props.ZIndex or 100,
+		LayoutOrder = props.LayoutOrder or 0,
+		[Children] = {
+			scope:Hydrate(Overlay(scope, {
+				Theme = theme,
+				OnClick = props.OnClose,
+				ZIndex = 100,
+			}))({
+				BackgroundTransparency = scope:Computed(function(use)
+					return 1 - use(openS) * 0.55
+				end),
+			}),
+			scope:Frame({
+				Name = "DialogCenter",
+				BackgroundTransparency = 1,
+				Size = UDim2.fromScale(1, 1),
+				ZIndex = 101,
+				Layout = {
+					Kind = "List",
+					FillDirection = Enum.FillDirection.Horizontal,
+					HorizontalAlignment = Enum.HorizontalAlignment.Center,
+					VerticalAlignment = Enum.VerticalAlignment.Center,
+				},
+				[Children] = { panel },
+			}),
+		},
+	}) :: Frame
+
+	Layer.mount(scope, props, root)
+	return root
+end
