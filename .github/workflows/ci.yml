@@ -14,6 +14,6 @@ jobs:
         run: |
           curl -fsSL https://raw.githubusercontent.com/rojo-rbx/rokit/main/scripts/install.sh | bash
           echo "$HOME/.rokit/bin" >> $GITHUB_PATH
-      - run: rokit install
+      - run: rokit install --no-trust-check
       - run: selene src demo
       - run: stylua --check src demo

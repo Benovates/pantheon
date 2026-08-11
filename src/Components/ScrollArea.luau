@@ -1,15 +1,13 @@
 --!strict
 --[[
-	Custom scroll surface with chrome:
+	Custom scroll surface with chrome (vertical or horizontal).
 
-	  ^          (chevron-up)
+	Vertical:                 Horizontal:
+	  ^                         < ====[]==== >
 	  |
-	  |
-	 | |         (thin rail + wider thumb)
 	 | |
-	  |
-	  |
-	  V          (chevron-down)
+	 | |
+	  V
 ]]
 local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
@@ -27,6 +25,7 @@ local RunService = game:GetService("RunService")
 
 return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 	local theme = resolveTheme(props)
+	local horizontal = props.Orientation == "Horizontal"
 	local smooth = props.Smooth ~= false
 	local inertia = props.Inertia ~= false
 	local keyboard = props.Keyboard ~= false
@@ -42,7 +41,7 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 	local padX = props.ScrollBarPadding or 6
 	local buttonSize = if showButtons then 20 else 0
 	local chromeInner = math.max(thumbThickness, railThickness, if showButtons then 16 else 0)
-	local chromeWidth = chromeInner + padX * 2
+	local chromeCross = chromeInner + padX * 2
 	local contentLayout = props.ContentLayout or "List"
 	local contentPad = if props.ContentPadding ~= nil then props.ContentPadding else theme.Metrics.SpaceMd
 	local listPad = if props.ListPadding ~= nil then props.ListPadding else theme.Metrics.SpaceLg
@@ -78,8 +77,12 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 		barVisible:set(1)
 	end
 
+	local function axisOf(v: Vector2): number
+		return if horizontal then v.X else v.Y
+	end
+
 	local function maxScroll(): number
-		return math.max(0, peek(contentSize).Y - peek(viewSize).Y)
+		return math.max(0, axisOf(peek(contentSize)) - axisOf(peek(viewSize)))
 	end
 
 	local overscrollEnabled = if props.Overscroll == nil then inertia else props.Overscroll
@@ -154,7 +157,7 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 		local max = maxScroll()
 		local y = peek(target)
 		if y < 0 then
-			if props.OnRefresh and y < -refreshThreshold then
+			if not horizontal and props.OnRefresh and y < -refreshThreshold then
 				task.defer(props.OnRefresh)
 			end
 			target:set(0)
@@ -259,13 +262,27 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 		BackgroundTransparency = 1,
 		ClipsDescendants = false,
 		Size = if autoCanvas
-			then UDim2.new(1, -chromeWidth, 0, 0)
+			then (
+				if horizontal
+					then UDim2.new(0, 0, 1, -chromeCross)
+					else UDim2.new(1, -chromeCross, 0, 0)
+			)
 			else scope:Computed(function(use)
-				return UDim2.new(1, -chromeWidth, 0, use(contentSize).Y)
+				local cs = use(contentSize) :: Vector2
+				if horizontal then
+					return UDim2.new(0, cs.X, 1, -chromeCross)
+				end
+				return UDim2.new(1, -chromeCross, 0, cs.Y)
 			end),
-		AutomaticSize = if autoCanvas then Enum.AutomaticSize.Y else Enum.AutomaticSize.None,
+		AutomaticSize = if autoCanvas
+			then (if horizontal then Enum.AutomaticSize.X else Enum.AutomaticSize.Y)
+			else Enum.AutomaticSize.None,
 		Position = scope:Computed(function(use)
-			return UDim2.fromOffset(0, -use(offset))
+			local off = use(offset) :: number
+			if horizontal then
+				return UDim2.fromOffset(-off, 0)
+			end
+			return UDim2.fromOffset(0, -off)
 		end),
 		[Children] = {
 			if useListLayout
@@ -279,8 +296,12 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 			if useListLayout
 				then scope:New("UIListLayout")({
 					SortOrder = Enum.SortOrder.LayoutOrder,
+					FillDirection = if horizontal
+						then Enum.FillDirection.Horizontal
+						else Enum.FillDirection.Vertical,
 					Padding = UDim.new(0, listPad),
 					HorizontalAlignment = Enum.HorizontalAlignment.Left,
+					VerticalAlignment = Enum.VerticalAlignment.Top,
 				})
 				else nil,
 			props.Children,
@@ -326,9 +347,9 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 			local hide = (1 - use(barVisibleS)) * 0.35
 			return math.clamp(0.4 + hide, 0.15, 0.85)
 		end),
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 0),
-		Size = UDim2.new(0, railThickness, 1, 0),
+		AnchorPoint = if horizontal then Vector2.new(0, 0.5) else Vector2.new(0.5, 0),
+		Position = if horizontal then UDim2.new(0, 0, 0.5, 0) else UDim2.new(0.5, 0, 0, 0),
+		Size = if horizontal then UDim2.new(1, 0, 0, railThickness) else UDim2.new(0, railThickness, 1, 0),
 		BorderSizePixel = 0,
 		ZIndex = 1,
 		[Children] = {
@@ -336,7 +357,27 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 		},
 	})
 
-	-- Wider thumb sitting on the rail
+	local function thumbMetrics(use: any): (number, number, number, number)
+		local vs = use(viewSize) :: Vector2
+		local cs = use(contentSize) :: Vector2
+		local off = use(offset) :: number
+		local trackLen = math.max(axisOf(vs) - buttonSize * 2, 1)
+		local contentLen = math.max(axisOf(cs), 1)
+		local max = math.max(0, contentLen - axisOf(vs))
+		local ratio = math.clamp(axisOf(vs) / contentLen, 0.12, 1)
+		local t = if max <= 0 then 0 else math.clamp(off / max, 0, 1)
+		local baseLen = trackLen * ratio
+		local drag = use(draggingBarS) :: number
+		local velSx = math.min(math.abs(use(stretchS) :: number), baseLen * 0.7)
+		local sx = drag * baseLen * 0.1 + velSx
+		local len = math.min(baseLen + sx, trackLen)
+		local travel = math.max(trackLen - baseLen, 0)
+		local pos = math.clamp(t * travel - (len - baseLen) * 0.5, 0, math.max(trackLen - len, 0))
+		local thin = math.max(thumbThickness - drag * 2.5, railThickness + 1)
+		return pos, len, thin, trackLen
+	end
+
+	-- Thumb sitting on the rail (stretches along scroll axis while dragging)
 	local thumb = scope:New("Frame")({
 		Name = "Thumb",
 		BackgroundColor3 = scope:Computed(function(use)
@@ -347,40 +388,20 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 			local boost = activeAmount(use) * 0.4
 			return math.clamp(0.25 - boost + hide, 0, 1)
 		end),
-		AnchorPoint = Vector2.new(0.5, 0),
+		AnchorPoint = if horizontal then Vector2.new(0, 0.5) else Vector2.new(0.5, 0),
 		Position = scope:Computed(function(use)
-			local vs = use(viewSize) :: Vector2
-			local cs = use(contentSize) :: Vector2
-			local off = use(offset) :: number
-			local trackH = math.max(vs.Y - buttonSize * 2, 1)
-			local contentH = math.max(cs.Y, 1)
-			local max = math.max(0, contentH - vs.Y)
-			local thumbRatio = math.clamp(vs.Y / contentH, 0.12, 1)
-			-- Clamp scroll ratio so overscroll never pushes the thumb past the track
-			local t = if max <= 0 then 0 else math.clamp(off / max, 0, 1)
-			local baseH = trackH * thumbRatio
-			local drag = use(draggingBarS) :: number
-			local velSx = math.min(math.abs(use(stretchS) :: number), baseH * 0.7)
-			local sx = drag * baseH * 0.1 + velSx
-			local h = math.min(baseH + sx, trackH)
-			local travel = math.max(trackH - baseH, 0)
-			local y = math.clamp(t * travel - (h - baseH) * 0.5, 0, math.max(trackH - h, 0))
-			return UDim2.new(0.5, 0, 0, y)
+			local pos = thumbMetrics(use)
+			if horizontal then
+				return UDim2.new(0, pos, 0.5, 0)
+			end
+			return UDim2.new(0.5, 0, 0, pos)
 		end),
 		Size = scope:Computed(function(use)
-			local vs = use(viewSize) :: Vector2
-			local cs = use(contentSize) :: Vector2
-			local trackH = math.max(vs.Y - buttonSize * 2, 1)
-			local contentH = math.max(cs.Y, 1)
-			local ratio = math.clamp(vs.Y / contentH, 0.12, 1)
-			local baseH = trackH * ratio
-			local drag = use(draggingBarS) :: number
-			-- Drag: slightly thinner + longer; velocity adds more stretch
-			local thin = drag * 2.5
-			local velSx = math.min(math.abs(use(stretchS) :: number), baseH * 0.7)
-			local sx = drag * baseH * 0.1 + velSx
-			local h = math.min(baseH + sx, trackH)
-			return UDim2.fromOffset(math.max(thumbThickness - thin, railThickness + 1), h)
+			local _, len, thin = thumbMetrics(use)
+			if horizontal then
+				return UDim2.fromOffset(len, thin)
+			end
+			return UDim2.fromOffset(thin, len)
 		end),
 		ZIndex = 2,
 		[Children] = {
@@ -391,8 +412,10 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 	local track = scope:New("Frame")({
 		Name = "ScrollTrack",
 		BackgroundTransparency = 1,
-		Size = UDim2.new(1, 0, 1, -buttonSize * 2),
-		Position = UDim2.fromOffset(0, buttonSize),
+		Size = if horizontal
+			then UDim2.new(1, -buttonSize * 2, 1, 0)
+			else UDim2.new(1, 0, 1, -buttonSize * 2),
+		Position = if horizontal then UDim2.fromOffset(buttonSize, 0) else UDim2.fromOffset(0, buttonSize),
 		BorderSizePixel = 0,
 		Active = true,
 		ZIndex = 1,
@@ -402,15 +425,19 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 		},
 	})
 
-	local function makeScrollButton(name: string, iconName: string, delta: number, top: boolean)
+	local function makeScrollButton(name: string, iconName: string, delta: number, startEdge: boolean)
 		local pressed = scope:Value(0)
 		local pressedS = scope:Spring(pressed, theme.Motion.SpringSpeed, theme.Motion.SpringDamping)
 		local btn = scope:New("TextButton")(P({
 			Name = name,
 			Text = "",
 			BackgroundTransparency = 1,
-			Size = UDim2.new(1, 0, 0, buttonSize),
-			Position = if top then UDim2.fromOffset(0, 0) else UDim2.new(0, 0, 1, -buttonSize),
+			Size = if horizontal
+				then UDim2.new(0, buttonSize, 1, 0)
+				else UDim2.new(1, 0, 0, buttonSize),
+			Position = if horizontal
+				then (if startEdge then UDim2.fromOffset(0, 0) else UDim2.new(1, -buttonSize, 0, 0))
+				else (if startEdge then UDim2.fromOffset(0, 0) else UDim2.new(0, 0, 1, -buttonSize)),
 			BorderSizePixel = 0,
 			AutoButtonColor = false,
 			[OnEvent("Activated")] = function()
@@ -456,26 +483,41 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 	local chrome = scope:New("Frame")({
 		Name = "ScrollChrome",
 		BackgroundTransparency = 1,
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, 0, 0, 0),
-		Size = UDim2.new(0, chromeWidth, 1, 0),
+		AnchorPoint = if horizontal then Vector2.new(0, 1) else Vector2.new(1, 0),
+		Position = if horizontal then UDim2.new(0, 0, 1, 0) else UDim2.new(1, 0, 0, 0),
+		Size = if horizontal
+			then UDim2.new(1, 0, 0, chromeCross)
+			else UDim2.new(0, chromeCross, 1, 0),
 		ZIndex = 5,
 		[Children] = {
 			scope:New("UIPadding")({
-				PaddingLeft = UDim.new(0, padX),
-				PaddingRight = UDim.new(0, padX),
-				PaddingTop = UDim.new(0, 4),
-				PaddingBottom = UDim.new(0, 4),
+				PaddingLeft = UDim.new(0, if horizontal then 4 else padX),
+				PaddingRight = UDim.new(0, if horizontal then 4 else padX),
+				PaddingTop = UDim.new(0, if horizontal then padX else 4),
+				PaddingBottom = UDim.new(0, if horizontal then padX else 4),
 			}),
-			-- Inner column after padding
 			scope:New("Frame")({
 				Name = "ChromeInner",
 				BackgroundTransparency = 1,
 				Size = UDim2.fromScale(1, 1),
 				[Children] = {
-					if showButtons then makeScrollButton("ScrollUp", "chevron-up", -buttonStep, true) else nil,
+					if showButtons
+						then makeScrollButton(
+							if horizontal then "ScrollLeft" else "ScrollUp",
+							if horizontal then "chevron-left" else "chevron-up",
+							-buttonStep,
+							true
+						)
+						else nil,
 					track,
-					if showButtons then makeScrollButton("ScrollDown", "chevron-down", buttonStep, false) else nil,
+					if showButtons
+						then makeScrollButton(
+							if horizontal then "ScrollRight" else "ScrollDown",
+							if horizontal then "chevron-right" else "chevron-down",
+							buttonStep,
+							false
+						)
+						else nil,
 				},
 			}),
 		},
@@ -532,13 +574,16 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 					return
 				end
 				-- Ignore if starting on scrollbar chrome
-				local cx = chrome.AbsolutePosition.X
-				if input.Position.X >= cx then
+				if horizontal then
+					if input.Position.Y >= chrome.AbsolutePosition.Y then
+						return
+					end
+				elseif input.Position.X >= chrome.AbsolutePosition.X then
 					return
 				end
 				contentDragging:set(true)
 				velocity:set(0)
-				local lastY = input.Position.Y
+				local lastPos = if horizontal then input.Position.X else input.Position.Y
 				local lastT = os.clock()
 				local move = UserInputService.InputChanged:Connect(function(changed)
 					if changed.UserInputType ~= Enum.UserInputType.Touch then
@@ -546,11 +591,12 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 					end
 					local now = os.clock()
 					local dt = math.max(now - lastT, 1 / 240)
-					local dy = changed.Position.Y - lastY
-					lastY = changed.Position.Y
+					local cur = if horizontal then changed.Position.X else changed.Position.Y
+					local d = cur - lastPos
+					lastPos = cur
 					lastT = now
-					scrollBy(-dy, true)
-					velocity:set(-dy / dt)
+					scrollBy(-d, true)
+					velocity:set(-d / dt)
 				end)
 				local ended
 				ended = UserInputService.InputEnded:Connect(function(endedInput)
@@ -595,24 +641,26 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 				return
 			end
 			bumpActivity()
-			local trackH = track.AbsoluteSize.Y
-			local contentH = math.max(peek(contentSize).Y, 1)
-			local view = peek(viewSize).Y
-			local max = math.max(0, contentH - view)
+			local trackLen = if horizontal then track.AbsoluteSize.X else track.AbsoluteSize.Y
+			local contentLen = math.max(axisOf(peek(contentSize)), 1)
+			local view = axisOf(peek(viewSize))
+			local max = math.max(0, contentLen - view)
 			if max <= 0 then
 				return
 			end
-			local thumbRatio = math.clamp(view / contentH, 0.12, 1)
-			local thumbPx = thumbRatio * trackH
-			local localY = input.Position.Y - track.AbsolutePosition.Y
-			local thumbTop = (peek(offset) / max) * (trackH - thumbPx)
-			local onThumb = localY >= thumbTop - 2 and localY <= thumbTop + thumbPx + 2
+			local thumbRatio = math.clamp(view / contentLen, 0.12, 1)
+			local thumbPx = thumbRatio * trackLen
+			local localPos = if horizontal
+				then input.Position.X - track.AbsolutePosition.X
+				else input.Position.Y - track.AbsolutePosition.Y
+			local thumbStart = (peek(offset) / max) * (trackLen - thumbPx)
+			local onThumb = localPos >= thumbStart - 2 and localPos <= thumbStart + thumbPx + 2
 
 			if onThumb then
 				draggingBar:set(1)
 				hoveringBar:set(1)
-				local grabOffset = localY - thumbTop
-				local lastY = input.Position.Y
+				local grabOffset = localPos - thumbStart
+				local lastAxis = if horizontal then input.Position.X else input.Position.Y
 				local lastT = os.clock()
 
 				local move = UserInputService.InputChanged:Connect(function(changed)
@@ -624,13 +672,14 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 					end
 					local now = os.clock()
 					local dt = math.max(now - lastT, 1 / 240)
-					local vel = (changed.Position.Y - lastY) / dt
-					lastY = changed.Position.Y
+					local cur = if horizontal then changed.Position.X else changed.Position.Y
+					local vel = (cur - lastAxis) / dt
+					lastAxis = cur
 					lastT = now
 					stretch:set(math.clamp(vel * 0.055, -36, 36))
 
-					local y = changed.Position.Y - track.AbsolutePosition.Y - grabOffset
-					local t = math.clamp(y / math.max(trackH - thumbPx, 1), 0, 1)
+					local p = cur - (if horizontal then track.AbsolutePosition.X else track.AbsolutePosition.Y) - grabOffset
+					local t = math.clamp(p / math.max(trackLen - thumbPx, 1), 0, 1)
 					scrollTo(t * max)
 				end)
 				local ended
@@ -649,7 +698,7 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 				table.insert(scope, ended)
 			elseif railClick then
 				railPressed:set(1)
-				local t = math.clamp((localY - thumbPx * 0.5) / math.max(trackH - thumbPx, 1), 0, 1)
+				local t = math.clamp((localPos - thumbPx * 0.5) / math.max(trackLen - thumbPx, 1), 0, 1)
 				scrollTo(t * max)
 				task.delay(0.12, function()
 					railPressed:set(0)
@@ -665,18 +714,34 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 				if processed then
 					return
 				end
-				if input.KeyCode == Enum.KeyCode.Down then
-					scrollBy(56)
-				elseif input.KeyCode == Enum.KeyCode.Up then
-					scrollBy(-56)
-				elseif input.KeyCode == Enum.KeyCode.PageDown then
-					scrollBy(peek(viewSize).Y * 0.9)
-				elseif input.KeyCode == Enum.KeyCode.PageUp then
-					scrollBy(-peek(viewSize).Y * 0.9)
-				elseif input.KeyCode == Enum.KeyCode.Home then
-					scrollTo(0)
-				elseif input.KeyCode == Enum.KeyCode.End then
-					scrollTo(maxScroll())
+				if horizontal then
+					if input.KeyCode == Enum.KeyCode.Right then
+						scrollBy(56)
+					elseif input.KeyCode == Enum.KeyCode.Left then
+						scrollBy(-56)
+					elseif input.KeyCode == Enum.KeyCode.PageDown then
+						scrollBy(axisOf(peek(viewSize)) * 0.9)
+					elseif input.KeyCode == Enum.KeyCode.PageUp then
+						scrollBy(-axisOf(peek(viewSize)) * 0.9)
+					elseif input.KeyCode == Enum.KeyCode.Home then
+						scrollTo(0)
+					elseif input.KeyCode == Enum.KeyCode.End then
+						scrollTo(maxScroll())
+					end
+				else
+					if input.KeyCode == Enum.KeyCode.Down then
+						scrollBy(56)
+					elseif input.KeyCode == Enum.KeyCode.Up then
+						scrollBy(-56)
+					elseif input.KeyCode == Enum.KeyCode.PageDown then
+						scrollBy(peek(viewSize).Y * 0.9)
+					elseif input.KeyCode == Enum.KeyCode.PageUp then
+						scrollBy(-peek(viewSize).Y * 0.9)
+					elseif input.KeyCode == Enum.KeyCode.Home then
+						scrollTo(0)
+					elseif input.KeyCode == Enum.KeyCode.End then
+						scrollTo(maxScroll())
+					end
 				end
 			end)
 		)

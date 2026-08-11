@@ -602,6 +602,8 @@ export type ChoiceGroupProps = BaseProps & {
 
 export type ScrollAreaProps = BaseProps & {
 	Children: any?,
+	--- Scroll axis. Default "Vertical".
+	Orientation: ("Vertical" | "Horizontal")?,
 	ScrollBarThickness: number?,
 	ScrollBarColor: Color3?,
 	ScrollBarActiveColor: Color3?,
@@ -623,7 +625,7 @@ export type ScrollAreaProps = BaseProps & {
 	OnScroll: ((offset: number) -> ())?,
 	--- Rubber-band overscroll. Default true when Inertia.
 	Overscroll: boolean?,
-	--- Pull-to-refresh callback (fires after pull threshold).
+	--- Pull-to-refresh callback (fires after pull threshold). Vertical only.
 	OnRefresh: (() -> ())?,
 	RefreshThreshold: number?,
 	--- Drag anywhere to scroll (touch/mouse). Default true.
