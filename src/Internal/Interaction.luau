@@ -6,11 +6,7 @@
 	(Material state-layer model). No child overlay Frame — padding must not
 	create a second “hover box”.
 ]]
-local Packages = script.Parent.Parent.Parent
-local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
-
-local peek = Fusion.peek
 
 export type BindOptions = {
 	Disabled: boolean?,
