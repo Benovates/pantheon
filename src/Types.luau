@@ -105,10 +105,13 @@ export type ThemeMotion = {
 	PressScale: number,
 }
 
+export type PreferredTextSizeName = "Medium" | "Large" | "Larger" | "Largest"
+
 export type AccessibilityPrefs = {
 	ReduceMotion: boolean?,
 	PreferredTransparency: number?,
 	HighContrast: boolean?,
+	PreferredTextSize: PreferredTextSizeName?,
 }
 
 --- Control chrome defaults (iOS-style switch I/O labels, etc.)
