@@ -86,6 +86,18 @@ export type ThemeTypography = {
 	[string]: TypeScale,
 }
 
+export type ThemeColorRole = {
+	Base: Color3,
+	OnBase: Color3,
+	Container: Color3,
+	OnContainer: Color3,
+}
+
+--- Extensible palette; defaults use Material-ish names (primary, secondary, …).
+export type ThemePalette = { [string]: ThemeColorRole }
+
+--- Color3 | hex | RGB {r,g,b} | palette name | full role
+export type ColorInput = Color3 | string | { number } | ThemeColorRole
 
 export type ThemeMotion = {
 	SpringSpeed: number,
@@ -111,6 +123,8 @@ export type ThemeAudio = { [string]: string }
 export type Theme = {
 	Mode: ThemeMode,
 	Colors: ThemeColors,
+	--- Named colors for Color= props (primary, secondary, error, custom, …)
+	Palette: ThemePalette,
 	Fonts: ThemeFonts,
 	Typography: ThemeTypography,
 	Metrics: ThemeMetrics,
@@ -123,8 +137,16 @@ export type Theme = {
 
 export type ThemeRef = UsedAs<Theme>
 
-export type ButtonVariant = "Primary" | "Tonal" | "Text" | "Destructive" | "Outlined"
-export type TextVariant = "Display" | "Headline" | "Title" | "Body" | "Label" | "Mono"
+--- Style only (Vuetify-like). Legacy names still accepted on Button.
+export type ButtonVariant =
+	"Filled"
+	| "Tonal"
+	| "Outlined"
+	| "Text"
+	| "Primary"
+	| "Destructive"
+
+export type TextVariant = string
 export type AlertTone = "Info" | "Success" | "Warning" | "Error"
 export type ProgressVariant = "Linear" | "Circular"
 export type ProgressMode = "Determinate" | "Indeterminate" | "Buffering"
@@ -143,7 +165,10 @@ export type BaseProps = {
 
 export type ButtonProps = BaseProps & {
 	Text: UsedAs<string>?,
+	--- Style: Filled | Tonal | Outlined | Text (legacy Primary/Destructive still work)
 	Variant: ButtonVariant?,
+	--- Palette name, Color3, hex, RGB table, or ThemeColorRole
+	Color: UsedAs<ColorInput>?,
 	OnClick: (() -> ())?,
 	Disabled: UsedAs<boolean>?,
 	Icon: string?,
@@ -206,6 +231,7 @@ export type ChipProps = BaseProps & {
 export type DialogAction = {
 	Text: string,
 	Variant: ButtonVariant?,
+	Color: ColorInput?,
 	OnClick: (() -> ())?,
 }
 
