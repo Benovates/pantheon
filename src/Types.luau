@@ -96,8 +96,8 @@ export type ThemeColorRole = {
 --- Extensible palette; defaults use Material-ish names (primary, secondary, …).
 export type ThemePalette = { [string]: ThemeColorRole }
 
---- Color3 | hex | RGB {r,g,b} | palette name | full role
-export type ColorInput = Color3 | string | { number } | ThemeColorRole
+--- Color3 | hex | RGB {r,g,b} | palette name | Material swatch ("Blue 500") | { Blue = 500 } | role
+export type ColorInput = Color3 | string | { number } | { [string]: number | string } | ThemeColorRole
 
 export type ThemeMotion = {
 	SpringSpeed: number,

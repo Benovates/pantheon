@@ -3,6 +3,7 @@ local Packages = script.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Types)
 local Accessibility = require(script.Parent.Internal.Accessibility)
+local Color = require(script.Parent.Internal.Color)
 
 local peek = Fusion.peek
 
@@ -74,6 +75,55 @@ local function darkColors(): Types.ThemeColors
 	}
 end
 
+--[[
+	Default semantic palette (primary/secondary/…).
+	Full Material hue/shade system: Internal.MaterialColors / Color = "Blue 500".
+]]
+local function defaultPalette(colors: Types.ThemeColors, mode: Types.ThemeMode): Types.ThemePalette
+	local secondarySeed = if mode == "Dark"
+		then Color3.fromRGB(156, 163, 175)
+		else Color3.fromRGB(97, 97, 97)
+	return {
+		primary = {
+			Base = colors.Primary,
+			OnBase = colors.OnPrimary,
+			Container = colors.PrimaryContainer,
+			OnContainer = colors.OnPrimaryContainer,
+		},
+		secondary = Color.rolesFromSeed(secondarySeed, mode),
+		surface = {
+			Base = colors.SurfaceContainerHigh,
+			OnBase = colors.OnSurface,
+			Container = colors.SurfaceContainer,
+			OnContainer = colors.OnSurfaceVariant,
+		},
+		error = {
+			Base = colors.Error,
+			OnBase = colors.OnError,
+			Container = Color.lerp(colors.Error, colors.Surface, 0.78),
+			OnContainer = colors.Error,
+		},
+		success = {
+			Base = colors.Success,
+			OnBase = colors.OnSuccess,
+			Container = Color.lerp(colors.Success, colors.Surface, 0.78),
+			OnContainer = colors.Success,
+		},
+		warning = {
+			Base = colors.Warning,
+			OnBase = colors.OnWarning,
+			Container = Color.lerp(colors.Warning, colors.Surface, 0.78),
+			OnContainer = colors.Warning,
+		},
+		info = {
+			Base = colors.Info,
+			OnBase = colors.OnInfo,
+			Container = Color.lerp(colors.Info, colors.Surface, 0.78),
+			OnContainer = colors.Info,
+		},
+	}
+end
+
 local defaultMetrics: Types.ThemeMetrics = {
 	Space2xs = 4,
 	SpaceXs = 8,
@@ -104,14 +154,15 @@ local function typography(): Types.ThemeTypography
 		Display = { Font = MontserratBold, Size = 32, LineHeight = 1.2 },
 		Headline = { Font = MontserratBold, Size = 24, LineHeight = 1.25 },
 		Title = { Font = MontserratSemi, Size = 18, LineHeight = 1.3 },
-		Body = { Font = MontserratMedium, Size = 14, LineHeight = 1.4 },
-		Label = { Font = MontserratSemi, Size = 12, LineHeight = 1.3 },
+		Button = { Font = MontserratSemi, Size = 16, LineHeight = 1.4 },
+		Body = { Font = MontserratMedium, Size = 16, LineHeight = 1.4 },
+		Label = { Font = MontserratSemi, Size = 14, LineHeight = 1.3 },
 		Mono = { Font = Mono, Size = 13, LineHeight = 1.35 },
 	}
 end
 
 local function lerpColor(a: Color3, b: Color3, t: number): Color3
-	return Color3.new(a.R + (b.R - a.R) * t, a.G + (b.G - a.G) * t, a.B + (b.B - a.B) * t)
+	return Color.lerp(a, b, t)
 end
 
 local function blendThemes(a: Types.Theme, b: Types.Theme, t: number): Types.Theme
@@ -130,8 +181,33 @@ local function blendThemes(a: Types.Theme, b: Types.Theme, t: number): Types.The
 			colors[key] = value
 		end
 	end
+	local palette: any = {}
+	local aPal = a.Palette or {}
+	local bPal = b.Palette or {}
+	local keys: { [string]: boolean } = {}
+	for k in aPal do
+		keys[k] = true
+	end
+	for k in bPal do
+		keys[k] = true
+	end
+	for k in keys do
+		local ar = aPal[k]
+		local br = bPal[k]
+		if ar and br then
+			palette[k] = {
+				Base = lerpColor(ar.Base, br.Base, t),
+				OnBase = lerpColor(ar.OnBase, br.OnBase, t),
+				Container = lerpColor(ar.Container, br.Container, t),
+				OnContainer = lerpColor(ar.OnContainer, br.OnContainer, t),
+			}
+		else
+			palette[k] = br or ar
+		end
+	end
 	local out = table.clone(b)
 	out.Colors = colors
+	out.Palette = palette
 	out.Mode = if t < 0.5 then a.Mode else b.Mode
 	return out
 end
@@ -139,9 +215,16 @@ end
 local Theme = {}
 
 export type ThemeCreateOpts = {
+	--- When false, skip system accessibility prefs (unless `Accessibility` is set).
 	RespectAccessibility: boolean?,
+	--- Explicit prefs override (storybooks / tests). Takes priority over system read.
+	Accessibility: Types.AccessibilityPrefs?,
 	Controls: Types.ThemeControls?,
 	Overrides: { [string]: any }?,
+	--- Extra / override named colors (seed Color3, hex, or full ThemeColorRole)
+	Palette: { [string]: Color3 | Types.ThemeColorRole | Types.ColorInput }?,
+	--- Merge custom typography scales (keeps required defaults)
+	Typography: { [string]: Types.TypeScale }?,
 }
 
 local function deepMerge(base: any, over: any): any
@@ -174,9 +257,11 @@ function Theme.create(mode: Types.ThemeMode?, opts: ThemeCreateOpts?): Types.The
 	if opts ~= nil and opts.Controls ~= nil and opts.Controls.SwitchIcons ~= nil then
 		switchIcons = opts.Controls.SwitchIcons
 	end
+	local colors = if resolved == "Dark" then darkColors() else lightColors()
 	local theme: Types.Theme = {
 		Mode = resolved,
-		Colors = if resolved == "Dark" then darkColors() else lightColors(),
+		Colors = colors,
+		Palette = defaultPalette(colors, resolved),
 		Fonts = {
 			Heading = MontserratBold,
 			Body = MontserratMedium,
@@ -204,10 +289,18 @@ function Theme.create(mode: Types.ThemeMode?, opts: ThemeCreateOpts?): Types.The
 		theme = deepMerge(theme, opts.Overrides) :: Types.Theme
 		theme.Mode = resolved
 	end
+	if opts and opts.Palette then
+		theme.Palette = Color.normalizePalette(opts.Palette, resolved, theme.Palette)
+	end
+	if opts and opts.Typography then
+		theme.Typography = deepMerge(theme.Typography, opts.Typography) :: Types.ThemeTypography
+	end
 	if opts and opts.Controls then
 		theme.Controls = deepMerge(theme.Controls or {}, opts.Controls)
 	end
-	if opts == nil or opts.RespectAccessibility ~= false then
+	if opts and opts.Accessibility ~= nil then
+		theme = Accessibility.apply(theme, opts.Accessibility :: any)
+	elseif opts == nil or opts.RespectAccessibility ~= false then
 		theme = Accessibility.apply(theme)
 	end
 	return theme
@@ -220,13 +313,23 @@ end
 function Theme.createAnimated(
 	scope: Types.Scope,
 	mode: any,
-	opts: { Animate: boolean?, RespectAccessibility: boolean?, Controls: Types.ThemeControls? }?
+	opts: {
+		Animate: boolean?,
+		RespectAccessibility: boolean?,
+		Accessibility: Types.AccessibilityPrefs?,
+		Controls: Types.ThemeControls?,
+		Palette: { [string]: Color3 | Types.ThemeColorRole | Types.ColorInput }?,
+		Typography: { [string]: Types.TypeScale }?,
+	}?
 ): Types.ThemeRef
 	local animate = if opts and opts.Animate == false then false else true
 	local respect = if opts and opts.RespectAccessibility == false then false else true
 	local createOpts: ThemeCreateOpts = {
 		RespectAccessibility = respect,
+		Accessibility = if opts then opts.Accessibility else nil,
 		Controls = if opts then opts.Controls else nil,
+		Palette = if opts then opts.Palette else nil,
+		Typography = if opts then opts.Typography else nil,
 	}
 	local light = Theme.create("Light", createOpts)
 	local dark = Theme.create("Dark", createOpts)
@@ -274,6 +377,8 @@ end
 
 Theme.Contextual = themeContext
 Theme.Accessibility = Accessibility
+Theme.Color = Color
+Theme.Material = Color.Material
 Theme.blend = blendThemes
 Theme.deepMerge = deepMerge
 

@@ -20,6 +20,9 @@ export type ButtonProps = Types.ButtonProps
 export type TextFieldProps = Types.TextFieldProps
 export type ListItemProps = Types.ListItemProps
 export type ButtonVariant = Types.ButtonVariant
+export type ColorInput = Types.ColorInput
+export type ThemeColorRole = Types.ThemeColorRole
+export type ThemePalette = Types.ThemePalette
 
 local EstuaryUI = {
 	Theme = Theme,
@@ -29,6 +32,8 @@ local EstuaryUI = {
 	Validators = require(script.Internal.Validators),
 	Accessibility = require(script.Internal.Accessibility),
 	Shadow = require(script.Internal.Shadow),
+	Color = require(script.Internal.Color),
+	Material = require(script.Internal.MaterialColors),
 	Fusion = Fusion,
 	Iona = Iona,
 	Version = { major = 0, minor = 3, isRelease = false },
