@@ -29,7 +29,7 @@ return function(scope: Types.Scope, props: Types.ButtonProps): TextButton
 	local variant: Types.ButtonVariant = props.Variant or "Primary"
 	local bg, fg, transparency, outlined, stateColor = variantColors(theme, variant)
 	local disabled = peek(props.Disabled) == true
-	local padX = math.max(theme.Metrics.ButtonPadX - 4, 8)
+	local padX = math.max(theme.Metrics.ButtonPadX, 8)
 	local padY = math.max(theme.Metrics.ButtonPadY - 2, 2)
 	local leading = props.LeadingIcon or props.Icon
 	local trailing = props.TrailingIcon

@@ -95,7 +95,7 @@ local defaultMetrics: Types.ThemeMetrics = {
 	AppBarHeight = 56,
 	DrawerWidth = 280,
 	RailWidth = 72,
-	ButtonPadX = 16,
+	ButtonPadX = 20,
 	ButtonPadY = 4,
 }
 
@@ -141,7 +141,32 @@ local Theme = {}
 export type ThemeCreateOpts = {
 	RespectAccessibility: boolean?,
 	Controls: Types.ThemeControls?,
+	Overrides: { [string]: any }?,
 }
+
+local function deepMerge(base: any, over: any): any
+	if typeof(over) ~= "table" then
+		return over
+	end
+	if typeof(base) ~= "table" then
+		return table.clone(over)
+	end
+	local out = table.clone(base)
+	for key, value in over do
+		local existing = out[key]
+		if typeof(value) == "table" and typeof(existing) == "table" and getmetatable(value) == nil and getmetatable(existing) == nil then
+			local isArray = #value > 0 or #existing > 0
+			if isArray then
+				out[key] = table.clone(value)
+			else
+				out[key] = deepMerge(existing, value)
+			end
+		else
+			out[key] = value
+		end
+	end
+	return out
+end
 
 function Theme.create(mode: Types.ThemeMode?, opts: ThemeCreateOpts?): Types.Theme
 	local resolved: Types.ThemeMode = mode or "Light"
@@ -175,6 +200,13 @@ function Theme.create(mode: Types.ThemeMode?, opts: ThemeCreateOpts?): Types.The
 			SwitchIcons = switchIcons,
 		},
 	}
+	if opts and opts.Overrides then
+		theme = deepMerge(theme, opts.Overrides) :: Types.Theme
+		theme.Mode = resolved
+	end
+	if opts and opts.Controls then
+		theme.Controls = deepMerge(theme.Controls or {}, opts.Controls)
+	end
 	if opts == nil or opts.RespectAccessibility ~= false then
 		theme = Accessibility.apply(theme)
 	end
@@ -243,5 +275,6 @@ end
 Theme.Contextual = themeContext
 Theme.Accessibility = Accessibility
 Theme.blend = blendThemes
+Theme.deepMerge = deepMerge
 
 return Theme
