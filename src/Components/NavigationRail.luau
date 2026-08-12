@@ -148,10 +148,10 @@ return function(scope: Types.Scope, props: Types.NavigationRailProps): Frame
 			Padding = { if horizontal then 14 else 10, if horizontal then 12 else 6 },
 			Layout = {
 				Kind = "List",
-				FillDirection = Enum.FillDirection.Vertical,
+				FillDirection = Enum.FillDirection.Horizontal,
 				HorizontalAlignment = Enum.HorizontalAlignment.Center,
 				VerticalAlignment = Enum.VerticalAlignment.Center,
-				Padding = if horizontal then 2 else 4,
+				Padding = if horizontal then 8 else 4,
 				SortOrder = Enum.SortOrder.LayoutOrder,
 			},
 			[OnEvent("Activated")] = function()
