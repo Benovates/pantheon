@@ -58,9 +58,8 @@ return function(scope: Types.Scope, props: Types.NavigationRailProps): Frame
 		if w < 1 or h < 1 then
 			return
 		end
-		-- Slight inset from the tab hit area; content padding does most of the breathing room.
-		local insetX = if horizontal then 2 else 2
-		local insetY = if horizontal then 2 else 2
+		local insetX = if horizontal then 0 else 2
+		local insetY = if horizontal then 0 else 2
 		relX += insetX
 		relY += insetY
 		w = math.max(w - insetX * 2, 8)
