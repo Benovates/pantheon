@@ -196,6 +196,7 @@ return function(scope: Types.Scope, props: Types.NavigationRailProps): Frame
 			scope:Frame({
 				Name = "Indicator",
 				BackgroundColor3 = theme.Colors.PrimaryContainer,
+				BackgroundTransparency = 0.5,
 				ZIndex = 1,
 				Position = scope:Computed(function(use)
 					local extra = use(stretchS)
