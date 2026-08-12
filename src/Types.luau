@@ -265,6 +265,13 @@ export type RadioOption = {
 	Label: string,
 }
 
+export type RadioProps = BaseProps & {
+	Checked: UsedAs<boolean>,
+	Label: UsedAs<string>?,
+	OnActivated: (() -> ())?,
+	Disabled: UsedAs<boolean>?,
+}
+
 export type RadioGroupProps = BaseProps & {
 	Options: { RadioOption },
 	Value: UsedAs<string>?,

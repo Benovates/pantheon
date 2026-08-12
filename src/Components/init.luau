@@ -20,6 +20,7 @@ return {
 	Prompt = require(script.Prompt),
 	Checkbox = require(script.Checkbox),
 	Switch = require(script.Switch),
+	Radio = require(script.Radio),
 	RadioGroup = require(script.RadioGroup),
 	Select = require(script.Select),
 	Combobox = require(script.Combobox),
