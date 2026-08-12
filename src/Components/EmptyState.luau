@@ -16,32 +16,48 @@ return function(scope: Types.Scope, props: Types.EmptyStateProps): Frame
 		LayoutOrder = props.LayoutOrder or 0,
 		Layout = {
 			Kind = "List",
-			Padding = theme.Metrics.SpaceSm,
+			Padding = theme.Metrics.SpaceLg,
 			HorizontalAlignment = Enum.HorizontalAlignment.Center,
 			VerticalAlignment = Enum.VerticalAlignment.Center,
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		},
 		[Children] = {
-			scope:TextLabel({
+			scope:Frame({
+				Name = "Labels",
 				BackgroundTransparency = 1,
-				FontFace = theme.Fonts.Heading,
-				TextSize = 18,
-				TextColor3 = theme.Colors.OnSurface,
-				Text = props.Title,
-				AutomaticSize = Enum.AutomaticSize.XY,
-				LayoutOrder = 1,
+				Size = UDim2.new(1, 0, 0, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				LayoutOrder = 0,
+				Layout = {
+					Kind = "List",
+					FillDirection = Enum.FillDirection.Vertical,
+					VerticalAlignment = Enum.VerticalAlignment.Center,
+					HorizontalAlignment = Enum.HorizontalAlignment.Center,
+					Padding = theme.Metrics.Space2xs,
+				},
+				[Children] = {
+					scope:TextLabel({
+						BackgroundTransparency = 1,
+						FontFace = theme.Fonts.Heading,
+						TextSize = 18,
+						TextColor3 = theme.Colors.OnSurface,
+						Text = props.Title,
+						AutomaticSize = Enum.AutomaticSize.XY,
+						LayoutOrder = 1,
+					}),
+					if props.Subtitle
+						then scope:TextLabel({
+							BackgroundTransparency = 1,
+							FontFace = theme.Fonts.Body,
+							TextSize = 14,
+							TextColor3 = theme.Colors.OnSurfaceVariant,
+							Text = props.Subtitle,
+							AutomaticSize = Enum.AutomaticSize.XY,
+							LayoutOrder = 2,
+						})
+						else nil,
+					},
 			}),
-			if props.Subtitle
-				then scope:TextLabel({
-					BackgroundTransparency = 1,
-					FontFace = theme.Fonts.Body,
-					TextSize = 14,
-					TextColor3 = theme.Colors.OnSurfaceVariant,
-					Text = props.Subtitle,
-					AutomaticSize = Enum.AutomaticSize.XY,
-					LayoutOrder = 2,
-				})
-				else nil,
 			if props.Action then Button(scope, props.Action) else nil,
 		},
 	}) :: Frame
