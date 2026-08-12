@@ -79,10 +79,13 @@ export type ThemeTypography = {
 	Display: TypeScale,
 	Headline: TypeScale,
 	Title: TypeScale,
+	Button: TypeScale,
 	Body: TypeScale,
 	Label: TypeScale,
 	Mono: TypeScale,
+	[string]: TypeScale,
 }
+
 
 export type ThemeMotion = {
 	SpringSpeed: number,
