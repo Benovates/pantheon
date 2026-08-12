@@ -79,6 +79,7 @@ return function(scope: Types.Scope, props: Types.DialogProps): Frame
 		BorderSizePixel = 0,
 		LayoutOrder = 2,
 		CornerRadius = theme.Metrics.RadiusPanel,
+		Outline = { Color = theme.Colors.OutlineVariant, Thickness = 1, Mode = Enum.ApplyStrokeMode.Border },
 		Padding = { theme.Metrics.SpaceLg },
 		Layout = {
 			Kind = "List",
@@ -155,6 +156,16 @@ return function(scope: Types.Scope, props: Types.DialogProps): Frame
 		},
 	})
 
+	local baseZ = props.ZIndex or 100
+	local outlineStroke = scope:New("UIStroke")({
+		Name = "DialogOutlineFlash",
+		Parent = panel,
+		Color = theme.Colors.Outline,
+		ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+		Thickness = 2,
+		Transparency = 1,
+	})
+
 	local scale = Instance.new("UIScale")
 	scale.Parent = panel
 	table.insert(
@@ -163,6 +174,11 @@ return function(scope: Types.Scope, props: Types.DialogProps): Frame
 			local t = peek(openS)
 			scale.Scale = 0.94 + 0.06 * t
 			panel.BackgroundTransparency = 1 - t
+
+			-- Pulse around t ~= 0.5 (as openS springs from 0 -> 1).
+			local pulse = math.clamp(1 - math.abs(2 * t - 1), 0, 1)
+			outlineStroke.Transparency = 1 - pulse * 0.85
+			outlineStroke.Thickness = 1 + pulse * 2
 		end)
 	)
 
@@ -174,13 +190,13 @@ return function(scope: Types.Scope, props: Types.DialogProps): Frame
 		Visible = scope:Computed(function(use)
 			return use(openS) > 0.02 and (props.Visible ~= false)
 		end),
-		ZIndex = props.ZIndex or 100,
+		ZIndex = baseZ,
 		LayoutOrder = props.LayoutOrder or 0,
 		[Children] = {
 			scope:Hydrate(Overlay(scope, {
 				Theme = theme,
 				OnClick = props.OnClose,
-				ZIndex = 100,
+				ZIndex = baseZ,
 			}))({
 				BackgroundTransparency = scope:Computed(function(use)
 					return 1 - use(openS) * 0.55
@@ -190,7 +206,7 @@ return function(scope: Types.Scope, props: Types.DialogProps): Frame
 				Name = "DialogCenter",
 				BackgroundTransparency = 1,
 				Size = UDim2.fromScale(1, 1),
-				ZIndex = 101,
+				ZIndex = baseZ + 1,
 				Layout = {
 					Kind = "List",
 					FillDirection = Enum.FillDirection.Horizontal,
