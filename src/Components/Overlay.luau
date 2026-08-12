@@ -14,6 +14,8 @@ return function(scope: Types.Scope, props: Types.OverlayProps?): TextButton
 		Name = "Overlay",
 		Text = "",
 		AutoButtonColor = false,
+		AnchorPoint = Vector2.new(0, 0),
+		Position = UDim2.fromScale(0, 0),
 		BackgroundColor3 = theme.Colors.Scrim,
 		BackgroundTransparency = 0.35,
 		BorderSizePixel = 0,
