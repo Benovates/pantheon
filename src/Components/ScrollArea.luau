@@ -14,6 +14,7 @@ local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
 local Interaction = require(script.Parent.Parent.Internal.Interaction)
+local ScrollInput = require(script.Parent.Parent.Internal.ScrollInput)
 local Icon = require(script.Parent.Icon)
 local P = require(script.Parent.Parent.Internal.props)
 
@@ -31,7 +32,9 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 	local keyboard = props.Keyboard ~= false
 	local autoCanvas = props.AutoCanvas ~= false
 	local railClick = props.ScrollBarRail ~= false
-	local showRail = if props.ScrollBarRailBackground == nil then true else props.ScrollBarRailBackground
+	local showRail = if props.ScrollBarRailBackground == nil
+		then true
+		else props.ScrollBarRailBackground
 	local autoHide = props.AutoHideScrollBar ~= false
 	local hideDelay = props.AutoHideDelay or 0.85
 	local showButtons = props.ScrollButtons == true
@@ -43,7 +46,9 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 	local chromeInner = math.max(thumbThickness, railThickness, if showButtons then 16 else 0)
 	local chromeCross = chromeInner + padX * 2
 	local contentLayout = props.ContentLayout or "List"
-	local contentPad = if props.ContentPadding ~= nil then props.ContentPadding else theme.Metrics.SpaceMd
+	local contentPad = if props.ContentPadding ~= nil
+		then props.ContentPadding
+		else theme.Metrics.SpaceMd
 	local listPad = if props.ListPadding ~= nil then props.ListPadding else theme.Metrics.SpaceLg
 	local useListLayout = contentLayout ~= "None"
 	-- Extra inset so UIStroke near full-bleed children isn't sheared by root clip.
@@ -58,12 +63,13 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 	local offset = scope:Value(peek(props.ScrollOffset) or 0)
 	local velocity = scope:Value(0)
 	local target = scope:Value(peek(props.ScrollOffset) or 0)
-	local scrollSpring = scope:Spring(target, if smooth then 52 else 120, 0.9)
+	local scrollSpring = scope:Spring(target, if smooth then 88 else 120, 0.92)
 
 	local barVisible = scope:Value(1)
 	local barVisibleS = scope:Spring(barVisible, 28, 0.95)
 	local hoveringBar = scope:Value(0)
-	local hoveringBarS = scope:Spring(hoveringBar, theme.Motion.SpringSpeed, theme.Motion.SpringDamping)
+	local hoveringBarS =
+		scope:Spring(hoveringBar, theme.Motion.SpringSpeed, theme.Motion.SpringDamping)
 	local draggingBar = scope:Value(0)
 	local draggingBarS = scope:Spring(draggingBar, theme.Motion.SpringSpeed * 1.2, 0.9)
 	local railPressed = scope:Value(0)
@@ -85,10 +91,14 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 		return math.max(0, axisOf(peek(contentSize)) - axisOf(peek(viewSize)))
 	end
 
-	local overscrollEnabled = if props.Overscroll == nil then inertia else props.Overscroll
+	local overscrollEnabled = if props.Overscroll ~= nil
+		then props.Overscroll
+		else (inertia or props.OnRefresh ~= nil)
 	-- Drag-to-scroll is touch-only by default (mouse uses wheel / scrollbar).
 	local touchDevice = UserInputService.TouchEnabled
-	local dragToScroll = if props.DragToScroll == nil then touchDevice else props.DragToScroll == true
+	local dragToScroll = if props.DragToScroll == nil
+		then touchDevice
+		else props.DragToScroll == true
 	local refreshThreshold = props.RefreshThreshold or 72
 	local contentDragging = scope:Value(false)
 
@@ -100,7 +110,7 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 		if typeof(last) == "number" and math.abs(y - last) < 0.5 then
 			return
 		end
-		;(scope :: any)._estuaryLastScroll = y
+		(scope :: any)._estuaryLastScroll = y
 		props.OnScroll(y)
 	end
 
@@ -119,10 +129,29 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 		return math.clamp(y, 0, maxScroll())
 	end
 
+	-- Wheel / trackpad at an edge, touch drag, or already rubber-banding past bounds.
+	local function shouldOverscroll(delta: number, current: number, max: number): boolean
+		if not overscrollEnabled then
+			return false
+		end
+		if current < -0.5 or current > max + 0.5 then
+			return true
+		end
+		if delta < 0 and current <= 0.5 then
+			return true
+		end
+		if delta > 0 and current >= max - 0.5 then
+			return true
+		end
+		return false
+	end
+
 	local function scrollBy(delta: number, raw: boolean?)
 		bumpActivity()
-		local nextY = peek(target) + delta
-		if overscrollEnabled and (raw or peek(contentDragging)) then
+		local current = peek(target)
+		local max = maxScroll()
+		local nextY = current + delta
+		if raw or peek(contentDragging) or shouldOverscroll(delta, current, max) then
 			target:set(nextY)
 			if not smooth then
 				offset:set(resist(nextY))
@@ -137,7 +166,9 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 			end
 		end
 		if inertia and not peek(contentDragging) then
-			velocity:set(delta * 12)
+			-- Accumulate momentum (trackpad sends rapid small deltas).
+			local v = peek(velocity)
+			velocity:set(v + delta * 22)
 		end
 	end
 
@@ -169,14 +200,20 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 	end
 
 	local function activeAmount(use: any): number
-		return math.clamp(use(draggingBarS) + use(railPressedS) * 0.85 + use(hoveringBarS) * 0.35, 0, 1)
+		return math.clamp(
+			use(draggingBarS) + use(railPressedS) * 0.85 + use(hoveringBarS) * 0.35,
+			0,
+			1
+		)
 	end
 
 	table.insert(
 		scope,
 		scope:Observer(scrollSpring):onBind(function()
 			local raw = peek(scrollSpring)
-			local y = if overscrollEnabled and peek(contentDragging) then resist(raw) else clampScroll(raw)
+			local y = if overscrollEnabled and peek(contentDragging)
+				then resist(raw)
+				else clampScroll(raw)
 			-- While free-springing past edges, show resisted position then settle
 			if overscrollEnabled and not peek(contentDragging) then
 				if raw < 0 or raw > maxScroll() then
@@ -213,23 +250,28 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 				local v = peek(velocity)
 				local y = peek(target)
 				local max = maxScroll()
-				-- Rubber-band settle when past edges
-				if overscrollEnabled and (y < 0 or y > max) then
-					local goal = if y < 0 then 0 else max
-					local nextY = y + (goal - y) * math.min(1, dt * 10)
-					if math.abs(nextY - goal) < 0.5 then
-						nextY = goal
-						velocity:set(0)
+				-- Rubber-band settle when past edges (after coasting stops).
+				if overscrollEnabled and (y < 0 or y > max) and math.abs(v) < 0.35 then
+					if y < 0 and not horizontal and props.OnRefresh and y < -refreshThreshold then
+						settleIfNeeded()
+					else
+						local goal = if y < 0 then 0 else max
+						local nextY = y + (goal - y) * math.min(1, dt * 10)
+						if math.abs(nextY - goal) < 0.5 then
+							nextY = goal
+							velocity:set(0)
+						end
+						target:set(nextY)
 					end
-					target:set(nextY)
-				elseif math.abs(v) >= 0.8 then
+				elseif math.abs(v) >= 0.35 then
 					local nextY = y + v * dt
 					if overscrollEnabled then
 						target:set(nextY)
 					else
 						target:set(clampScroll(nextY))
 					end
-					velocity:set(v * math.max(0, 1 - dt * 5.2))
+					-- Mac-like: quick ramp-up, faster coast-down.
+					velocity:set(v * math.max(0, 1 - dt * 9.5))
 				else
 					velocity:set(0)
 					if overscrollEnabled and (y < 0 or y > max) then
@@ -262,11 +304,9 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 		BackgroundTransparency = 1,
 		ClipsDescendants = false,
 		Size = if autoCanvas
-			then (
-				if horizontal
-					then UDim2.new(0, 0, 1, -chromeCross)
-					else UDim2.new(1, -chromeCross, 0, 0)
-			)
+			then (if horizontal
+				then UDim2.new(0, 0, 1, -chromeCross)
+				else UDim2.new(1, -chromeCross, 0, 0))
 			else scope:Computed(function(use)
 				local cs = use(contentSize) :: Vector2
 				if horizontal then
@@ -349,7 +389,9 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 		end),
 		AnchorPoint = if horizontal then Vector2.new(0, 0.5) else Vector2.new(0.5, 0),
 		Position = if horizontal then UDim2.new(0, 0, 0.5, 0) else UDim2.new(0.5, 0, 0, 0),
-		Size = if horizontal then UDim2.new(1, 0, 0, railThickness) else UDim2.new(0, railThickness, 1, 0),
+		Size = if horizontal
+			then UDim2.new(1, 0, 0, railThickness)
+			else UDim2.new(0, railThickness, 1, 0),
 		BorderSizePixel = 0,
 		ZIndex = 1,
 		[Children] = {
@@ -415,7 +457,9 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 		Size = if horizontal
 			then UDim2.new(1, -buttonSize * 2, 1, 0)
 			else UDim2.new(1, 0, 1, -buttonSize * 2),
-		Position = if horizontal then UDim2.fromOffset(buttonSize, 0) else UDim2.fromOffset(0, buttonSize),
+		Position = if horizontal
+			then UDim2.fromOffset(buttonSize, 0)
+			else UDim2.fromOffset(0, buttonSize),
 		BorderSizePixel = 0,
 		Active = true,
 		ZIndex = 1,
@@ -425,7 +469,12 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 		},
 	})
 
-	local function makeScrollButton(name: string, iconName: string, delta: number, startEdge: boolean)
+	local function makeScrollButton(
+		name: string,
+		iconName: string,
+		delta: number,
+		startEdge: boolean
+	)
 		local pressed = scope:Value(0)
 		local pressedS = scope:Spring(pressed, theme.Motion.SpringSpeed, theme.Motion.SpringDamping)
 		local btn = scope:New("TextButton")(P({
@@ -437,7 +486,9 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 				else UDim2.new(1, 0, 0, buttonSize),
 			Position = if horizontal
 				then (if startEdge then UDim2.fromOffset(0, 0) else UDim2.new(1, -buttonSize, 0, 0))
-				else (if startEdge then UDim2.fromOffset(0, 0) else UDim2.new(0, 0, 1, -buttonSize)),
+				else (if startEdge
+					then UDim2.fromOffset(0, 0)
+					else UDim2.new(0, 0, 1, -buttonSize)),
 			BorderSizePixel = 0,
 			AutoButtonColor = false,
 			[OnEvent("Activated")] = function()
@@ -533,6 +584,7 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 		Name = "ScrollArea",
 		BackgroundTransparency = 1,
 		ClipsDescendants = true,
+		Active = true,
 		Size = props.Size or UDim2.fromScale(1, 1),
 		LayoutOrder = props.LayoutOrder or 0,
 		Visible = props.Visible,
@@ -542,6 +594,24 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 			chrome,
 		},
 	}) :: Frame
+
+	-- Route wheel to the deepest scroll area under the pointer; sink so camera doesn't zoom.
+	table.insert(
+		scope,
+		ScrollInput.register({
+			root = root,
+			horizontal = horizontal,
+			scrollBy = scrollBy,
+		})
+	)
+
+	-- Gui-level fallback for trackpad clients that skip the global wheel pipeline.
+	table.insert(
+		scope,
+		root.InputChanged:Connect(function(input)
+			ScrollInput.handleWheel(input)
+		end)
+	)
 
 	table.insert(
 		scope,
@@ -556,16 +626,7 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 		end
 	end)
 
-	table.insert(
-		scope,
-		root.InputChanged:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseWheel then
-				scrollBy(-input.Position.Z * 72)
-			end
-		end)
-	)
-
-	-- Drag-to-scroll / touch pan + pull-to-refresh (touch only — mouse uses wheel/scrollbar)
+	-- Drag-to-scroll / touch pan + pull-to-refresh (wheel/trackpad overscroll at edges too).
 	if dragToScroll then
 		table.insert(
 			scope,
@@ -678,7 +739,9 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 					lastT = now
 					stretch:set(math.clamp(vel * 0.055, -36, 36))
 
-					local p = cur - (if horizontal then track.AbsolutePosition.X else track.AbsolutePosition.Y) - grabOffset
+					local p = cur
+						- (if horizontal then track.AbsolutePosition.X else track.AbsolutePosition.Y)
+						- grabOffset
 					local t = math.clamp(p / math.max(trackLen - thumbPx, 1), 0, 1)
 					scrollTo(t * max)
 				end)
@@ -698,7 +761,8 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Frame
 				table.insert(scope, ended)
 			elseif railClick then
 				railPressed:set(1)
-				local t = math.clamp((localPos - thumbPx * 0.5) / math.max(trackLen - thumbPx, 1), 0, 1)
+				local t =
+					math.clamp((localPos - thumbPx * 0.5) / math.max(trackLen - thumbPx, 1), 0, 1)
 				scrollTo(t * max)
 				task.delay(0.12, function()
 					railPressed:set(0)
