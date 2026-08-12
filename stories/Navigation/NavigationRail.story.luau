@@ -3,7 +3,7 @@ local StoryUtil = require(script.Parent.Parent.StoryUtil)
 
 return StoryUtil.story(function(scope, C, ctx)
 	local rail = C.NavigationRail(scope, {
-		Orientation = "Vertical",
+		Orientation = "Horizontal",
 		Layer = ctx.overlayLayer,
 		Items = {
 			{ Id = "home", Icon = "home", Label = "Home" },
@@ -12,6 +12,6 @@ return StoryUtil.story(function(scope, C, ctx)
 		},
 	})
 	return StoryUtil.panel(scope, 320, scope:Hydrate(rail)({
-		Size = UDim2.new(0, ctx.theme.Metrics.RailWidth, 1, 0),
+		Size = UDim2.new(1, 0, 0, ctx.theme.Metrics.AppBarHeight),
 	}))
 end)
