@@ -19,7 +19,8 @@ return function(scope: Types.Scope, props: Types.AppBarProps): Frame
 		[Children] = {
 			if props.Leading
 				then scope:Hydrate(props.Leading)({
-					Position = UDim2.fromOffset(8, 8),
+					AnchorPoint = Vector2.new(0, 0.5),
+					Position = UDim2.new(0, 8, 0.5, 0),
 					Size = UDim2.fromOffset(40, 40),
 				})
 				else nil,
@@ -29,6 +30,7 @@ return function(scope: Types.Scope, props: Types.AppBarProps): Frame
 				TextSize = 18,
 				TextColor3 = theme.Colors.OnSurface,
 				TextXAlignment = Enum.TextXAlignment.Left,
+				TextYAlignment = Enum.TextYAlignment.Center,
 				Text = props.Title or "",
 				Position = UDim2.fromOffset(if props.Leading then 56 else 16, 0),
 				Size = UDim2.new(1, -120, 1, 0),
@@ -42,6 +44,7 @@ return function(scope: Types.Scope, props: Types.AppBarProps): Frame
 				Layout = {
 					Kind = "List",
 					FillDirection = Enum.FillDirection.Horizontal,
+					VerticalAlignment = Enum.VerticalAlignment.Center,
 					Padding = 4,
 					HorizontalAlignment = Enum.HorizontalAlignment.Right,
 				},
