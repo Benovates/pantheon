@@ -4,6 +4,7 @@ local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
 local Interaction = require(script.Parent.Parent.Internal.Interaction)
+local Color = require(script.Parent.Parent.Internal.Color)
 local Icon = require(script.Parent.Icon)
 local P = require(script.Parent.Parent.Internal.props)
 
@@ -11,23 +12,47 @@ local Children = Fusion.Children
 local OnEvent = Fusion.OnEvent
 local peek = Fusion.peek
 
-local function variantColors(theme: Types.Theme, variant: Types.ButtonVariant): (Color3, Color3, number, boolean, Color3)
-	if variant == "Primary" then
-		return theme.Colors.Primary, theme.Colors.OnPrimary, 0, false, theme.Colors.OnPrimary
-	elseif variant == "Destructive" then
-		return theme.Colors.Error, theme.Colors.OnError, 0, false, theme.Colors.OnError
-	elseif variant == "Tonal" then
-		return theme.Colors.PrimaryContainer, theme.Colors.OnPrimaryContainer, 0, false, theme.Colors.OnPrimaryContainer
-	elseif variant == "Outlined" then
-		return theme.Colors.Surface, theme.Colors.Primary, 0, true, theme.Colors.Primary
+local function normalizeVariant(
+	variant: Types.ButtonVariant?,
+	colorProp: Types.ColorInput?
+): (string, Types.ColorInput?)
+	local v = variant or "Filled"
+	-- Legacy variants that encoded color
+	if v == "Primary" then
+		return "Filled", colorProp or "primary"
 	end
-	return theme.Colors.Primary, theme.Colors.Primary, 1, false, theme.Colors.Primary
+	if v == "Destructive" then
+		return "Filled", colorProp or "error"
+	end
+	if v == "Tonal" or v == "Outlined" or v == "Text" or v == "Filled" then
+		return v, colorProp
+	end
+	return "Filled", colorProp
+end
+
+local function styleFromRole(
+	style: string,
+	role: Types.ThemeColorRole,
+	theme: Types.Theme
+): (Color3, Color3, number, boolean, Color3)
+	if style == "Tonal" then
+		return role.Container, role.OnContainer, 0, false, role.OnContainer
+	end
+	if style == "Outlined" then
+		return theme.Colors.Surface, role.Base, 0, true, role.Base
+	end
+	if style == "Text" then
+		return role.Base, role.Base, 1, false, role.Base
+	end
+	-- Filled
+	return role.Base, role.OnBase, 0, false, role.OnBase
 end
 
 return function(scope: Types.Scope, props: Types.ButtonProps): TextButton
 	local theme = resolveTheme(props)
-	local variant: Types.ButtonVariant = props.Variant or "Primary"
-	local bg, fg, transparency, outlined, stateColor = variantColors(theme, variant)
+	local style, colorInput = normalizeVariant(props.Variant, peek(props.Color) :: Types.ColorInput?)
+	local role = Color.resolve(colorInput, theme, "primary")
+	local bg, fg, transparency, outlined, stateColor = styleFromRole(style, role, theme)
 	local disabled = peek(props.Disabled) == true
 	local padX = math.max(theme.Metrics.ButtonPadX, 8)
 	local padY = math.max(theme.Metrics.ButtonPadY - 2, 2)
@@ -58,12 +83,13 @@ return function(scope: Types.Scope, props: Types.ButtonProps): TextButton
 			})
 		)
 	end
+	local typeScale = theme.Typography.Button or theme.Typography.Label or theme.Typography.Body
 	table.insert(
 		kids,
 		scope:TextLabel({
 			BackgroundTransparency = 1,
-			FontFace = theme.Typography.Label.Font,
-			TextSize = theme.Typography.Body.Size,
+			FontFace = typeScale.Font,
+			TextSize = typeScale.Size,
 			Text = props.Text or "Button",
 			TextColor3 = if disabled then disabledFg else fg,
 			TextTransparency = if disabled then 0.62 else 0,
@@ -116,7 +142,7 @@ return function(scope: Types.Scope, props: Types.ButtonProps): TextButton
 		},
 		Outline = if outlined and not disabled
 			then {
-				Color = theme.Colors.Outline,
+				Color = role.Base,
 				Thickness = 1,
 				Mode = Enum.ApplyStrokeMode.Border,
 			}
