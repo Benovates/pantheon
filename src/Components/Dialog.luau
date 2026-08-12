@@ -50,11 +50,12 @@ return function(scope: Types.Scope, props: Types.DialogProps): Frame
 	local actionRow = {}
 	for i, action in actions do
 		local variant: Types.ButtonVariant = action.Variant
-			or (if i == actionCount then "Primary" else (if horizontal then "Tonal" else "Text"))
+			or (if i == actionCount then "Filled" else (if horizontal then "Tonal" else "Text"))
 		local btn = Button(scope, {
 			Theme = theme,
 			Text = action.Text,
 			Variant = variant,
+			Color = action.Color,
 			OnClick = action.OnClick,
 			LayoutOrder = i,
 			Size = if horizontal then UDim2.new(1, 0, 0, 40) else UDim2.new(1, 0, 0, 40),
@@ -69,7 +70,7 @@ return function(scope: Types.Scope, props: Types.DialogProps): Frame
 
 	local hasIcon = props.Icon ~= nil and props.Icon ~= ""
 	local iconSize = props.IconSize or 28
-	local titleAlign = if hasIcon then Enum.TextXAlignment.Center else Enum.TextXAlignment.Left
+	local titleAlign = Enum.TextXAlignment.Left
 
 	local panel = scope:Frame({
 		Name = "DialogPanel",
@@ -79,11 +80,14 @@ return function(scope: Types.Scope, props: Types.DialogProps): Frame
 		BorderSizePixel = 0,
 		LayoutOrder = 2,
 		CornerRadius = theme.Metrics.RadiusPanel,
-		Outline = { Color = theme.Colors.OutlineVariant, Thickness = 1, Mode = Enum.ApplyStrokeMode.Border },
+		Outline = {
+			Color = theme.Colors.OutlineVariant,
+			Thickness = 1,
+			Mode = Enum.ApplyStrokeMode.Border,
+		},
 		Padding = { theme.Metrics.SpaceLg },
 		Layout = {
 			Kind = "List",
-			Padding = theme.Metrics.SpaceMd,
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		},
 		[Children] = {
@@ -91,13 +95,13 @@ return function(scope: Types.Scope, props: Types.DialogProps): Frame
 				then scope:Frame({
 					Name = "IconWell",
 					BackgroundTransparency = 1,
-					Size = UDim2.new(1, 0, 0, iconSize + 4),
+					Size = UDim2.new(1, 0, 0, iconSize + 12),
 					LayoutOrder = 0,
 					Layout = {
 						Kind = "List",
 						FillDirection = Enum.FillDirection.Horizontal,
-						HorizontalAlignment = Enum.HorizontalAlignment.Center,
-						VerticalAlignment = Enum.VerticalAlignment.Center,
+						HorizontalAlignment = Enum.HorizontalAlignment.Left,
+						VerticalAlignment = Enum.VerticalAlignment.Top,
 					},
 					[Children] = {
 						Icon(scope, {
@@ -109,31 +113,46 @@ return function(scope: Types.Scope, props: Types.DialogProps): Frame
 					},
 				})
 				else nil,
-			scope:TextLabel({
+			scope:Frame({
+				Name = "Labels",
 				BackgroundTransparency = 1,
-				FontFace = theme.Typography.Headline.Font,
-				TextSize = theme.Typography.Title.Size,
-				TextColor3 = theme.Colors.OnSurface,
-				TextXAlignment = titleAlign,
-				Text = props.Title,
 				Size = UDim2.new(1, 0, 0, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,
 				LayoutOrder = 1,
+				Padding = { theme.Metrics.SpaceXs, 0, 0, 0 },
+				Layout = {
+					Kind = "List",
+					Padding = theme.Metrics.Space2xs,
+					FillDirection = Enum.FillDirection.Vertical,
+				},
+				[Children] = {
+					scope:TextLabel({
+						BackgroundTransparency = 1,
+						FontFace = theme.Typography.Title.Font,
+						TextSize = theme.Typography.Title.Size,
+						TextColor3 = theme.Colors.OnSurface,
+						TextXAlignment = titleAlign,
+						Text = props.Title,
+						Size = UDim2.new(1, 0, 0, 0),
+						AutomaticSize = Enum.AutomaticSize.Y,
+						LayoutOrder = 1,
+					}),
+					if props.Body
+						then scope:TextLabel({
+							BackgroundTransparency = 1,
+							FontFace = theme.Typography.Body.Font,
+							TextSize = theme.Typography.Body.Size,
+							TextColor3 = theme.Colors.OnSurfaceVariant,
+							TextWrapped = true,
+							TextXAlignment = titleAlign,
+							Text = props.Body,
+							Size = UDim2.new(1, 0, 0, 0),
+							AutomaticSize = Enum.AutomaticSize.Y,
+							LayoutOrder = 2,
+						})
+						else nil,
+				},
 			}),
-			if props.Body
-				then scope:TextLabel({
-					BackgroundTransparency = 1,
-					FontFace = theme.Typography.Body.Font,
-					TextSize = theme.Typography.Body.Size,
-					TextColor3 = theme.Colors.OnSurfaceVariant,
-					TextWrapped = true,
-					TextXAlignment = titleAlign,
-					Text = props.Body,
-					Size = UDim2.new(1, 0, 0, 0),
-					AutomaticSize = Enum.AutomaticSize.Y,
-					LayoutOrder = 2,
-				})
-				else nil,
 			if props.Children then props.Children else nil,
 			scope:Frame({
 				Name = "Actions",
@@ -151,6 +170,7 @@ return function(scope: Types.Scope, props: Types.DialogProps): Frame
 					Padding = theme.Metrics.SpaceXs,
 					SortOrder = Enum.SortOrder.LayoutOrder,
 				},
+				Padding = { theme.Metrics.SpaceMd, 0, 0, 0 },
 				[Children] = actionRow,
 			}),
 		},

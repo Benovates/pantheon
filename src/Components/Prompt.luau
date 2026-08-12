@@ -17,12 +17,14 @@ return function(scope: Types.Scope, props: Types.DialogProps & {
 		or {
 			{
 				Text = props.CancelText or "Cancel",
-				Variant = "Text" :: Types.ButtonVariant,
+				Variant = "Tonal" :: Types.ButtonVariant,
+				Color = "secondary",
 				OnClick = props.OnClose,
 			},
 			{
 				Text = props.ConfirmText or "OK",
-				Variant = (if props.Destructive then "Destructive" else "Primary") :: Types.ButtonVariant,
+				Variant = "Filled" :: Types.ButtonVariant,
+				Color = if props.Destructive then "error" else "primary",
 				OnClick = props.OnConfirm or props.OnClose,
 			},
 		}
