@@ -1,0 +1,26 @@
+--!strict
+local StoryUtil = require(script.Parent.Parent.StoryUtil)
+
+return StoryUtil.story(function(scope, C, ctx)
+	local open = scope:Value(false)
+	local trigger = C.Button(scope, {
+		Text = "Open menu",
+		Variant = "Tonal",
+		OnClick = function()
+			open:set(true)
+		end,
+	})
+	C.Menu(scope, {
+		Layer = ctx.overlayLayer,
+		Open = open,
+		OnClose = function()
+			open:set(false)
+		end,
+		Items = {
+			{ Text = "Action A", OnClick = function() open:set(false) end },
+			{ Text = "Action B", OnClick = function() open:set(false) end },
+			{ Text = "Disabled", Disabled = true },
+		},
+	})
+	return trigger
+end)
