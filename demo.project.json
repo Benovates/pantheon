@@ -22,6 +22,9 @@
           "$className": "Folder",
           "$path": "Packages/_Index"
         }
+      },
+      "Stories": {
+        "$path": "stories"
       }
     },
     "StarterPlayer": {
