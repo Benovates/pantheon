@@ -114,8 +114,8 @@ return function(scope: Types.Scope, props: Types.NavigationRailProps): Frame
 				kids,
 				scope:TextLabel({
 					BackgroundTransparency = 1,
-					FontFace = theme.Typography.Label.Font,
-					TextSize = theme.Typography.Label.Size,
+					FontFace = theme.Typography.Button.Font,
+					TextSize = theme.Typography.Button.Size,
 					TextColor3 = scope:Computed(function(use)
 						return if use(isSelected) then theme.Colors.Primary else theme.Colors.OnSurfaceVariant
 					end),
