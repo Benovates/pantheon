@@ -295,6 +295,21 @@ function ScrollInput.capture(
 		)
 	end
 
+	local function bindEnded(source: Instance)
+		if not source:IsA("GuiObject") and not source:IsA("UserInputService") then
+			return
+		end
+		table.insert(
+			connections,
+			source.InputEnded:Connect(function(input: InputObject)
+				if not isEnd(input) then
+					return
+				end
+				finish(input)
+			end)
+		)
+	end
+
 	local collector = findLayerCollector(from)
 	if collector then
 		local overlay = Instance.new("TextButton")
@@ -311,6 +326,7 @@ function ScrollInput.capture(
 		overlay.Parent = collector
 		cover = overlay
 		bindChanged(overlay)
+		bindEnded(UserInputService)
 		-- Plugin widgets often skip UIS MouseMovement; MouseMoved is widget-local.
 		table.insert(
 			connections,
