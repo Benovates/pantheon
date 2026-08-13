@@ -61,6 +61,7 @@ return function(scope: Types.Scope, props: Types.MenuSectionProps): Instance
 		theme.Motion.SpringSpeed,
 		theme.Motion.SpringDamping
 	)
+	local contentHeight = scope:Value(0)
 
 	local sectionChildren: { any } = {}
 
@@ -111,18 +112,34 @@ return function(scope: Types.Scope, props: Types.MenuSectionProps): Instance
 			)
 			table.insert(
 				titleKids,
-				scope:Hydrate(Icon(scope, {
-					Theme = theme,
-					Name = "chevron-down",
-					IconSize = 16,
-					Color = theme.Colors.OnSurfaceVariant,
-				}))({
-					LayoutOrder = 4,
-					ImageTransparency = 0.2,
-					Rotation = scope:Computed(function(use)
-						return (1 - use(expandedS)) * -90
-					end),
-				})
+					scope:Frame({
+						BackgroundTransparency = 1,
+						BorderSizePixel = 0,
+						Size = UDim2.fromOffset(20, 20),
+						LayoutOrder = 4,
+						[Children] = {
+							scope:Frame({
+								BackgroundTransparency = 1,
+								BorderSizePixel = 0,
+								Size = UDim2.fromScale(1, 1),
+								Rotation = scope:Computed(function(use)
+									return (use(expandedS) :: number) * 90
+								end),
+								[Children] = {
+									scope:Hydrate(Icon(scope, {
+										Theme = theme,
+										Name = "chevron-right",
+										IconSize = 16,
+										Color = theme.Colors.OnSurfaceVariant,
+									}))({
+										AnchorPoint = Vector2.new(0.5, 0.5),
+										Position = UDim2.fromScale(0.5, 0.5),
+										ImageTransparency = 0.2,
+									}),
+								},
+							}),
+						},
+					})
 			)
 		end
 
@@ -196,15 +213,39 @@ return function(scope: Types.Scope, props: Types.MenuSectionProps): Instance
 		table.insert(itemNodes, props.Children)
 	end
 
-	local itemsHost = scope:Frame({
-		Name = "SectionItems",
+	local inner = scope:Frame({
+		Name = "SectionItemsInner",
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
+		Layout = {
+			Kind = "List",
+			Padding = 1,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		},
+		[Children] = {
+			scope:New("UIScale")({
+				Scale = scope:Computed(function(use)
+					return 0.96 + 0.04 * use(expandedS)
+				end),
+			}),
+			itemNodes,
+		},
+	})
+
+	local itemsHost = scope:Frame({
+		Name = "SectionItems",
+		BackgroundTransparency = 1,
+		Size = if collapsible
+			then scope:Computed(function(use)
+				return UDim2.new(1, 0, 0, (use(expandedS) :: number) * (use(contentHeight) :: number))
+			end)
+			else UDim2.new(1, 0, 0, 0),
+		AutomaticSize = if collapsible then Enum.AutomaticSize.None else Enum.AutomaticSize.Y,
 		LayoutOrder = 2,
 		Visible = if collapsible
 			then scope:Computed(function(use)
-				return use(expandedS) > 0.02
+				return use(expandedS) > 0.01
 			end)
 			else true,
 		ClipsDescendants = collapsible,
@@ -213,18 +254,22 @@ return function(scope: Types.Scope, props: Types.MenuSectionProps): Instance
 			Padding = 1,
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		},
-		[Children] = itemNodes,
+		[Children] = { inner },
 	})
 	if collapsible then
-		local scale = Instance.new("UIScale")
-		scale.Parent = itemsHost
-		table.insert(
-			scope,
-			scope:Observer(expandedS):onBind(function()
-				local t = peek(expandedS)
-				scale.Scale = 0.96 + 0.04 * t
-			end)
-		)
+		local function syncHeight()
+			local layout = inner:FindFirstChildWhichIsA("UIListLayout")
+			local h = if layout then layout.AbsoluteContentSize.Y else inner.AbsoluteSize.Y
+			if h > 0 and math.abs(h - peek(contentHeight)) > 0.5 then
+				contentHeight:set(h)
+			end
+		end
+		local layout = inner:FindFirstChildWhichIsA("UIListLayout")
+		if layout then
+			table.insert(scope, layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(syncHeight))
+		end
+		table.insert(scope, inner:GetPropertyChangedSignal("AbsoluteSize"):Connect(syncHeight))
+		task.defer(syncHeight)
 	end
 	table.insert(sectionChildren, itemsHost)
 

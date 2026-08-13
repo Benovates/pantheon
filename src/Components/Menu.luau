@@ -383,8 +383,12 @@ return function(scope: Types.Scope, props: Types.MenuProps): Instance
 					end),
 					Visible = scope:Computed(function(use)
 						local s = use(stack) :: { string }
-						local t = use(depthS) :: number
-						return math.abs(slotOf(s) - t) < 1.05
+						for _, id in s do
+							if id == pageId then
+								return true
+							end
+						end
+						return false
 					end),
 					ClipsDescendants = true,
 					Layout = {
