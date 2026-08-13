@@ -104,13 +104,15 @@ return function(scope: Types.Scope, props: Types.MultiSelectProps): Instance
 			AutoButtonColor = false,
 			Active = not disabled,
 			BackgroundColor3 = scope:Computed(function(use)
-				local base = if use(isOn) then theme.Colors.PrimaryContainer else theme.Colors.Surface
+				local base = if use(isOn)
+					then theme.Colors.PrimaryContainer
+					else theme.Colors.Surface
 				return Interaction.lerpColor(base, theme.Colors.OnSurface, ix.alpha(use))
 			end),
 			Size = UDim2.new(1, 0, 0, 40),
 			LayoutOrder = i,
 			ClipsDescendants = true,
-			CornerRadius = theme.Metrics.RadiusSm,
+			CornerRadius = theme.Metrics.RadiusSm - theme.Metrics.Space2xs,
 			Padding = { theme.Metrics.SpaceXs, theme.Metrics.SpaceSm },
 			Layout = {
 				Kind = "List",
@@ -263,7 +265,9 @@ return function(scope: Types.Scope, props: Types.MultiSelectProps): Instance
 		Name = "Trigger",
 		BackgroundColor3 = triggerIx.fill(theme.Colors.SurfaceContainer),
 		Size = UDim2.new(1, 0, 0, if displayMode == "Chips" then 0 else 40),
-		AutomaticSize = if displayMode == "Chips" then Enum.AutomaticSize.Y else Enum.AutomaticSize.None,
+		AutomaticSize = if displayMode == "Chips"
+			then Enum.AutomaticSize.Y
+			else Enum.AutomaticSize.None,
 		LayoutOrder = 2,
 		ClipsDescendants = false,
 		CornerRadius = theme.Metrics.RadiusSm,
@@ -291,7 +295,9 @@ return function(scope: Types.Scope, props: Types.MultiSelectProps): Instance
 				Name = "Content",
 				BackgroundTransparency = 1,
 				Size = UDim2.new(1, 0, 0, if displayMode == "Chips" then 0 else 40),
-				AutomaticSize = if displayMode == "Chips" then Enum.AutomaticSize.Y else Enum.AutomaticSize.None,
+				AutomaticSize = if displayMode == "Chips"
+					then Enum.AutomaticSize.Y
+					else Enum.AutomaticSize.None,
 				ZIndex = 2,
 				Padding = { theme.Metrics.SpaceXs, theme.Metrics.SpaceSm },
 				Layout = {
@@ -317,66 +323,73 @@ return function(scope: Types.Scope, props: Types.MultiSelectProps): Instance
 
 	local fieldKids: { any } = {}
 	if hasLabel then
-		table.insert(fieldKids, scope:TextLabel({
+		table.insert(
+			fieldKids,
+			scope:TextLabel({
+				BackgroundTransparency = 1,
+				FontFace = theme.Typography.Label.Font,
+				TextSize = theme.Typography.Label.Size,
+				TextColor3 = theme.Colors.OnSurfaceVariant,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				Text = props.Label,
+				Size = UDim2.new(1, 0, 0, 16),
+				LayoutOrder = 1,
+			})
+		)
+	end
+	table.insert(fieldKids, trigger)
+	table.insert(
+		fieldKids,
+		scope:TextLabel({
 			BackgroundTransparency = 1,
 			FontFace = theme.Typography.Label.Font,
 			TextSize = theme.Typography.Label.Size,
-			TextColor3 = theme.Colors.OnSurfaceVariant,
+			TextColor3 = theme.Colors.Error,
 			TextXAlignment = Enum.TextXAlignment.Left,
-			Text = props.Label,
+			Text = scope:Computed(function(use)
+				return use(errorText) or ""
+			end),
 			Size = UDim2.new(1, 0, 0, 16),
-			LayoutOrder = 1,
-		}))
-	end
-	table.insert(fieldKids, trigger)
-	table.insert(fieldKids, scope:TextLabel({
-		BackgroundTransparency = 1,
-		FontFace = theme.Typography.Label.Font,
-		TextSize = theme.Typography.Label.Size,
-		TextColor3 = theme.Colors.Error,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Text = scope:Computed(function(use)
-			return use(errorText) or ""
-		end),
-		Size = UDim2.new(1, 0, 0, 16),
-		Visible = scope:Computed(function(use)
-			return use(errorText) ~= nil
-		end),
-		LayoutOrder = 3,
-	}))
+			Visible = scope:Computed(function(use)
+				return use(errorText) ~= nil
+			end),
+			LayoutOrder = 3,
+		})
+	)
 
-	local popKids: { any } = {
-		scope:New("UICorner")({ CornerRadius = UDim.new(0, theme.Metrics.RadiusSm) }),
-		scope:New("UIStroke")({
-			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-			Color = theme.Colors.Outline,
-			Thickness = 1,
-		}),
-		scope:New("UIPadding")({
-			PaddingTop = UDim.new(0, 4),
-			PaddingBottom = UDim.new(0, 4),
-			PaddingLeft = UDim.new(0, 4),
-			PaddingRight = UDim.new(0, 4),
-		}),
-		scope:New("UIListLayout")({
-			SortOrder = Enum.SortOrder.LayoutOrder,
-			Padding = UDim.new(0, 2),
-		}),
-		scope:New("UISizeConstraint")({
-			MinSize = Vector2.new(160, 0),
-		}),
-	}
+	local popKids: { any } = {}
 	for _, item in menuItems do
 		table.insert(popKids, item)
 	end
 
-	local popover = scope:New("Frame")({
+	local popover = scope:Frame({
 		Name = "MultiSelectPopover",
 		BackgroundColor3 = theme.Colors.Surface,
 		Size = UDim2.fromOffset(0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
 		Visible = CanvasFade.shown(scope, openS, nil, { Theme = theme }),
 		BackgroundTransparency = CanvasFade.surfaceTransparency(scope, openS, { Theme = theme }),
+		CornerRadius = theme.Metrics.RadiusSm,
+		Outline = {
+			Color = theme.Colors.Outline,
+			Thickness = 1,
+			Mode = Enum.ApplyStrokeMode.Border,
+		},
+		Padding = { theme.Metrics.Space2xs },
+		Layout = {
+			Kind = "List",
+			Padding = 2,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		},
+		SizeConstraint = {
+			MinSize = Vector2.new(160, 0),
+		},
+		Shadow = {
+			BlurRadius = 8,
+			Transparency = scope:Computed(function(use)
+				return 1 - (use(openS) :: number) * 0.1
+			end),
+		},
 		ZIndex = 200,
 		[Children] = popKids,
 	})

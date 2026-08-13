@@ -90,6 +90,12 @@ return function(scope: Types.Scope, props: Types.DialogProps): Instance
 			Thickness = 1,
 			Mode = Enum.ApplyStrokeMode.Border,
 		},
+		Shadow = {
+			BlurRadius = 12,
+			Transparency = scope:Computed(function(use)
+				return 1 - (use(openS) :: number) * 0.15
+			end),
+		},
 		Padding = { theme.Metrics.SpaceLg },
 		Layout = {
 			Kind = "List",

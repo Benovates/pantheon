@@ -68,7 +68,7 @@ return function(scope: Types.Scope, props: Types.SelectProps): Instance
 					LayoutOrder = order,
 					AutoButtonColor = false,
 					ClipsDescendants = true,
-					CornerRadius = theme.Metrics.RadiusSm,
+					CornerRadius = theme.Metrics.RadiusSm - theme.Metrics.Space2xs,
 					Padding = { theme.Metrics.SpaceXs, theme.Metrics.SpaceSm },
 					[OnEvent("Activated")] = function()
 						selected:set(optValue)
@@ -150,34 +150,36 @@ return function(scope: Types.Scope, props: Types.SelectProps): Instance
 	table.insert(fieldKids, trigger)
 
 	-- Popover mounts to Layer when provided (does not push layout)
-	local popover = scope:New("Frame")({
+	local popover = scope:Frame({
 		Name = "SelectPopover",
 		BackgroundColor3 = theme.Colors.Surface,
 		Size = UDim2.fromOffset(0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
 		Visible = CanvasFade.shown(scope, openS, nil, { Theme = theme }),
 		BackgroundTransparency = CanvasFade.surfaceTransparency(scope, openS, { Theme = theme }),
+		CornerRadius = theme.Metrics.RadiusSm,
+		Outline = {
+			Color = theme.Colors.Outline,
+			Thickness = 1,
+			Mode = Enum.ApplyStrokeMode.Border,
+		},
+		Padding = { theme.Metrics.Space2xs },
+		Layout = {
+			Kind = "List",
+			Padding = 2,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		},
+		SizeConstraint = {
+			MinSize = Vector2.new(160, 0),
+		},
+		Shadow = {
+			BlurRadius = 8,
+			Transparency = scope:Computed(function(use)
+				return 1 - (use(openS) :: number) * 0.1
+			end),
+		},
 		ZIndex = 200,
 		[Children] = {
-			scope:New("UICorner")({ CornerRadius = UDim.new(0, theme.Metrics.RadiusSm) }),
-			scope:New("UIStroke")({
-				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Color = theme.Colors.Outline,
-				Thickness = 1,
-			}),
-			scope:New("UIPadding")({
-				PaddingTop = UDim.new(0, 4),
-				PaddingBottom = UDim.new(0, 4),
-				PaddingLeft = UDim.new(0, 4),
-				PaddingRight = UDim.new(0, 4),
-			}),
-			scope:New("UIListLayout")({
-				SortOrder = Enum.SortOrder.LayoutOrder,
-				Padding = UDim.new(0, 2),
-			}),
-			scope:New("UISizeConstraint")({
-				MinSize = Vector2.new(160, 0),
-			}),
 			menuChildren,
 		},
 	})

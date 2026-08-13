@@ -17,10 +17,7 @@ local Children = Fusion.Children
 -- Matches NavigationRail default horizontal height.
 local HORIZONTAL_RAIL_HEIGHT = 52
 
-local function isVerticalRail(
-	rail: Instance?,
-	explicit: ("Vertical" | "Horizontal")?
-): boolean
+local function isVerticalRail(rail: Instance?, explicit: ("Vertical" | "Horizontal")?): boolean
 	if explicit == "Horizontal" then
 		return false
 	end
@@ -91,7 +88,18 @@ return function(scope: Types.Scope, props: Types.WindowProps): Instance
 		[Children] = props.Children,
 	})
 
-	local chrome: { any } = { content, overlayLayer }
+	local chrome: { any } = {
+		content,
+		overlayLayer,
+		scope:New("UIStroke")({
+			BorderStrokePosition = Enum.BorderStrokePosition.Inner,
+			Color = theme.Colors.OutlineVariant,
+			Transparency = 0.25,
+			Thickness = 1,
+			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+			ZIndex = 5,
+		}),
+	}
 	if props.AppBar then
 		table.insert(chrome, 1, props.AppBar)
 	end
@@ -102,7 +110,14 @@ return function(scope: Types.Scope, props: Types.WindowProps): Instance
 	-- CanvasGroup + CornerRadius clips descendants to the rounded rect (Sheet-equivalent fill).
 	local window = scope:CanvasGroup({
 		Name = "Window",
-		BackgroundColor3 = if elevated then theme.Colors.SurfaceContainerHigh else theme.Colors.Surface,
+		BackgroundColor3 = if elevated
+			then theme.Colors.SurfaceContainerHigh
+			else theme.Colors.Surface,
+		Shadow = {
+			BlurRadius = if elevated then 24 else 6,
+			Offset = UDim2.new(0, 0, 0, 4),
+			Transparency = 0.75,
+		},
 		GroupTransparency = 0,
 		BorderSizePixel = 0,
 		Size = props.Size or UDim2.fromScale(1, 1),
@@ -111,11 +126,6 @@ return function(scope: Types.Scope, props: Types.WindowProps): Instance
 		ZIndex = props.ZIndex,
 		ClipsDescendants = true,
 		CornerRadius = radius,
-		Outline = {
-			Color = theme.Colors.OutlineVariant,
-			Thickness = 1,
-			Mode = Enum.ApplyStrokeMode.Border,
-		},
 		[Children] = chrome,
 	}) :: CanvasGroup
 
