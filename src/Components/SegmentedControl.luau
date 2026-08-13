@@ -9,9 +9,9 @@ local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
 local Interaction = require(script.Parent.Parent.Internal.Interaction)
 local ScrollInput = require(script.Parent.Parent.Internal.ScrollInput)
-local Shadow = require(script.Parent.Parent.Internal.Shadow)
 local Icon = require(script.Parent.Icon)
 local P = require(script.Parent.Parent.Internal.props)
+local UserInputService = game:GetService("UserInputService")
 
 local Children = Fusion.Children
 local OnEvent = Fusion.OnEvent
@@ -101,6 +101,9 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Instanc
 		if disabled then
 			return
 		end
+		if ScrollInput.findPluginGui(host) ~= nil then
+			return
+		end
 		if
 			input.UserInputType ~= Enum.UserInputType.MouseButton1
 			and input.UserInputType ~= Enum.UserInputType.Touch
@@ -111,7 +114,33 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Instanc
 		local lastX = startX
 		local dragged = false
 		local grab = peek(indicatorW) * 0.5
-		local stopCapture = ScrollInput.capture(
+		local cancelCapture: (() -> ())? = nil
+		local endedConn: RBXScriptConnection? = nil
+		local focusConn: RBXScriptConnection? = nil
+		local function clearDrag(finalize: boolean)
+			if endedConn then
+				endedConn:Disconnect()
+				endedConn = nil
+			end
+			if focusConn then
+				focusConn:Disconnect()
+				focusConn = nil
+			end
+			if cancelCapture then
+				cancelCapture()
+				cancelCapture = nil
+			end
+			dragging:set(0)
+			stretch:set(0)
+			if finalize then
+				if dragged then
+					selectId(nearestId(lastX), true)
+				else
+					selectId(startId, true)
+				end
+			end
+		end
+		cancelCapture = ScrollInput.capture(
 			host,
 			function(changed)
 				return changed.UserInputType == Enum.UserInputType.MouseMovement
@@ -133,16 +162,23 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Instanc
 				indicatorX:set(math.clamp(rel, 0, maxX))
 			end,
 			function()
-				dragging:set(0)
-				stretch:set(0)
-				if dragged then
-					selectId(nearestId(lastX), true)
-				else
-					selectId(startId, true)
-				end
+				clearDrag(true)
 			end
 		)
-		table.insert(scope, stopCapture)
+		endedConn = UserInputService.InputEnded:Connect(function(endedInput)
+			if
+				endedInput.UserInputType == Enum.UserInputType.MouseButton1
+				or endedInput.UserInputType == Enum.UserInputType.Touch
+			then
+				clearDrag(true)
+			end
+		end)
+		focusConn = UserInputService.WindowFocusReleased:Connect(function()
+			clearDrag(false)
+		end)
+		table.insert(scope, function()
+			clearDrag(false)
+		end)
 	end
 
 	for i, item in props.Items do
@@ -270,19 +306,20 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Instanc
 					return UDim2.new(0, math.max((use(wS) :: number) + extra, 8), 1, lift * 10)
 				end),
 				[Children] = {
-					Shadow.create(scope, {
-						Theme = theme,
-						Elevation = scope:Computed(function(use)
-							return if use(draggingS) > 0.2 then 8 else 0
-						end),
-						ZIndex = 0,
-					}),
 					scope:Frame({
 						Name = "Pill",
 						BackgroundColor3 = theme.Colors.Surface,
 						Size = UDim2.fromScale(1, 1),
 						ZIndex = 1,
 						CornerRadius = theme.Metrics.RadiusPill,
+						Shadow = {
+							BlurRadius = scope:Computed(function(use)
+								return (use(draggingS) :: number) * 8
+							end),
+							Transparency = scope:Computed(function(use)
+								return 1 - (use(draggingS) :: number) * 0.2
+							end),
+						}
 					}),
 				},
 			}),
