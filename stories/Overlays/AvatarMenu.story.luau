@@ -20,10 +20,21 @@ return StoryUtil.story(function(scope, C, ctx)
 		OnClose = function()
 			open:set(false)
 		end,
-		Items = {
-			{ Text = "Profile", OnClick = function() open:set(false) end },
-			{ Text = "Settings", OnClick = function() open:set(false) end },
-			{ Text = "Sign out", OnClick = function() open:set(false) end },
+		MaxHeight = 200,
+		Sections = {
+			{
+				Title = "Account",
+				Items = {
+					{ Text = "Profile", OnClick = function() open:set(false) end },
+					{ Text = "Settings", OnClick = function() open:set(false) end },
+				},
+			},
+			{
+				Title = "Session",
+				Items = {
+					{ Text = "Sign out", OnClick = function() open:set(false) end },
+				},
+			},
 		},
 	})
 	return trigger

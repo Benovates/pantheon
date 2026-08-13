@@ -12,6 +12,6 @@ return StoryUtil.story(function(scope, C, ctx)
 		},
 	})
 	return StoryUtil.panel(scope, 320, scope:Hydrate(rail)({
-		Size = UDim2.new(1, 0, 0, ctx.theme.Metrics.AppBarHeight),
+		Size = UDim2.new(1, 0, 0, 52),
 	}))
 end)
