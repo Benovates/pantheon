@@ -59,8 +59,45 @@ return StoryUtil.story(function(scope, C, ctx)
 						Text = "Appearance",
 						Leading = "moon",
 						Trailing = "chevron-right",
-						OnClick = close,
+						Page = "appearance",
 						LayoutOrder = 2,
+					}),
+					C.MenuButton(scope, {
+						Text = "Language",
+						Leading = "globe",
+						Trailing = "chevron-right",
+						Page = "language",
+						LayoutOrder = 3,
+					}),
+				},
+			}),
+			C.MenuPage(scope, {
+				Id = "appearance",
+				Title = "Appearance",
+				Children = {
+					C.RadioGroup(scope, {
+						Options = {
+							{ Label = "Light", Value = "light" },
+							{ Label = "Dark", Value = "dark" },
+						},
+					}),
+				},
+			}),
+			C.MenuPage(scope, {
+				Id = "language",
+				Title = "Language",
+				Children = {
+					C.RadioGroup(scope, {
+						Options = {
+							{ Label = "English", Value = "english" },
+							{ Label = "Spanish", Value = "spanish" },
+							{ Label = "French", Value = "french" },
+							{ Label = "German", Value = "german" },
+							{ Label = "Italian", Value = "italian" },
+							{ Label = "Portuguese", Value = "portuguese" },
+							{ Label = "Russian", Value = "russian" },
+							{ Label = "Turkish", Value = "turkish" },
+						},
 					}),
 				},
 			}),

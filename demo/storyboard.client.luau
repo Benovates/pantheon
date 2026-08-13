@@ -79,6 +79,10 @@ local function rebuild()
 		local tableRows = scope:Value(rows)
 		local sections = {}
 
+		local function close()
+			drawerOpen:set(false)
+		end
+
 		local overlayLayer = scope:Frame({
 			Name = "OverlayLayer",
 			BackgroundTransparency = 1,
@@ -471,27 +475,9 @@ local function rebuild()
 			Sections = {
 				{
 					Items = {
-						{
-							Text = "Home",
-							Leading = "home",
-							OnClick = function()
-								drawerOpen:set(false)
-							end,
-						},
-						{
-							Text = "Library",
-							Leading = "library",
-							OnClick = function()
-								drawerOpen:set(false)
-							end,
-						},
-						{
-							Text = "Search",
-							Leading = "search",
-							OnClick = function()
-								drawerOpen:set(false)
-							end,
-						},
+						{ Text = "Home", Leading = "home", OnClick = close },
+						{ Text = "Library", Leading = "library", OnClick = close },
+						{ Text = "Search", Leading = "search", OnClick = close },
 					},
 				},
 				{
@@ -500,27 +486,14 @@ local function rebuild()
 					Collapsible = true,
 					DefaultExpanded = true,
 					Items = {
-						{
-							Text = "Profile",
-							Leading = "circle-user",
-							OnClick = function()
-								drawerOpen:set(false)
-							end,
-						},
+						{ Text = "Profile", Leading = "circle-user", OnClick = close },
 						{
 							Text = "Settings",
 							Leading = "settings",
 							Trailing = "chevron-right",
 							Page = "settings",
 						},
-						{
-							Text = "Sign out",
-							Leading = "log-out",
-							Color = "error",
-							OnClick = function()
-								drawerOpen:set(false)
-							end,
-						},
+						{ Text = "Sign out", Leading = "log-out", Color = "error", OnClick = close },
 					} :: { any },
 				},
 			},
@@ -539,10 +512,45 @@ local function rebuild()
 							Text = "Appearance",
 							Leading = "moon",
 							Trailing = "chevron-right",
-							OnClick = function()
-								drawerOpen:set(false)
-							end,
+							Page = "appearance",
 							LayoutOrder = 2,
+						}),
+						C.MenuButton(scope, {
+							Text = "Language",
+							Leading = "globe",
+							Trailing = "chevron-right",
+							Page = "language",
+							LayoutOrder = 3,
+						}),
+					},
+				}),
+				C.MenuPage(scope, {
+					Id = "appearance",
+					Title = "Appearance",
+					Children = {
+						C.RadioGroup(scope, {
+							Options = {
+								{ Label = "Light", Value = "light" },
+								{ Label = "Dark", Value = "dark" },
+							},
+						}),
+					},
+				}),
+				C.MenuPage(scope, {
+					Id = "language",
+					Title = "Language",
+					Children = {
+						C.RadioGroup(scope, {
+							Options = {
+								{ Label = "English", Value = "english" },
+								{ Label = "Spanish", Value = "spanish" },
+								{ Label = "French", Value = "french" },
+								{ Label = "German", Value = "german" },
+								{ Label = "Italian", Value = "italian" },
+								{ Label = "Portuguese", Value = "portuguese" },
+								{ Label = "Russian", Value = "russian" },
+								{ Label = "Turkish", Value = "turkish" },
+							},
 						}),
 					},
 				}),
