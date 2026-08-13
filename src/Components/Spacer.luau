@@ -1,7 +1,7 @@
 --!strict
 local Types = require(script.Parent.Parent.Types)
 
-return function(scope: Types.Scope, props: Types.BaseProps?): Frame
+return function(scope: Types.Scope, props: Types.BaseProps?): Instance
 	local p: Types.BaseProps = props or {}
 	return scope:Frame({
 		Name = "Spacer",

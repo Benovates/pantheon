@@ -8,6 +8,8 @@ local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
 local Interaction = require(script.Parent.Parent.Internal.Interaction)
+local ScrollInput = require(script.Parent.Parent.Internal.ScrollInput)
+local Shadow = require(script.Parent.Parent.Internal.Shadow)
 local Icon = require(script.Parent.Icon)
 local P = require(script.Parent.Parent.Internal.props)
 
@@ -17,7 +19,7 @@ local peek = Fusion.peek
 
 local INSET = 3
 
-return function(scope: Types.Scope, props: Types.SegmentedControlProps): Frame
+return function(scope: Types.Scope, props: Types.SegmentedControlProps): Instance
 	local theme = resolveTheme(props)
 	local disabled = peek(props.Disabled) == true
 	local initialId = peek(props.Selected) or (props.Items[1] and props.Items[1].Id) or ""
@@ -26,9 +28,11 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Frame
 	local indicatorX = scope:Value(0)
 	local indicatorW = scope:Value(0)
 	local stretch = scope:Value(0)
-	local stretchS = scope:Spring(stretch, theme.Motion.SpringSpeed * 1.55, 0.76)
-	local xS = scope:Spring(indicatorX, theme.Motion.SpringSpeed * 0.8, 0.84)
-	local wS = scope:Spring(indicatorW, theme.Motion.SpringSpeed * 0.8, 0.84)
+	local stretchS = scope:Spring(stretch, theme.Motion.SpringSpeed * 1.55, theme.Motion.SpringDamping)
+	local xS = scope:Spring(indicatorX, theme.Motion.SpringSpeed * 0.8, theme.Motion.SpringDamping)
+	local wS = scope:Spring(indicatorW, theme.Motion.SpringSpeed * 0.8, theme.Motion.SpringDamping)
+	local dragging = scope:Value(0)
+	local draggingS = scope:Spring(dragging, theme.Motion.SpringSpeed, theme.Motion.SpringDamping)
 
 	local segments: { TextButton } = {}
 	local host: Frame
@@ -61,6 +65,84 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Frame
 		end
 		indicatorX:set(relX)
 		indicatorW:set(w)
+	end
+
+	local function nearestId(absX: number): string
+		local best = (props.Items[1] and props.Items[1].Id) or peek(selected)
+		local bestDist = math.huge
+		for i, seg in segments do
+			local cx = seg.AbsolutePosition.X + seg.AbsoluteSize.X * 0.5
+			local dist = math.abs(absX - cx)
+			if dist < bestDist then
+				bestDist = dist
+				best = props.Items[i].Id
+			end
+		end
+		return best
+	end
+
+	local function selectId(id: string, animateStretch: boolean)
+		if id == "" then
+			return
+		end
+		local prev = peek(selected)
+		if prev ~= id then
+			selected:set(id)
+			if props.OnChanged then
+				props.OnChanged(id)
+			end
+		end
+		task.defer(function()
+			syncIndicator(animateStretch and prev ~= id)
+		end)
+	end
+
+	local function beginPointer(startId: string, input: InputObject)
+		if disabled then
+			return
+		end
+		if
+			input.UserInputType ~= Enum.UserInputType.MouseButton1
+			and input.UserInputType ~= Enum.UserInputType.Touch
+		then
+			return
+		end
+		local startX = input.Position.X
+		local lastX = startX
+		local dragged = false
+		local grab = peek(indicatorW) * 0.5
+		local stopCapture = ScrollInput.capture(
+			host,
+			function(changed)
+				return changed.UserInputType == Enum.UserInputType.MouseMovement
+					or changed.UserInputType == Enum.UserInputType.Touch
+			end,
+			function(endedInput)
+				return endedInput.UserInputType == Enum.UserInputType.MouseButton1
+					or endedInput.UserInputType == Enum.UserInputType.Touch
+			end,
+			function(pos)
+				lastX = pos.X
+				if not dragged and math.abs(pos.X - startX) < 8 then
+					return
+				end
+				dragged = true
+				dragging:set(1)
+				local rel = pos.X - host.AbsolutePosition.X - grab
+				local maxX = math.max(host.AbsoluteSize.X - peek(indicatorW), 0)
+				indicatorX:set(math.clamp(rel, 0, maxX))
+			end,
+			function()
+				dragging:set(0)
+				stretch:set(0)
+				if dragged then
+					selectId(nearestId(lastX), true)
+				else
+					selectId(startId, true)
+				end
+			end
+		)
+		table.insert(scope, stopCapture)
 	end
 
 	for i, item in props.Items do
@@ -144,17 +226,10 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Frame
 				SortOrder = Enum.SortOrder.LayoutOrder,
 			},
 			[OnEvent("Activated")] = function()
-				if disabled then
+				if disabled or peek(dragging) > 0.5 then
 					return
 				end
-				local prev = peek(selected)
-				selected:set(item.Id)
-				task.defer(function()
-					syncIndicator(prev ~= item.Id)
-				end)
-				if props.OnChanged then
-					props.OnChanged(item.Id)
-				end
+				selectId(item.Id, true)
 			end,
 			[Children] = kids,
 		})) :: TextButton
@@ -164,6 +239,12 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Frame
 		flex.Parent = seg
 		ix.wire(seg)
 		table.insert(segments, seg)
+		table.insert(
+			scope,
+			seg.InputBegan:Connect(function(input)
+				beginPointer(item.Id, input)
+			end)
+		)
 	end
 
 	host = scope:Frame({
@@ -173,17 +254,37 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Frame
 		[Children] = {
 			scope:Frame({
 				Name = "Indicator",
-				BackgroundColor3 = theme.Colors.Surface,
-				ZIndex = 1,
+				BackgroundTransparency = 1,
+				ZIndex = scope:Computed(function(use)
+					return if use(draggingS) > 0.2 then 3 else 1
+				end),
 				AnchorPoint = Vector2.new(0, 0.5),
 				Position = scope:Computed(function(use)
-					local extra = use(stretchS)
-					return UDim2.new(0, use(xS) - extra * 0.5, 0.5, 0)
+					local extra = (use(stretchS) :: number) + (use(draggingS) :: number) * 10
+					local x = ((if (use(draggingS) :: number) > 0.45 then use(indicatorX) else use(xS)) :: number)
+					return UDim2.new(0, x - extra * 0.5, 0.5, 0)
 				end),
 				Size = scope:Computed(function(use)
-					return UDim2.new(0, math.max(use(wS) + use(stretchS), 8), 1, 0)
+					local lift = use(draggingS) :: number
+					local extra = (use(stretchS) :: number) + lift * 10
+					return UDim2.new(0, math.max((use(wS) :: number) + extra, 8), 1, lift * 10)
 				end),
-				CornerRadius = theme.Metrics.RadiusPill,
+				[Children] = {
+					Shadow.create(scope, {
+						Theme = theme,
+						Elevation = scope:Computed(function(use)
+							return if use(draggingS) > 0.2 then 8 else 0
+						end),
+						ZIndex = 0,
+					}),
+					scope:Frame({
+						Name = "Pill",
+						BackgroundColor3 = theme.Colors.Surface,
+						Size = UDim2.fromScale(1, 1),
+						ZIndex = 1,
+						CornerRadius = theme.Metrics.RadiusPill,
+					}),
+				},
 			}),
 			scope:Frame({
 				Name = "Segments",
@@ -210,7 +311,7 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Frame
 		LayoutOrder = props.LayoutOrder or 0,
 		Visible = props.Visible,
 		ZIndex = props.ZIndex,
-		ClipsDescendants = true,
+		ClipsDescendants = false,
 		CornerRadius = theme.Metrics.RadiusPill,
 		Padding = { INSET, INSET },
 		[Children] = { host },

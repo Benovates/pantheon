@@ -482,7 +482,13 @@ function Material.get(hueOrSwatch: string, shade: MaterialShade?): Color3?
 
 	-- Default shade 500 when only hue given
 	local key = shadeKey or "500"
-	local value = hue[key] or hue[tonumber(key)]
+	local value: Color3? = hue[key]
+	if value == nil then
+		local n = tonumber(key)
+		if n ~= nil then
+			value = (hue :: any)[n]
+		end
+	end
 	if value == nil and string.sub(key, 1, 1) == "A" then
 		value = hue[key] or hue[string.upper(key)]
 	end

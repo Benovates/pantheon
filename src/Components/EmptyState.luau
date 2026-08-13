@@ -7,7 +7,7 @@ local Button = require(script.Parent.Button)
 
 local Children = Fusion.Children
 
-return function(scope: Types.Scope, props: Types.EmptyStateProps): Frame
+return function(scope: Types.Scope, props: Types.EmptyStateProps): Instance
 	local theme = resolveTheme(props)
 	return scope:Frame({
 		Name = "EmptyState",

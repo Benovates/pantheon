@@ -10,7 +10,7 @@ local Children = Fusion.Children
 local OnEvent = Fusion.OnEvent
 local peek = Fusion.peek
 
-return function(scope: Types.Scope, props: Types.ListItemProps): TextButton
+return function(scope: Types.Scope, props: Types.ListItemProps): Instance
 	local theme = resolveTheme(props)
 	local disabled = peek(props.Disabled) == true
 	local ix = Interaction.bind(scope, theme, {

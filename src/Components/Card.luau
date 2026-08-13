@@ -6,7 +6,7 @@ local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolve
 
 local Children = Fusion.Children
 
-return function(scope: Types.Scope, props: Types.CardProps): Frame
+return function(scope: Types.Scope, props: Types.CardProps): Instance
 	local theme = resolveTheme(props)
 	return scope:Frame({
 		Name = "Card",

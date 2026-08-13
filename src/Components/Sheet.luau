@@ -2,7 +2,7 @@
 local Types = require(script.Parent.Parent.Types)
 local Surface = require(script.Parent.Surface)
 
-return function(scope: Types.Scope, props: Types.SurfaceProps?): Frame
+return function(scope: Types.Scope, props: Types.SurfaceProps?): Instance
 	local p: Types.SurfaceProps = props or {}
 	return Surface(scope, {
 		Theme = p.Theme,

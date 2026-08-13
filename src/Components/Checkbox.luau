@@ -13,7 +13,7 @@ local Children = Fusion.Children
 local OnEvent = Fusion.OnEvent
 local peek = Fusion.peek
 
-return function(scope: Types.Scope, props: Types.CheckboxProps): Frame
+return function(scope: Types.Scope, props: Types.CheckboxProps): Instance
 	local theme = resolveTheme(props)
 	local checked = scope:Value(peek(props.Checked) == true)
 	local checkedS = scope:Spring(
@@ -28,14 +28,14 @@ return function(scope: Types.Scope, props: Types.CheckboxProps): Frame
 			return if use(checked) then 1 else 0
 		end),
 		theme.Motion.SpringSpeed * 1.15,
-		0.9
+		theme.Motion.SpringDamping
 	)
 	local bounce = scope:Spring(
 		scope:Computed(function(use)
 			return if use(checked) then 1 else 0
 		end),
 		theme.Motion.SpringSpeed * 1.3,
-		0.78
+		theme.Motion.SpringDamping
 	)
 	local disabled = peek(props.Disabled) == true
 	local ix = Interaction.bind(scope, theme, {
@@ -54,10 +54,10 @@ return function(scope: Types.Scope, props: Types.CheckboxProps): Frame
 	end)
 
 	local shortProgress = scope:Computed(function(use)
-		return math.clamp(use(draw) / 0.4, 0, 1)
+		return math.clamp((use(draw) :: number) / 0.4, 0, 1)
 	end)
 	local longProgress = scope:Computed(function(use)
-		return math.clamp((use(draw) - 0.28) / 0.72, 0, 1)
+		return math.clamp(((use(draw) :: number) - 0.28) / 0.72, 0, 1)
 	end)
 
 	local stroke = theme.Colors.OnPrimary

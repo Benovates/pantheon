@@ -8,7 +8,7 @@ local Radio = require(script.Parent.Radio)
 local Children = Fusion.Children
 local peek = Fusion.peek
 
-return function(scope: Types.Scope, props: Types.RadioGroupProps): Frame
+return function(scope: Types.Scope, props: Types.RadioGroupProps): Instance
 	local theme = resolveTheme(props)
 	local selected =
 		scope:Value(peek(props.Value) or (props.Options[1] and props.Options[1].Value) or "")

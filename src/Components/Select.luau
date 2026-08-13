@@ -3,6 +3,7 @@ local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local CanvasFade = require(script.Parent.Parent.Internal.CanvasFade)
 local Interaction = require(script.Parent.Parent.Internal.Interaction)
 local Layer = require(script.Parent.Parent.Internal.Layer)
 
@@ -11,7 +12,7 @@ local OnEvent = Fusion.OnEvent
 local peek = Fusion.peek
 local RunService = game:GetService("RunService")
 
-return function(scope: Types.Scope, props: Types.SelectProps): Frame
+return function(scope: Types.Scope, props: Types.SelectProps): Instance
 	local theme = resolveTheme(props)
 	local open = scope:Value(false)
 	local openS = scope:Spring(
@@ -60,7 +61,7 @@ return function(scope: Types.Scope, props: Types.SelectProps): Frame
 					TextColor3 = theme.Colors.OnSurface,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					BackgroundColor3 = scope:Computed(function(u)
-						local alpha = math.clamp(u(hoverS) * 0.08 + u(pressS) * 0.12, 0, 0.2)
+						local alpha = math.clamp((u(hoverS) :: number) * 0.08 + (u(pressS) :: number) * 0.12, 0, 0.2)
 						return Interaction.lerpColor(base, theme.Colors.OnSurface, alpha)
 					end),
 					Size = UDim2.new(1, 0, 0, 40),
@@ -154,12 +155,8 @@ return function(scope: Types.Scope, props: Types.SelectProps): Frame
 		BackgroundColor3 = theme.Colors.Surface,
 		Size = UDim2.fromOffset(0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
-		Visible = scope:Computed(function(use)
-			return use(openS) > 0.02
-		end),
-		BackgroundTransparency = scope:Computed(function(use)
-			return 1 - use(openS)
-		end),
+		Visible = CanvasFade.shown(scope, openS, nil, { Theme = theme }),
+		BackgroundTransparency = CanvasFade.surfaceTransparency(scope, openS, { Theme = theme }),
 		ZIndex = 200,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = UDim.new(0, theme.Metrics.RadiusSm) }),
@@ -211,12 +208,17 @@ return function(scope: Types.Scope, props: Types.SelectProps): Frame
 		},
 	}) :: Frame
 
-	local mounted = Layer.mount(scope, props, popover)
-	if not mounted then
-		popover.Parent = field
+	local chrome = CanvasFade.host(scope, popover, openS, { Theme = theme })
+	if chrome ~= popover then
 		popover.Size = UDim2.new(1, 0, 0, 0)
 		popover.AutomaticSize = Enum.AutomaticSize.Y
-		popover.Position = UDim2.fromOffset(0, closedHeight + 4)
+	end
+	local mounted = Layer.mount(scope, props, chrome)
+	if not mounted then
+		chrome.Parent = field
+		chrome.Size = UDim2.new(1, 0, 0, 0)
+		chrome.AutomaticSize = Enum.AutomaticSize.Y
+		chrome.Position = UDim2.fromOffset(0, closedHeight + 4)
 	else
 		table.insert(
 			scope,
@@ -231,8 +233,8 @@ return function(scope: Types.Scope, props: Types.SelectProps): Frame
 				local tp = trigger.AbsolutePosition
 				local ts = trigger.AbsoluteSize
 				local lp = layer.AbsolutePosition
-				popover.Position = UDim2.fromOffset(tp.X - lp.X, tp.Y - lp.Y + ts.Y + 4)
-				popover.Size = UDim2.fromOffset(math.max(ts.X, 160), 0)
+				chrome.Position = UDim2.fromOffset(tp.X - lp.X, tp.Y - lp.Y + ts.Y + 4)
+				chrome.Size = UDim2.fromOffset(math.max(ts.X, 160), 0)
 			end)
 		)
 	end

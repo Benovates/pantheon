@@ -140,7 +140,7 @@ local defaultMetrics: Types.ThemeMetrics = {
 	RadiusXl = 20,
 	Radius2xl = 24,
 	Radius3xl = 32,
-	RadiusPanel = 16,
+	RadiusPanel = 12,
 	RadiusPill = 999,
 	AppBarHeight = 64,
 	DrawerWidth = 280,
@@ -156,7 +156,7 @@ local function typography(): Types.ThemeTypography
 		Title = { Font = MontserratSemi, Size = 18, LineHeight = 1.3 },
 		Button = { Font = MontserratSemi, Size = 16, LineHeight = 1.4 },
 		Body = { Font = MontserratMedium, Size = 16, LineHeight = 1.4 },
-		Label = { Font = MontserratSemi, Size = 14, LineHeight = 1.3 },
+		Label = { Font = MontserratSemi, Size = 12, LineHeight = 1.3 },
 		Mono = { Font = Mono, Size = 13, LineHeight = 1.35 },
 	}
 end
@@ -182,8 +182,8 @@ local function blendThemes(a: Types.Theme, b: Types.Theme, t: number): Types.The
 		end
 	end
 	local palette: any = {}
-	local aPal = a.Palette or {}
-	local bPal = b.Palette or {}
+	local aPal: Types.ThemePalette = a.Palette or {}
+	local bPal: Types.ThemePalette = b.Palette or {}
 	local keys: { [string]: boolean } = {}
 	for k in aPal do
 		keys[k] = true
@@ -237,7 +237,9 @@ local function deepMerge(base: any, over: any): any
 	local out = table.clone(base)
 	for key, value in over do
 		local existing = out[key]
-		if typeof(value) == "table" and typeof(existing) == "table" and getmetatable(value) == nil and getmetatable(existing) == nil then
+		local mtValue: any = getmetatable(value)
+		local mtExisting: any = getmetatable(existing)
+		if typeof(value) == "table" and typeof(existing) == "table" and mtValue == nil and mtExisting == nil then
 			local isArray = #value > 0 or #existing > 0
 			if isArray then
 				out[key] = table.clone(value)
@@ -277,8 +279,8 @@ function Theme.create(mode: Types.ThemeMode?, opts: ThemeCreateOpts?): Types.The
 			confirm = "",
 		},
 		Motion = {
-			SpringSpeed = 36,
-			SpringDamping = 0.94,
+			SpringSpeed = 640,
+			SpringDamping = 20,
 			PressScale = 1,
 		},
 		Controls = {
@@ -345,7 +347,7 @@ function Theme.createAnimated(
 		end)
 	end
 
-	local blend = scope:Spring(goal, 28, 0.95)
+	local blend = scope:Spring(goal, light.Motion.SpringSpeed * 0.05, 1)
 	return scope:Computed(function(use)
 		return blendThemes(light, dark, use(blend))
 	end)

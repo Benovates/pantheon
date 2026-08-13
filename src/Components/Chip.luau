@@ -6,7 +6,7 @@ local Button = require(script.Parent.Button)
 
 local peek = Fusion.peek
 
-return function(scope: Types.Scope, props: Types.ChipProps): TextButton
+return function(scope: Types.Scope, props: Types.ChipProps): Instance
 	local selected = peek(props.Selected) == true
 	local variant: Types.ButtonVariant = if selected then "Primary" else "Tonal"
 	return Button(scope, {

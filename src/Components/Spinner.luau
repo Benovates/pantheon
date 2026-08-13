@@ -5,7 +5,7 @@
 local Types = require(script.Parent.Parent.Types)
 local Progress = require(script.Parent.Progress)
 
-return function(scope: Types.Scope, props: Types.SpinnerProps): Frame
+return function(scope: Types.Scope, props: Types.SpinnerProps): Instance
 	local px = props.SizePx or 32
 	return Progress(scope, {
 		Theme = props.Theme,

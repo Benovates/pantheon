@@ -7,7 +7,7 @@ local Lucide = require(Packages.Lucide)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
 
-return function(scope: Types.Scope, props: Types.IconProps): ImageLabel
+return function(scope: Types.Scope, props: Types.IconProps): Instance
 	local theme = resolveTheme(props)
 	local size = props.IconSize or 24
 	local assetSize = props.AssetSize or 48
@@ -43,5 +43,8 @@ return function(scope: Types.Scope, props: Types.IconProps): ImageLabel
 		Visible = props.Visible,
 		ZIndex = props.ZIndex,
 		ScaleType = Enum.ScaleType.Fit,
+		AspectRatio = {
+			Ratio = 1,
+		}
 	}) :: ImageLabel
 end

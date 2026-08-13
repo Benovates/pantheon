@@ -9,7 +9,7 @@ local Slider = require(script.Parent.Slider)
 local Children = Fusion.Children
 local peek = Fusion.peek
 
-return function(scope: Types.Scope, props: Types.ColorPickerProps): Frame
+return function(scope: Types.Scope, props: Types.ColorPickerProps): Instance
 	local theme = resolveTheme(props)
 	local initial = peek(props.Value) or Color3.fromRGB(0, 105, 92)
 	local h0, s0, v0 = HSV.fromColor3(initial)

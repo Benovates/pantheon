@@ -28,7 +28,7 @@ local function mapsEqual(a: { [number]: number }, b: { [number]: number }): bool
 	return true
 end
 
-return function(scope: Types.Scope, props: Types.VirtualListProps): Frame
+return function(scope: Types.Scope, props: Types.VirtualListProps): Instance
 	local theme = resolveTheme(props)
 	local itemHeight = props.ItemHeight
 	local gap = props.Padding or 0
@@ -111,7 +111,7 @@ return function(scope: Types.Scope, props: Types.VirtualListProps): Frame
 			updateWindow()
 		end,
 		Children = { host },
-	})
+	}) :: GuiObject
 	list.Name = "VirtualList"
 
 	local function syncViewport()

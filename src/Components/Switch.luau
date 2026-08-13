@@ -15,7 +15,7 @@ local TRACK_H = 32
 local THUMB = 24
 local INSET = 4
 
-return function(scope: Types.Scope, props: Types.SwitchProps): Frame
+return function(scope: Types.Scope, props: Types.SwitchProps): Instance
 	local theme = resolveTheme(props)
 	local checked = scope:Value(peek(props.Checked) == true)
 	local disabled = peek(props.Disabled) == true
@@ -28,11 +28,11 @@ return function(scope: Types.Scope, props: Types.SwitchProps): Frame
 			return if use(checked) then 1 else 0
 		end),
 		theme.Motion.SpringSpeed * 0.95,
-		math.min(theme.Motion.SpringDamping + 0.04, 1)
+		theme.Motion.SpringDamping
 	)
 
 	local stretch = scope:Value(0)
-	local stretchS = scope:Spring(stretch, theme.Motion.SpringSpeed * 1.4, 0.88)
+	local stretchS = scope:Spring(stretch, theme.Motion.SpringSpeed * 1.4, theme.Motion.SpringDamping)
 
 	local ix = Interaction.bind(scope, theme, {
 		Disabled = disabled,
@@ -126,7 +126,7 @@ return function(scope: Types.Scope, props: Types.SwitchProps): Frame
 				TextSize = 11,
 				TextColor3 = theme.Colors.OnSurfaceVariant,
 				TextTransparency = scope:Computed(function(use)
-					local t = use(checkedS)
+					local t = use(checkedS) :: number
 					local base = t
 					return if disabled then math.min(base + 0.35, 1) else base
 				end),

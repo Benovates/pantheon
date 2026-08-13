@@ -7,7 +7,7 @@ local Slider = require(script.Parent.Slider)
 local Children = Fusion.Children
 local peek = Fusion.peek
 
-return function(scope: Types.Scope, props: Types.RangeSliderProps): Frame
+return function(scope: Types.Scope, props: Types.RangeSliderProps): Instance
 	local minBound = props.Min or 0
 	local maxBound = props.Max or 1
 	local initial = peek(props.Value) or NumberRange.new(minBound, maxBound)

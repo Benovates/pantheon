@@ -25,7 +25,7 @@ local function copyExpanded(map: { [string]: boolean }?): { [string]: boolean }
 	return out
 end
 
-return function(scope: Types.Scope, props: Types.TreeViewProps): Frame
+return function(scope: Types.Scope, props: Types.TreeViewProps): Instance
 	local theme = resolveTheme(props)
 	local expanded = scope:Value(copyExpanded(peek(props.Expanded)))
 	local selected = scope:Value(peek(props.Selected) or "")
@@ -46,7 +46,7 @@ return function(scope: Types.Scope, props: Types.TreeViewProps): Frame
 				return if use(isExpanded) then 1 else 0
 			end),
 			theme.Motion.SpringSpeed * 0.95,
-			0.88
+			theme.Motion.SpringDamping
 		)
 		local isSelected = scope:Computed(function(use)
 			return use(selected) == node.Id
@@ -70,7 +70,7 @@ return function(scope: Types.Scope, props: Types.TreeViewProps): Frame
 						BorderSizePixel = 0,
 						Size = UDim2.fromScale(1, 1),
 						Rotation = scope:Computed(function(use)
-							return use(expandS) * 90
+							return (use(expandS) :: number) * 90
 						end),
 						[Children] = {
 							scope:Hydrate(Icon(scope, {
@@ -200,7 +200,7 @@ return function(scope: Types.Scope, props: Types.TreeViewProps): Frame
 					Name = "Children_" .. node.Id,
 					BackgroundTransparency = 1,
 					Size = scope:Computed(function(use)
-						return UDim2.new(1, 0, 0, use(expandS) * use(branchHeight))
+						return UDim2.new(1, 0, 0, (use(expandS) :: number) * (use(branchHeight) :: number))
 					end),
 					Visible = scope:Computed(function(use)
 						return use(expandS) > 0.01

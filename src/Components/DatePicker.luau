@@ -30,7 +30,7 @@ local function monthLabel(month: number): string
 	return Calendar.MONTHS_SHORT[month] or "?"
 end
 
-return function(scope: Types.Scope, props: Types.DatePickerProps): Frame
+return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 	local theme = resolveTheme(props)
 	local now = os.date("*t")
 	local y0, m0, d0 = Calendar.parseISO(peek(props.Value) or "")
@@ -315,7 +315,7 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Frame
 			end)
 
 			local appear = cellScope:Value(0)
-			local appearS = cellScope:Spring(appear, theme.Motion.SpringSpeed, 0.88)
+			local appearS = cellScope:Spring(appear, theme.Motion.SpringSpeed, theme.Motion.SpringDamping)
 			task.delay(delay, function()
 				if alive then
 					appear:set(1)
@@ -343,7 +343,7 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Frame
 					return if use(selectedS) then theme.Colors.OnPrimary else theme.Colors.OnSurface
 				end),
 				TextTransparency = cellScope:Computed(function(use)
-					local t = use(appearS) * (use(daysModeS) ^ fadePower)
+					local t = (use(appearS) :: number) * ((use(daysModeS) :: number) ^ fadePower)
 					return 1 - t
 				end),
 				BackgroundColor3 = cellScope:Computed(function(use)
@@ -357,7 +357,7 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Frame
 					)
 				end),
 				BackgroundTransparency = cellScope:Computed(function(use)
-					local t = use(appearS) * (use(daysModeS) ^ fadePower)
+					local t = (use(appearS) :: number) * ((use(daysModeS) :: number) ^ fadePower)
 					local fade = 1 - t
 					if use(selectedS) then
 						return fade * 0.55

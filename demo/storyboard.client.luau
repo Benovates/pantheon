@@ -22,12 +22,12 @@ local uiScope: any = nil
 local V = EstuaryUI.Validators
 
 local function appendSection(scope: any, into: { any }, title: string, order: number, kids: { any })
-	local children = {
+	local children: { Instance } = {
 		C.Text(scope, { Text = title, Variant = "Title", LayoutOrder = 0 }),
 	}
 	for _, kid in kids do
 		if kid ~= nil then
-			table.insert(children, kid)
+			table.insert(children, kid :: Instance)
 		end
 	end
 	table.insert(
@@ -67,6 +67,7 @@ local function rebuild()
 		local promptOpen = scope:Value(false)
 		local avatarMenuOpen = scope:Value(false)
 		local popoverOpen = scope:Value(false)
+		local notifyOn = scope:Value(true)
 		local rows = {}
 		for i = 1, 200 do
 			table.insert(rows, {
@@ -83,7 +84,7 @@ local function rebuild()
 			BackgroundTransparency = 1,
 			Size = UDim2.fromScale(1, 1),
 			ZIndex = 50,
-		}) :: Frame
+		})
 
 		local host = C.SnackbarHost(scope, { Layer = overlayLayer })
 		local avatarBtn
@@ -92,7 +93,10 @@ local function rebuild()
 
 		appendSection(scope, sections, "Typography & actions", 1, {
 			C.Text(scope, { Text = "Display", Variant = "Display", LayoutOrder = 1 }),
-			C.Text(scope, { Text = "Body copy for Cadence/Tithe surfaces.", Variant = "Body", LayoutOrder = 2 }),
+			C.Text(
+				scope,
+				{ Text = "Body copy for Cadence/Tithe surfaces.", Variant = "Body", LayoutOrder = 2 }
+			),
 			C.Button(scope, { Text = "Primary", Variant = "Primary", LayoutOrder = 3 }),
 			C.Button(scope, { Text = "Tonal", Variant = "Tonal", LayoutOrder = 4 }),
 			C.Button(scope, { Text = "Outlined", Variant = "Outlined", LayoutOrder = 5 }),
@@ -104,8 +108,18 @@ local function rebuild()
 				LayoutOrder = 1,
 				Header = "Account",
 				Items = {
-					{ Title = "Profile", Subtitle = "Name, email, avatar", Icon = "user", OnClick = function() end },
-					{ Title = "Notifications", Subtitle = "Push & email", Icon = "bell", OnClick = function() end },
+					{
+						Title = "Profile",
+						Subtitle = "Name, email, avatar",
+						Icon = "user",
+						OnClick = function() end,
+					},
+					{
+						Title = "Notifications",
+						Subtitle = "Push & email",
+						Icon = "bell",
+						OnClick = function() end,
+					},
 					{
 						Title = "Animate theme",
 						Subtitle = "Use Theme.createAnimated in apps",
@@ -130,7 +144,7 @@ local function rebuild()
 						}),
 						ShowChevron = false,
 					},
-				},
+				} :: { any },
 			}),
 			C.SegmentedControl(scope, {
 				LayoutOrder = 2,
@@ -179,9 +193,14 @@ local function rebuild()
 						Icon = "folder",
 						Children = {
 							{ Id = "btn", Label = "Button.luau", Icon = "file" },
-							{ Id = "theme", Label = "Theme", Icon = "folder", Children = {
-								{ Id = "init", Label = "init.luau", Icon = "file" },
-							} },
+							{
+								Id = "theme",
+								Label = "Theme",
+								Icon = "folder",
+								Children = {
+									{ Id = "init", Label = "init.luau", Icon = "file" },
+								},
+							},
 						},
 					},
 				},
@@ -232,7 +251,10 @@ local function rebuild()
 			C.Checkbox(scope, { Label = "Accept", LayoutOrder = 2 }),
 			C.Checkbox(scope, { Label = "Disabled", Disabled = true, LayoutOrder = 2 }),
 			C.Switch(scope, { Label = "Enabled", LayoutOrder = 3 }),
-			C.Switch(scope, { Label = "Disabled", Disabled = true, Checked = true, LayoutOrder = 3 }),
+			C.Switch(
+				scope,
+				{ Label = "Disabled", Disabled = true, Checked = true, LayoutOrder = 3 }
+			),
 			C.RadioGroup(scope, {
 				LayoutOrder = 4,
 				Options = {
@@ -253,7 +275,10 @@ local function rebuild()
 			C.RangeSlider(scope, { Min = 0, Max = 100, LayoutOrder = 7 }),
 		})
 		appendSection(scope, sections, "Feedback", 3, {
-			C.Alert(scope, { Title = "Info", Text = "Opaque MD3 alert.", Tone = "Info", LayoutOrder = 1 }),
+			C.Alert(
+				scope,
+				{ Title = "Info", Text = "Opaque MD3 alert.", Tone = "Info", LayoutOrder = 1 }
+			),
 			C.Progress(scope, { Value = 0.55, Mode = "Determinate", LayoutOrder = 2 }),
 			C.Progress(scope, { Mode = "Indeterminate", LayoutOrder = 2 }),
 			C.Progress(scope, { Value = 0.3, Buffer = 0.65, Mode = "Buffering", LayoutOrder = 2 }),
@@ -333,7 +358,9 @@ local function rebuild()
 				Variant = "Tonal",
 				LayoutOrder = 6,
 				OnClick = function()
-					railOrientation:set(if peek(railOrientation) == "Vertical" then "Horizontal" else "Vertical")
+					railOrientation:set(
+						if peek(railOrientation) == "Vertical" then "Horizontal" else "Vertical"
+					)
 					rebuild()
 				end,
 			}),
@@ -436,13 +463,89 @@ local function rebuild()
 			Title = "Cadence",
 			Subtitle = "estuary-ui catalog",
 			AvatarInitials = "EU",
+			Inset = 4,
 			OnClose = function()
 				drawerOpen:set(false)
 			end,
-			Items = {
-				{ Title = "Forms", OnClick = function() end },
-				{ Title = "Navigation", OnClick = function() end },
-				{ Title = "Data", OnClick = function() end },
+			InitialPage = "root",
+			Sections = {
+				{
+					Items = {
+						{
+							Text = "Home",
+							Leading = "home",
+							OnClick = function()
+								drawerOpen:set(false)
+							end,
+						},
+						{
+							Text = "Library",
+							Leading = "library",
+							OnClick = function()
+								drawerOpen:set(false)
+							end,
+						},
+						{
+							Text = "Search",
+							Leading = "search",
+							OnClick = function()
+								drawerOpen:set(false)
+							end,
+						},
+					},
+				},
+				{
+					Title = "Account",
+					Icon = "user",
+					Collapsible = true,
+					DefaultExpanded = true,
+					Items = {
+						{
+							Text = "Profile",
+							Leading = "circle-user",
+							OnClick = function()
+								drawerOpen:set(false)
+							end,
+						},
+						{
+							Text = "Settings",
+							Leading = "settings",
+							Trailing = "chevron-right",
+							Page = "settings",
+						},
+						{
+							Text = "Sign out",
+							Leading = "log-out",
+							Color = "error",
+							OnClick = function()
+								drawerOpen:set(false)
+							end,
+						},
+					} :: { any },
+				},
+			},
+			Children = {
+				C.MenuPage(scope, {
+					Id = "settings",
+					Title = "Settings",
+					Children = {
+						C.MenuButton(scope, {
+							Text = "Notifications",
+							Leading = "bell",
+							Trailing = C.Switch(scope, { Checked = notifyOn }),
+							LayoutOrder = 1,
+						}),
+						C.MenuButton(scope, {
+							Text = "Appearance",
+							Leading = "moon",
+							Trailing = "chevron-right",
+							OnClick = function()
+								drawerOpen:set(false)
+							end,
+							LayoutOrder = 2,
+						}),
+					},
+				}),
 			},
 		})
 		C.Popover(scope, {
@@ -467,7 +570,7 @@ local function rebuild()
 					end,
 				},
 				{ Text = "Disabled", Disabled = true },
-			},
+			} :: { any },
 		})
 		C.AvatarMenu(scope, {
 			Layer = overlayLayer,
@@ -508,7 +611,10 @@ local function rebuild()
 				sheetOpen:set(false)
 			end,
 			Children = {
-				C.Text(scope, { Text = "iOS-style app sheet with grabber + scrim.", Variant = "Body" }),
+				C.Text(
+					scope,
+					{ Text = "iOS-style app sheet with grabber + scrim.", Variant = "Body" }
+				),
 				C.StarRating(scope, { Value = 5 }),
 			},
 		})
@@ -585,12 +691,18 @@ local function rebuild()
 					return
 				end
 				refreshing:set(true)
-				host.Show("Pull to refresh…")
+				host.Show("Refreshing…")
 				task.delay(1.2, function()
 					refreshing:set(false)
 					host.Show("Feed updated")
 				end)
 			end,
+			OnPullCancel = function()
+				host.Show("Refresh cancelled")
+			end,
+			PullHint = "Pull to refresh",
+			ReleaseHint = "Release to refresh",
+			CancelHint = "Pull back to cancel",
 		})
 
 		scope:New("ScreenGui")({
@@ -618,15 +730,28 @@ local function rebuild()
 								then UDim2.fromOffset(0, theme.Metrics.AppBarHeight)
 								else UDim2.new(0, 0, 1, -theme.Metrics.AppBarHeight),
 							Size = if verticalRail
-								then UDim2.new(0, theme.Metrics.RailWidth, 1, -theme.Metrics.AppBarHeight)
+								then UDim2.new(
+									0,
+									theme.Metrics.RailWidth,
+									1,
+									-theme.Metrics.AppBarHeight
+								)
 								else UDim2.new(1, 0, 0, theme.Metrics.AppBarHeight),
 						}),
 						scope:Hydrate(scroll)({
 							Position = if verticalRail
-								then UDim2.fromOffset(theme.Metrics.RailWidth, theme.Metrics.AppBarHeight)
+								then UDim2.fromOffset(
+									theme.Metrics.RailWidth,
+									theme.Metrics.AppBarHeight
+								)
 								else UDim2.fromOffset(0, theme.Metrics.AppBarHeight),
 							Size = if verticalRail
-								then UDim2.new(1, -theme.Metrics.RailWidth, 1, -theme.Metrics.AppBarHeight)
+								then UDim2.new(
+									1,
+									-theme.Metrics.RailWidth,
+									1,
+									-theme.Metrics.AppBarHeight
+								)
 								else UDim2.new(1, 0, 1, -theme.Metrics.AppBarHeight * 2),
 						}),
 						overlayLayer,

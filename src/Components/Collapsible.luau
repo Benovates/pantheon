@@ -11,7 +11,7 @@ local Children = Fusion.Children
 local OnEvent = Fusion.OnEvent
 local peek = Fusion.peek
 
-return function(scope: Types.Scope, props: Types.CollapsibleProps): Frame
+return function(scope: Types.Scope, props: Types.CollapsibleProps): Instance
 	local theme = resolveTheme(props)
 	local open = scope:Value(peek(props.Open) == true)
 	local openS = scope:Spring(
@@ -19,7 +19,7 @@ return function(scope: Types.Scope, props: Types.CollapsibleProps): Frame
 			return if use(open) then 1 else 0
 		end),
 		theme.Motion.SpringSpeed * 0.95,
-		0.88
+		theme.Motion.SpringDamping
 	)
 	local contentHeight = scope:Value(0)
 	local ix = Interaction.bind(scope, theme, {
@@ -65,7 +65,7 @@ return function(scope: Types.Scope, props: Types.CollapsibleProps): Frame
 						BorderSizePixel = 0,
 						Size = UDim2.fromScale(1, 1),
 						Rotation = scope:Computed(function(use)
-							return use(openS) * 90
+							return (use(openS) :: number) * 90
 						end),
 						[Children] = {
 							scope:Hydrate(Icon(scope, {
@@ -136,7 +136,7 @@ return function(scope: Types.Scope, props: Types.CollapsibleProps): Frame
 		Name = "Body",
 		BackgroundTransparency = 1,
 		Size = scope:Computed(function(use)
-			return UDim2.new(1, 0, 0, use(openS) * use(contentHeight))
+			return UDim2.new(1, 0, 0, (use(openS) :: number) * (use(contentHeight) :: number))
 		end),
 		Visible = scope:Computed(function(use)
 			return use(openS) > 0.01

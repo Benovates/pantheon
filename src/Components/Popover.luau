@@ -1,21 +1,20 @@
 --!strict
 --[[
-	Anchored popover menu — mounts to Layer when provided.
+	Anchored popover — Overlay + positioned Menu (Embedded).
 ]]
 local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
 local Layer = require(script.Parent.Parent.Internal.Layer)
-local Interaction = require(script.Parent.Parent.Internal.Interaction)
 local Overlay = require(script.Parent.Overlay)
+local Menu = require(script.Parent.Menu)
 
 local Children = Fusion.Children
-local OnEvent = Fusion.OnEvent
 local peek = Fusion.peek
 local RunService = game:GetService("RunService")
 
-return function(scope: Types.Scope, props: Types.PopoverProps): Frame
+return function(scope: Types.Scope, props: Types.PopoverProps): Instance
 	local theme = resolveTheme(props)
 	local openRef = props.Open
 	local open = scope:Computed(function(use)
@@ -36,69 +35,27 @@ return function(scope: Types.Scope, props: Types.PopoverProps): Frame
 	local placement = props.Placement or "Bottom"
 	local pos = scope:Value(UDim2.fromOffset(0, 0))
 
-	local items = {}
-	local menuItems: { Types.MenuItemProps } = props.Items or {}
-	for i, item in menuItems do
-		local ix = Interaction.bind(scope, theme, {
-			Disabled = item.Disabled == true,
-			StateColor = theme.Colors.OnSurface,
-		})
-		local btn = scope:TextButton({
-			Text = item.Text,
-			FontFace = theme.Typography.Body.Font,
-			TextSize = theme.Typography.Body.Size,
-			TextColor3 = if item.Disabled then theme.Colors.OnSurfaceVariant else theme.Colors.OnSurface,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			BackgroundColor3 = ix.fill(theme.Colors.Surface),
-			Size = UDim2.new(1, 0, 0, 40),
-			LayoutOrder = i,
-			AutoButtonColor = false,
-			Active = not item.Disabled,
-			ClipsDescendants = true,
-			CornerRadius = theme.Metrics.RadiusSm,
-			Padding = { theme.Metrics.SpaceXs, theme.Metrics.SpaceSm },
-			[OnEvent("Activated")] = function()
-				if item.Disabled then
-					return
-				end
-				if item.OnClick then
-					item.OnClick()
-				end
-				if props.OnClose then
-					props.OnClose()
-				end
-			end,
-		})
-		ix.wire(btn)
-		table.insert(items, btn)
-	end
-
-	local panel = scope:Frame({
-		Name = "PopoverPanel",
-		BackgroundColor3 = theme.Colors.Surface,
+	local menu = Menu(scope, {
+		Theme = theme,
+		Embedded = true,
+		Open = open,
+		OnClose = props.OnClose,
+		Items = props.Items,
+		Sections = props.Sections,
+		MaxHeight = props.MaxHeight,
+		Children = props.Children,
 		Size = UDim2.fromOffset(width, 0),
-		AutomaticSize = Enum.AutomaticSize.Y,
-		Position = pos,
-		BackgroundTransparency = scope:Computed(function(use)
-			return 1 - use(openS)
-		end),
+		Padding = 6,
 		ZIndex = (props.ZIndex or 90) + 1,
-		CornerRadius = theme.Metrics.RadiusPanel,
-		Outline = { Color = theme.Colors.Outline, Thickness = 1, Mode = Enum.ApplyStrokeMode.Border },
-		Padding = { 6 },
-		Layout = {
-			Kind = "List",
-			Padding = 2,
-			SortOrder = Enum.SortOrder.LayoutOrder,
-		},
-		[Children] = {
-			items,
-			props.Children :: any,
-		},
+	})
+
+	scope:Hydrate(menu)({
+		Name = "PopoverPanel",
+		Position = pos,
 	})
 
 	local scale = Instance.new("UIScale")
-	scale.Parent = panel
+	scale.Parent = menu
 	table.insert(
 		scope,
 		scope:Observer(openS):onBind(function()
@@ -108,7 +65,7 @@ return function(scope: Types.Scope, props: Types.PopoverProps): Frame
 	)
 
 	local function updatePosition()
-		local target = props.Target
+		local target = Layer.asGui(props.Target)
 		local layer = Layer.resolve(props)
 		if target == nil or layer == nil then
 			return
@@ -160,10 +117,10 @@ return function(scope: Types.Scope, props: Types.PopoverProps): Frame
 			}))({
 				BackgroundTransparency = scope:Computed(function(use)
 					-- Light dismiss scrim
-					return 1 - use(openS) * 0.25
+					return 1 - (use(openS) :: number) * 0.25
 				end),
 			}),
-			panel,
+			menu,
 		},
 	}) :: Frame
 

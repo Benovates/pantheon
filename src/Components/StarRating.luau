@@ -11,7 +11,7 @@ local Children = Fusion.Children
 local OnEvent = Fusion.OnEvent
 local peek = Fusion.peek
 
-return function(scope: Types.Scope, props: Types.StarRatingProps): Frame
+return function(scope: Types.Scope, props: Types.StarRatingProps): Instance
 	local theme = resolveTheme(props)
 	local maxStars = props.Max or 5
 	local readOnly = props.ReadOnly == true

@@ -1,6 +1,6 @@
 --!strict
 --[[
-	Tithe-style avatar account sheet / popover — profile header + actions.
+	Tithe-style avatar account sheet / popover — profile header + Menu actions.
 ]]
 local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
@@ -9,15 +9,13 @@ local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolve
 local Layer = require(script.Parent.Parent.Internal.Layer)
 local Overlay = require(script.Parent.Overlay)
 local Avatar = require(script.Parent.Avatar)
-local Divider = require(script.Parent.Divider)
-local Interaction = require(script.Parent.Parent.Internal.Interaction)
+local Menu = require(script.Parent.Menu)
 
 local Children = Fusion.Children
-local OnEvent = Fusion.OnEvent
 local peek = Fusion.peek
 local RunService = game:GetService("RunService")
 
-return function(scope: Types.Scope, props: Types.AvatarMenuProps): Frame
+return function(scope: Types.Scope, props: Types.AvatarMenuProps): Instance
 	local theme = resolveTheme(props)
 	local openRef = props.Open
 	local open = scope:Computed(function(use)
@@ -37,74 +35,35 @@ return function(scope: Types.Scope, props: Types.AvatarMenuProps): Frame
 	local width = 280
 	local pos = scope:Value(UDim2.fromOffset(16, 72))
 
-	local items = {}
-	local menuItems: { Types.MenuItemProps } = props.Items or {}
-	for i, item in menuItems do
-		local ix = Interaction.bind(scope, theme, {
-			Disabled = item.Disabled == true,
-			StateColor = theme.Colors.OnSurface,
-		})
-		local btn = scope:TextButton({
-			Text = item.Text,
-			FontFace = theme.Typography.Body.Font,
-			TextSize = theme.Typography.Body.Size,
-			TextColor3 = if item.Disabled then theme.Colors.OnSurfaceVariant else theme.Colors.OnSurface,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			BackgroundColor3 = ix.fill(theme.Colors.Surface),
-			Size = UDim2.new(1, 0, 0, 44),
-			LayoutOrder = i + 10,
-			AutoButtonColor = false,
-			Active = not item.Disabled,
-			ClipsDescendants = true,
-			CornerRadius = theme.Metrics.RadiusSm,
-			Padding = { theme.Metrics.SpaceSm, theme.Metrics.SpaceMd },
-			[OnEvent("Activated")] = function()
-				if item.Disabled then
-					return
-				end
-				if item.OnClick then
-					item.OnClick()
-				end
-				if props.OnClose then
-					props.OnClose()
-				end
-			end,
-		})
-		ix.wire(btn)
-		table.insert(items, btn)
-	end
-
-	local panel = scope:Frame({
-		Name = "AvatarMenuPanel",
-		BackgroundColor3 = theme.Colors.Surface,
-		Size = UDim2.fromOffset(width, 0),
+	local header = scope:Frame({
+		Name = "Header",
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		Position = pos,
-		BackgroundTransparency = scope:Computed(function(use)
-			return 1 - use(openS)
-		end),
-		ZIndex = (props.ZIndex or 95) + 1,
-		CornerRadius = theme.Metrics.RadiusPanel,
-		Outline = { Color = theme.Colors.OutlineVariant, Thickness = 1, Mode = Enum.ApplyStrokeMode.Border },
-		Padding = { theme.Metrics.SpaceMd },
+		LayoutOrder = 1,
 		Layout = {
 			Kind = "List",
 			Padding = theme.Metrics.SpaceSm,
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		},
+		Padding = { 0, 0, 4, 0 },
 		[Children] = {
 			scope:Frame({
 				Name = "Profile",
-				BackgroundTransparency = 1,
+				BackgroundTransparency = 0,
+				BackgroundColor3 = theme.Colors.SurfaceDim,
+				CornerRadius = theme.Metrics.RadiusPanel - 4 / 2,
 				Size = UDim2.new(1, 0, 0, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,
 				LayoutOrder = 1,
 				Layout = {
 					Kind = "List",
-					FillDirection = Enum.FillDirection.Horizontal,
+					FillDirection = Enum.FillDirection.Vertical,
 					VerticalAlignment = Enum.VerticalAlignment.Center,
-					Padding = theme.Metrics.SpaceMd,
+					HorizontalAlignment = Enum.HorizontalAlignment.Center,
+					Padding = theme.Metrics.SpaceSm,
 				},
+				Padding = { theme.Metrics.SpaceMd, 0 },
 				[Children] = {
 					Avatar(scope, {
 						Theme = theme,
@@ -147,15 +106,29 @@ return function(scope: Types.Scope, props: Types.AvatarMenuProps): Frame
 					}),
 				},
 			}),
-			scope:Hydrate(Divider(scope, { Theme = theme }))({
-				LayoutOrder = 2,
-			}),
-			items,
 		},
 	})
 
+	local menu = Menu(scope, {
+		Theme = theme,
+		Embedded = true,
+		Open = open,
+		OnClose = props.OnClose,
+		Items = props.Items or {},
+		Sections = props.Sections,
+		Header = header,
+		MaxHeight = props.MaxHeight,
+		Size = UDim2.fromOffset(width, 0),
+		ZIndex = (props.ZIndex or 95) + 1,
+	})
+
+	scope:Hydrate(menu)({
+		Name = "AvatarMenuPanel",
+		Position = pos,
+	})
+
 	local scale = Instance.new("UIScale")
-	scale.Parent = panel
+	scale.Parent = menu
 	table.insert(
 		scope,
 		scope:Observer(openS):onBind(function()
@@ -164,7 +137,7 @@ return function(scope: Types.Scope, props: Types.AvatarMenuProps): Frame
 	)
 
 	local function updatePosition()
-		local target = props.Target
+		local target = Layer.asGui(props.Target)
 		local layer = Layer.resolve(props)
 		if target == nil or layer == nil then
 			return
@@ -201,10 +174,10 @@ return function(scope: Types.Scope, props: Types.AvatarMenuProps): Frame
 				ZIndex = props.ZIndex or 95,
 			}))({
 				BackgroundTransparency = scope:Computed(function(use)
-					return 1 - use(openS) * 0.4
+					return 1 - (use(openS) :: number) * 0.4
 				end),
 			}),
-			panel,
+			menu,
 		},
 	}) :: Frame
 

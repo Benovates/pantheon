@@ -7,7 +7,7 @@ local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolve
 local Children = Fusion.Children
 local peek = Fusion.peek
 
-return function(scope: Types.Scope, props: Types.BadgeProps): Frame
+return function(scope: Types.Scope, props: Types.BadgeProps): Instance
 	local theme = resolveTheme(props)
 	local count = peek(props.Count)
 	local show = props.Dot == true or (typeof(count) == "number" and count > 0)

@@ -14,7 +14,7 @@ local Children = Fusion.Children
 local OnEvent = Fusion.OnEvent
 local peek = Fusion.peek
 
-return function(scope: Types.Scope, props: Types.DataTableProps): Frame
+return function(scope: Types.Scope, props: Types.DataTableProps): Instance
 	local theme = resolveTheme(props)
 	local rowHeight = props.RowHeight or 48
 	local sortCol = scope:Value(peek(props.SortColumn) or "")

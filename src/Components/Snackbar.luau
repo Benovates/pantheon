@@ -7,7 +7,7 @@ local Button = require(script.Parent.Button)
 
 local Children = Fusion.Children
 
-return function(scope: Types.Scope, props: Types.SnackbarProps): Frame
+return function(scope: Types.Scope, props: Types.SnackbarProps): Instance
 	local theme = resolveTheme(props)
 	return scope:Frame({
 		Name = "Snackbar",

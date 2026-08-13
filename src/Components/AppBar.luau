@@ -6,7 +6,7 @@ local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolve
 
 local Children = Fusion.Children
 
-return function(scope: Types.Scope, props: Types.AppBarProps): Frame
+return function(scope: Types.Scope, props: Types.AppBarProps): Instance
 	local theme = resolveTheme(props)
 	local actions: { Instance } = props.Actions or {}
 	return scope:Frame({

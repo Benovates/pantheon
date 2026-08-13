@@ -6,12 +6,7 @@ local Types = require(script.Parent.Parent.Types)
 local Dialog = require(script.Parent.Dialog)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
 
-return function(scope: Types.Scope, props: Types.DialogProps & {
-	OnConfirm: (() -> ())?,
-	ConfirmText: string?,
-	CancelText: string?,
-	Destructive: boolean?,
-}): Frame
+return function(scope: Types.Scope, props: Types.PromptProps): Instance
 	local theme = resolveTheme(props)
 	local actions = props.Actions
 		or {

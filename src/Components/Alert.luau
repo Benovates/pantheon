@@ -17,7 +17,7 @@ local function toneColors(theme: Types.Theme, tone: Types.AlertTone): (Color3, C
 	return theme.Colors.Info, theme.Colors.OnInfo
 end
 
-return function(scope: Types.Scope, props: Types.AlertProps): Frame
+return function(scope: Types.Scope, props: Types.AlertProps): Instance
 	local theme = resolveTheme(props)
 	local tone: Types.AlertTone = props.Tone or "Info"
 	local bg, fg = toneColors(theme, tone)

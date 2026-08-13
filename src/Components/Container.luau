@@ -6,7 +6,7 @@ local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolve
 
 local Children = Fusion.Children
 
-return function(scope: Types.Scope, props: Types.ContainerProps): Frame
+return function(scope: Types.Scope, props: Types.ContainerProps): Instance
 	local theme = resolveTheme(props)
 	local maxWidth = props.MaxWidth or 960
 	return scope:Frame({

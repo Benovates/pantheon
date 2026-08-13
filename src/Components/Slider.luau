@@ -4,17 +4,17 @@ local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
 local Interaction = require(script.Parent.Parent.Internal.Interaction)
+local ScrollInput = require(script.Parent.Parent.Internal.ScrollInput)
 
 local Children = Fusion.Children
 local peek = Fusion.peek
-local UserInputService = game:GetService("UserInputService")
 
 local THUMB = 16
 local STRETCH_MAX = 10 -- hard limit on velocity stretch (px)
 -- Keep thumb (incl. hover/press grow) inside the control bounds.
 local EDGE = math.ceil(THUMB * 0.85)
 
-return function(scope: Types.Scope, props: Types.SliderProps): Frame
+return function(scope: Types.Scope, props: Types.SliderProps): Instance
 	local theme = resolveTheme(props)
 	local minV = props.Min or 0
 	local maxV = props.Max or 1
@@ -23,7 +23,7 @@ return function(scope: Types.Scope, props: Types.SliderProps): Frame
 	local dragging = scope:Value(0)
 	local draggingS = scope:Spring(dragging, theme.Motion.SpringSpeed, theme.Motion.SpringDamping)
 	local stretch = scope:Value(0)
-	local stretchS = scope:Spring(stretch, theme.Motion.SpringSpeed * 1.6, 0.85)
+	local stretchS = scope:Spring(stretch, theme.Motion.SpringSpeed * 1.6, theme.Motion.SpringDamping)
 	local disabled = peek(props.Disabled) == true
 	local ix = Interaction.bind(scope, theme, {
 		Disabled = disabled,
@@ -176,28 +176,23 @@ return function(scope: Types.Scope, props: Types.SliderProps): Frame
 				end
 			end
 			apply(input.Position)
-			local move = UserInputService.InputChanged:Connect(function(changed)
-				if
-					changed.UserInputType == Enum.UserInputType.MouseMovement
-					or changed.UserInputType == Enum.UserInputType.Touch
-				then
-					apply(changed.Position)
-				end
-			end)
-			local ended
-			ended = UserInputService.InputEnded:Connect(function(endedInput)
-				if
-					endedInput.UserInputType == Enum.UserInputType.MouseButton1
-					or endedInput.UserInputType == Enum.UserInputType.Touch
-				then
+			local stopCapture = ScrollInput.capture(
+				bar,
+				function(changed)
+					return changed.UserInputType == Enum.UserInputType.MouseMovement
+						or changed.UserInputType == Enum.UserInputType.Touch
+				end,
+				function(endedInput)
+					return endedInput.UserInputType == Enum.UserInputType.MouseButton1
+						or endedInput.UserInputType == Enum.UserInputType.Touch
+				end,
+				apply,
+				function()
 					dragging:set(0)
 					stretch:set(0)
-					move:Disconnect()
-					ended:Disconnect()
 				end
-			end)
-			table.insert(scope, move)
-			table.insert(scope, ended)
+			)
+			table.insert(scope, stopCapture)
 		end)
 	)
 

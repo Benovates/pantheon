@@ -6,13 +6,14 @@ local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local CanvasFade = require(script.Parent.Parent.Internal.CanvasFade)
 local Layer = require(script.Parent.Parent.Internal.Layer)
 local Overlay = require(script.Parent.Overlay)
 local IconButton = require(script.Parent.IconButton)
 
 local Children = Fusion.Children
 
-return function(scope: Types.Scope, props: Types.AppSheetProps): Frame
+return function(scope: Types.Scope, props: Types.AppSheetProps): Instance
 	local theme = resolveTheme(props)
 	local detent = props.Detent or 0.92
 	local showGrabber = props.ShowGrabber ~= false
@@ -27,9 +28,8 @@ return function(scope: Types.Scope, props: Types.AppSheetProps): Frame
 		scope:Computed(function(use)
 			return if use(open) then 1 else 0
 		end),
-		-- Slightly underdamped so the sheet settles with a springy bounce
-		theme.Motion.SpringSpeed * 0.62,
-		math.clamp(theme.Motion.SpringDamping - 0.18, 0.68, 0.88)
+		theme.Motion.SpringSpeed * 0.85,
+		theme.Motion.SpringDamping
 	)
 
 	local headerKids: { any } = {
@@ -47,6 +47,8 @@ return function(scope: Types.Scope, props: Types.AppSheetProps): Frame
 			Theme = theme,
 			Name = "x",
 			OnClick = props.OnClose,
+			Color = theme.Colors.Outline,
+			Variant = "Tonal",
 		}))({
 			LayoutOrder = 2,
 			Size = UDim2.fromOffset(40, 40),
@@ -108,25 +110,20 @@ return function(scope: Types.Scope, props: Types.AppSheetProps): Frame
 			BackgroundTransparency = 1,
 			Size = UDim2.new(1, 0, 1, 0),
 			LayoutOrder = 3,
-			Padding = { theme.Metrics.SpaceSm, theme.Metrics.SpaceMd },
 			[Children] = { props.Children },
 		})
 	)
 
-	local panel = scope:Frame({
+	-- TextButton sinks Overlay Activated; Frame.Active alone does not.
+	local panel = scope:TextButton({
 		Name = "AppSheetPanel",
+		Text = "",
+		AutoButtonColor = false,
 		BackgroundColor3 = theme.Colors.Surface,
 		Size = UDim2.new(1, 0, detent, 0),
 		AnchorPoint = Vector2.new(0, 1),
-		Position = scope:Computed(function(use)
-			-- openS 0 → fully below; 1 → flush to bottom
-			return UDim2.new(0, 0, 1 + (1 - use(openS)) * detent, 0)
-		end),
-		BackgroundTransparency = scope:Computed(function(use)
-			return 1 - use(openS)
-		end),
+		BackgroundTransparency = CanvasFade.surfaceTransparency(scope, openS, { Theme = theme }),
 		ZIndex = 111,
-		-- Sink clicks so the scrim underneath does not dismiss the sheet
 		Active = true,
 		ClipsDescendants = true,
 		CornerRadius = theme.Metrics.RadiusPanel,
@@ -135,6 +132,16 @@ return function(scope: Types.Scope, props: Types.AppSheetProps): Frame
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		},
 		[Children] = panelKids,
+	})
+
+	local host = CanvasFade.host(scope, panel, openS, { Theme = theme })
+	scope:Hydrate(host)({
+		Size = UDim2.new(1, 0, detent, 0),
+		AnchorPoint = Vector2.new(0, 1),
+		Position = scope:Computed(function(use)
+			-- openS 0 → fully below; 1 → flush to bottom
+			return UDim2.new(0, 0, 1 + (1 - use(openS)) * detent, 0)
+		end),
 	})
 
 	local root = scope:Frame({
@@ -154,10 +161,10 @@ return function(scope: Types.Scope, props: Types.AppSheetProps): Frame
 				ZIndex = 110,
 			}))({
 				BackgroundTransparency = scope:Computed(function(use)
-					return 1 - use(openS) * 0.55
+					return 1 - (use(openS) :: number) * 0.55
 				end),
 			}),
-			panel,
+			host,
 		},
 	}) :: Frame
 

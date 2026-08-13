@@ -3,6 +3,7 @@ local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local CanvasFade = require(script.Parent.Parent.Internal.CanvasFade)
 local Layer = require(script.Parent.Parent.Internal.Layer)
 
 local Children = Fusion.Children
@@ -73,7 +74,7 @@ local function place(
 	return UDim2.fromOffset(bestX, bestY), chosen
 end
 
-return function(scope: Types.Scope, props: Types.TooltipProps): Frame
+return function(scope: Types.Scope, props: Types.TooltipProps): Instance
 	local theme = resolveTheme(props)
 	local visible = scope:Value(0)
 	local visibleS = scope:Spring(visible, theme.Motion.SpringSpeed, theme.Motion.SpringDamping)
@@ -84,12 +85,8 @@ return function(scope: Types.Scope, props: Types.TooltipProps): Frame
 		Name = "Tooltip",
 		BackgroundColor3 = theme.Colors.SurfaceContainerHigh,
 		AutomaticSize = Enum.AutomaticSize.XY,
-		Visible = scope:Computed(function(use)
-			return use(visibleS) > 0.05
-		end),
-		BackgroundTransparency = scope:Computed(function(use)
-			return 1 - use(visibleS)
-		end),
+		Visible = CanvasFade.shown(scope, visibleS, nil, { Theme = theme }),
+		BackgroundTransparency = CanvasFade.surfaceTransparency(scope, visibleS, { Theme = theme }),
 		ZIndex = props.ZIndex or 120,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = UDim.new(0, theme.Metrics.RadiusSm) }),
@@ -115,10 +112,11 @@ return function(scope: Types.Scope, props: Types.TooltipProps): Frame
 		},
 	}) :: Frame
 
-	Layer.mount(scope, props, tip)
+	local host = CanvasFade.host(scope, tip, visibleS, { Theme = theme })
+	Layer.mount(scope, props, host)
 
 	local function updatePosition()
-		local target = props.Target
+		local target = Layer.asGui(props.Target)
 		if target == nil then
 			return
 		end
@@ -134,28 +132,29 @@ return function(scope: Types.Scope, props: Types.TooltipProps): Frame
 			placement,
 			Vector2.new(abs.X, abs.Y),
 			size,
-			tip.AbsoluteSize,
+			host.AbsoluteSize,
 			gap,
 			viewport - inset
 		)
 		if layer then
-			tip.Position = UDim2.fromOffset(pos.X.Offset - origin.X, pos.Y.Offset - origin.Y)
+			host.Position = UDim2.fromOffset(pos.X.Offset - origin.X, pos.Y.Offset - origin.Y)
 		else
-			tip.Position = pos
+			host.Position = pos
 		end
 	end
 
-	if props.Target then
+	local hoverTarget = Layer.asGui(props.Target)
+	if hoverTarget then
 		table.insert(
 			scope,
-			props.Target.MouseEnter:Connect(function()
+			hoverTarget.MouseEnter:Connect(function()
 				visible:set(1)
 				task.defer(updatePosition)
 			end)
 		)
 		table.insert(
 			scope,
-			props.Target.MouseLeave:Connect(function()
+			hoverTarget.MouseLeave:Connect(function()
 				visible:set(0)
 			end)
 		)
@@ -169,5 +168,5 @@ return function(scope: Types.Scope, props: Types.TooltipProps): Frame
 		)
 	end
 
-	return tip
+	return host
 end

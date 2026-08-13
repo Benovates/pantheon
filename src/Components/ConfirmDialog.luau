@@ -2,10 +2,7 @@
 local Types = require(script.Parent.Parent.Types)
 local Prompt = require(script.Parent.Prompt)
 
-return function(
-	scope: Types.Scope,
-	props: Types.DialogProps & { OnConfirm: (() -> ())?, ConfirmText: string? }
-): Frame
+return function(scope: Types.Scope, props: Types.ConfirmDialogProps): Instance
 	return Prompt(scope, {
 		Theme = props.Theme,
 		Title = props.Title,

@@ -16,7 +16,7 @@ local Children = Fusion.Children
 local OnEvent = Fusion.OnEvent
 local peek = Fusion.peek
 
-return function(scope: Types.Scope, props: Types.RadioProps): Frame
+return function(scope: Types.Scope, props: Types.RadioProps): Instance
 	local theme = resolveTheme(props)
 	local disabled = peek(props.Disabled) == true
 
@@ -37,7 +37,7 @@ return function(scope: Types.Scope, props: Types.RadioProps): Frame
 	})
 
 	local dotBurstV = scope:Value(0)
-	local dotBurstS = scope:Spring(dotBurstV, theme.Motion.SpringSpeed * 1.3, 0.82)
+	local dotBurstS = scope:Spring(dotBurstV, theme.Motion.SpringSpeed * 1.3, theme.Motion.SpringDamping)
 
 	table.insert(
 		scope,
@@ -80,8 +80,8 @@ return function(scope: Types.Scope, props: Types.RadioProps): Frame
 				Name = "Dot",
 				Size = scope:Computed(function(use)
 					-- Base: 10px when selected. Burst adds up to +10px (total 20px).
-					local base = use(selectedRingS)
-					local burst = use(dotBurstS) * base
+					local base = use(selectedRingS) :: number
+					local burst = (use(dotBurstS) :: number) * base
 					local s = 10 * math.clamp(base + burst, 0, 2)
 					return UDim2.fromOffset(s, s)
 				end),

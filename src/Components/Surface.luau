@@ -2,7 +2,7 @@
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
 
-return function(scope: Types.Scope, props: Types.SurfaceProps?): Frame
+return function(scope: Types.Scope, props: Types.SurfaceProps?): Instance
 	local p: Types.SurfaceProps = props or {}
 	local theme = resolveTheme(p)
 	local elevated = p.Elevated == true

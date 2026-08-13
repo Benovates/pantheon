@@ -13,7 +13,7 @@ local P = require(script.Parent.Parent.Internal.props)
 local Children = Fusion.Children
 local OnEvent = Fusion.OnEvent
 
-return function(scope: Types.Scope, props: Types.SettingsListProps): Frame
+return function(scope: Types.Scope, props: Types.SettingsListProps): Instance
 	local theme = resolveTheme(props)
 	local inset = props.InsetGrouped ~= false
 	local items: { Types.SettingsListItem } = props.Items or {}

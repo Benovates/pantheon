@@ -11,7 +11,7 @@ local UserInputService = game:GetService("UserInputService")
 local Validators = require(script.Parent.Parent.Internal.Validators)
 local Icon = require(script.Parent.Icon)
 
-return function(scope: Types.Scope, props: Types.TextFieldProps): Frame
+return function(scope: Types.Scope, props: Types.TextFieldProps): Instance
 	local theme = resolveTheme(props)
 	local validationError = scope:Value(nil :: string?)
 	local errText = scope:Computed(function(use)
@@ -182,7 +182,7 @@ return function(scope: Types.Scope, props: Types.TextFieldProps): Frame
 
 		table.insert(
 			scope,
-			handle.InputBegan:Connect(function(input)
+			handle.InputBegan:Connect(function(input: InputObject)
 				if
 					input.UserInputType ~= Enum.UserInputType.MouseButton1
 					and input.UserInputType ~= Enum.UserInputType.Touch
@@ -192,7 +192,7 @@ return function(scope: Types.Scope, props: Types.TextFieldProps): Frame
 				local start = input.Position
 				local startH = peek(height)
 				local startW = box.AbsoluteSize.X
-				local move = UserInputService.InputChanged:Connect(function(changed)
+				local move = UserInputService.InputChanged:Connect(function(changed: InputObject)
 					if
 						changed.UserInputType ~= Enum.UserInputType.MouseMovement
 						and changed.UserInputType ~= Enum.UserInputType.Touch

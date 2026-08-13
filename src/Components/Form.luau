@@ -6,12 +6,19 @@ local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolve
 
 local Children = Fusion.Children
 
-export type FormProps = Types.BaseProps & {
+export type FormProps = {
+	Theme: Types.ThemeRef?,
+	LayoutOrder: Types.UsedAs<number>?,
+	Size: Types.UsedAs<UDim2>?,
+	Visible: Types.UsedAs<boolean>?,
+	ZIndex: Types.UsedAs<number>?,
+	Layer: Instance?,
 	Children: any?,
 	Title: Types.UsedAs<string>?,
+	[string]: any,
 }
 
-return function(scope: Types.Scope, props: FormProps): Frame
+return function(scope: Types.Scope, props: FormProps): Instance
 	local theme = resolveTheme(props)
 	return scope:Frame({
 		Name = "Form",

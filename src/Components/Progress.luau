@@ -34,13 +34,13 @@ local function bounceIndicator(phase: number): (number, number)
 	local eased = smooth(t)
 
 	local breath = math.sin(eased * math.pi) -- 0 at ends, 1 mid
-	local width = 0.18 + breath * 0.34
+	local width = 0.05 + breath * 0.25
 	local travel = 1 - width
 	local left = eased * travel
 	return left, width
 end
 
-return function(scope: Types.Scope, props: Types.ProgressProps): Frame
+return function(scope: Types.Scope, props: Types.ProgressProps): Instance
 	local theme = resolveTheme(props)
 	local variant: Types.ProgressVariant = props.Variant or "Linear"
 	local mode: Types.ProgressMode = props.Mode
@@ -50,7 +50,7 @@ return function(scope: Types.Scope, props: Types.ProgressProps): Frame
 	if mode == "Indeterminate" or mode == "Buffering" then
 		table.insert(
 			scope,
-			RunService.RenderStepped:Connect(function(dt)
+			RunService.RenderStepped:Connect(function(dt: number)
 				-- ~1.4s per full bounce round-trip
 				phase:set((peek(phase) + dt / 2.4) % 1)
 			end)
@@ -61,7 +61,7 @@ return function(scope: Types.Scope, props: Types.ProgressProps): Frame
 		local angle = scope:Value(0)
 		table.insert(
 			scope,
-			RunService.RenderStepped:Connect(function(dt)
+			RunService.RenderStepped:Connect(function(dt: number)
 				angle:set((peek(angle) + dt * 270) % 360)
 			end)
 		)

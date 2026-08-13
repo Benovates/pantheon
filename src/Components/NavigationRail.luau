@@ -18,7 +18,7 @@ local Children = Fusion.Children
 local OnEvent = Fusion.OnEvent
 local peek = Fusion.peek
 
-return function(scope: Types.Scope, props: Types.NavigationRailProps): Frame
+return function(scope: Types.Scope, props: Types.NavigationRailProps): Instance
 	local theme = resolveTheme(props)
 	local selected = scope:Value(peek(props.Selected) or (props.Items[1] and props.Items[1].Id) or "")
 	local horizontal = props.Orientation == "Horizontal"
@@ -29,11 +29,11 @@ return function(scope: Types.Scope, props: Types.NavigationRailProps): Frame
 	local indicatorW = scope:Value(0)
 	local indicatorH = scope:Value(0)
 	local stretch = scope:Value(0)
-	local stretchS = scope:Spring(stretch, theme.Motion.SpringSpeed * 1.55, 0.76)
-	local xS = scope:Spring(indicatorX, theme.Motion.SpringSpeed * 0.8, 0.84)
-	local yS = scope:Spring(indicatorY, theme.Motion.SpringSpeed * 0.8, 0.84)
-	local wS = scope:Spring(indicatorW, theme.Motion.SpringSpeed * 0.8, 0.84)
-	local hS = scope:Spring(indicatorH, theme.Motion.SpringSpeed * 0.8, 0.84)
+	local stretchS = scope:Spring(stretch, theme.Motion.SpringSpeed * .8, theme.Motion.SpringDamping)
+	local xS = scope:Spring(indicatorX, theme.Motion.SpringSpeed * 0.8, theme.Motion.SpringDamping)
+	local yS = scope:Spring(indicatorY, theme.Motion.SpringSpeed * 0.8, theme.Motion.SpringDamping)
+	local wS = scope:Spring(indicatorW, theme.Motion.SpringSpeed * 0.8, theme.Motion.SpringDamping)
+	local hS = scope:Spring(indicatorH, theme.Motion.SpringSpeed * 0.8, theme.Motion.SpringDamping)
 
 	local tabs: { TextButton } = {}
 	local host: Frame
@@ -199,18 +199,18 @@ return function(scope: Types.Scope, props: Types.NavigationRailProps): Frame
 				BackgroundTransparency = 0.5,
 				ZIndex = 1,
 				Position = scope:Computed(function(use)
-					local extra = use(stretchS)
+					local extra = use(stretchS) :: number
 					if horizontal then
-						return UDim2.fromOffset(use(xS) - extra * 0.5, use(yS))
+						return UDim2.fromOffset((use(xS) :: number) - extra * 0.5, use(yS))
 					end
-					return UDim2.fromOffset(use(xS), use(yS) - extra * 0.5)
+					return UDim2.fromOffset(use(xS), (use(yS) :: number) - extra * 0.5)
 				end),
 				Size = scope:Computed(function(use)
-					local extra = use(stretchS)
+					local extra = use(stretchS) :: number
 					if horizontal then
-						return UDim2.fromOffset(math.max(use(wS) + extra, 8), use(hS))
+						return UDim2.fromOffset(math.max((use(wS) :: number) + extra, 8), use(hS))
 					end
-					return UDim2.fromOffset(use(wS), math.max(use(hS) + extra, 8))
+					return UDim2.fromOffset(use(wS), math.max((use(hS) :: number) + extra, 8))
 				end),
 				CornerRadius = theme.Metrics.RadiusSm,
 				Visible = scope:Computed(function(use)

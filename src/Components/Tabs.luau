@@ -4,11 +4,11 @@ local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
 local Chip = require(script.Parent.Chip)
+local ScrollArea = require(script.Parent.ScrollArea)
 
-local Children = Fusion.Children
 local peek = Fusion.peek
 
-return function(scope: Types.Scope, props: Types.TabsProps): ScrollingFrame
+return function(scope: Types.Scope, props: Types.TabsProps): Instance
 	local theme = resolveTheme(props)
 	local selected = scope:Value(peek(props.Selected) or (props.Items[1] and props.Items[1].Id) or "")
 
@@ -32,22 +32,21 @@ return function(scope: Types.Scope, props: Types.TabsProps): ScrollingFrame
 		return nodes
 	end)
 
-	return scope:New("ScrollingFrame")({
-		Name = "Tabs",
-		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
+	local tabs = ScrollArea(scope, {
+		Theme = theme,
 		Size = props.Size or UDim2.new(1, 0, 0, 44),
-		ScrollBarThickness = 0,
-		AutomaticCanvasSize = Enum.AutomaticSize.X,
-		CanvasSize = UDim2.new(0, 0, 0, 0),
 		LayoutOrder = props.LayoutOrder or 0,
-		[Children] = {
-			scope:New("UIListLayout")({
-				FillDirection = Enum.FillDirection.Horizontal,
-				Padding = UDim.new(0, theme.Metrics.SpaceXs),
-				SortOrder = Enum.SortOrder.LayoutOrder,
-			}),
-			chips,
-		},
-	}) :: ScrollingFrame
+		Orientation = "Horizontal",
+		ContentLayout = "List",
+		ContentPadding = 0,
+		ListPadding = theme.Metrics.SpaceXs,
+		ScrollBarThickness = 4,
+		ScrollBarPadding = 4,
+		ScrollBarRailBackground = false,
+		ScrollButtons = false,
+		AutoHideScrollBar = true,
+		Children = chips,
+	})
+	tabs.Name = "Tabs"
+	return tabs
 end

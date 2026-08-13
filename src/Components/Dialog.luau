@@ -9,6 +9,7 @@ local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local CanvasFade = require(script.Parent.Parent.Internal.CanvasFade)
 local Layer = require(script.Parent.Parent.Internal.Layer)
 local Overlay = require(script.Parent.Overlay)
 local Button = require(script.Parent.Button)
@@ -17,7 +18,7 @@ local Icon = require(script.Parent.Icon)
 local Children = Fusion.Children
 local peek = Fusion.peek
 
-return function(scope: Types.Scope, props: Types.DialogProps): Frame
+return function(scope: Types.Scope, props: Types.DialogProps): Instance
 	local theme = resolveTheme(props)
 	local openRef = props.Open
 	local open = scope:Computed(function(use)
@@ -49,7 +50,7 @@ return function(scope: Types.Scope, props: Types.DialogProps): Frame
 	local horizontal = actionCount > 0 and actionCount <= 2
 	local actionRow = {}
 	for i, action in actions do
-		local variant: Types.ButtonVariant = action.Variant
+		local variant = action.Variant
 			or (if i == actionCount then "Filled" else (if horizontal then "Tonal" else "Text"))
 		local btn = Button(scope, {
 			Theme = theme,
@@ -72,12 +73,16 @@ return function(scope: Types.Scope, props: Types.DialogProps): Frame
 	local iconSize = props.IconSize or 28
 	local titleAlign = Enum.TextXAlignment.Left
 
-	local panel = scope:Frame({
+	-- TextButton sinks Overlay Activated; Frame.Active alone does not.
+	local panel = scope:TextButton({
 		Name = "DialogPanel",
+		Text = "",
+		AutoButtonColor = false,
 		BackgroundColor3 = theme.Colors.Surface,
 		Size = props.Size or UDim2.fromOffset(320, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BorderSizePixel = 0,
+		Active = true,
 		LayoutOrder = 2,
 		CornerRadius = theme.Metrics.RadiusPanel,
 		Outline = {
@@ -192,8 +197,14 @@ return function(scope: Types.Scope, props: Types.DialogProps): Frame
 		scope,
 		scope:Observer(openS):onBind(function()
 			local t = peek(openS)
-			scale.Scale = 0.94 + 0.06 * t
-			panel.BackgroundTransparency = 1 - t
+			if peek(open) then
+				scale.Scale = 1.1 - 0.1 * t
+			else
+				scale.Scale = 0.9 + 0.1 * t
+			end
+			if not CanvasFade.active({ Theme = theme }) then
+				panel.BackgroundTransparency = 1 - t
+			end
 
 			-- Pulse around t ~= 0.5 (as openS springs from 0 -> 1).
 			local pulse = math.clamp(1 - math.abs(2 * t - 1), 0, 1)
@@ -201,6 +212,8 @@ return function(scope: Types.Scope, props: Types.DialogProps): Frame
 			outlineStroke.Thickness = 1 + pulse * 2
 		end)
 	)
+
+	local panelHost = CanvasFade.host(scope, panel, openS, { Theme = theme })
 
 	local root = scope:Frame({
 		Name = "Dialog",
@@ -219,7 +232,7 @@ return function(scope: Types.Scope, props: Types.DialogProps): Frame
 				ZIndex = baseZ,
 			}))({
 				BackgroundTransparency = scope:Computed(function(use)
-					return 1 - use(openS) * 0.55
+					return 1 - (use(openS) :: number) * 0.55
 				end),
 			}),
 			scope:Frame({
@@ -233,7 +246,7 @@ return function(scope: Types.Scope, props: Types.DialogProps): Frame
 					HorizontalAlignment = Enum.HorizontalAlignment.Center,
 					VerticalAlignment = Enum.VerticalAlignment.Center,
 				},
-				[Children] = { panel },
+				[Children] = { panelHost },
 			}),
 		},
 	}) :: Frame

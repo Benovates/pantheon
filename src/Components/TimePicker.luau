@@ -8,7 +8,7 @@ local Slider = require(script.Parent.Slider)
 local Children = Fusion.Children
 local peek = Fusion.peek
 
-return function(scope: Types.Scope, props: Types.TimePickerProps): Frame
+return function(scope: Types.Scope, props: Types.TimePickerProps): Instance
 	local theme = resolveTheme(props)
 	local total = peek(props.Value) or 0
 	local hours = scope:Value(math.floor(total / 3600) % 24)

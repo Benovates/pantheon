@@ -1,0 +1,181 @@
+--!strict
+local Packages = script.Parent.Parent.Parent
+local Fusion = require(Packages.Fusion)
+local Types = require(script.Parent.Parent.Types)
+local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Interaction = require(script.Parent.Parent.Internal.Interaction)
+local Color = require(script.Parent.Parent.Internal.Color)
+local MenuNav = require(script.Parent.Parent.Internal.MenuNav)
+local Icon = require(script.Parent.Icon)
+local P = require(script.Parent.Parent.Internal.props)
+
+local Children = Fusion.Children
+local OnEvent = Fusion.OnEvent
+local peek = Fusion.peek
+
+local function resolveSlot(value: Types.MenuSlot?, iconAlias: string?): (string?, Instance?)
+	if typeof(value) == "Instance" then
+		return nil, value
+	end
+	if typeof(value) == "string" and value ~= "" then
+		return value, nil
+	end
+	if typeof(iconAlias) == "string" and iconAlias ~= "" then
+		return iconAlias, nil
+	end
+	return nil, nil
+end
+
+return function(scope: Types.Scope, props: Types.MenuButtonProps): Instance
+	local theme = resolveTheme(props)
+	local disabled = peek(props.Disabled) == true
+	local compact = props.Compact ~= false
+	local rowHeight = if compact then 40 else 44
+	local hPad = if compact then theme.Metrics.SpaceSm else theme.Metrics.SpaceMd
+	local vPad = if compact then theme.Metrics.SpaceXs else theme.Metrics.SpaceSm
+	local iconSize = 18
+	-- Hover/press whenever the row can activate (click, push page, or close).
+	local clickable = not disabled
+		and (props.OnClick ~= nil or props.Page ~= nil or props.OnClose ~= nil)
+
+	local role = if props.Color ~= nil
+		then Color.resolve(peek(props.Color) :: Types.ColorInput?, theme, "primary")
+		else nil
+	local fg = if disabled
+		then theme.Colors.OnSurfaceVariant
+		elseif role then role.Base
+		else theme.Colors.OnSurface
+	local stateColor = if role then role.Base else theme.Colors.OnSurface
+
+	local ix = Interaction.bind(scope, theme, {
+		Disabled = not clickable,
+		StateColor = stateColor,
+	})
+
+	local leadingName, leadingInst = resolveSlot(props.Leading, props.LeadingIcon)
+	local trailingName, trailingInst = resolveSlot(props.Trailing, props.TrailingIcon)
+
+	local btn: TextButton
+	btn = scope:TextButton(P({
+		Name = "MenuButton",
+		Text = "",
+		AutoButtonColor = false,
+		BackgroundColor3 = ix.fill(theme.Colors.Surface),
+		Size = props.Size or UDim2.new(1, 0, 0, rowHeight),
+		LayoutOrder = props.LayoutOrder or 0,
+		Visible = props.Visible,
+		ZIndex = props.ZIndex,
+		Active = clickable,
+		ClipsDescendants = true,
+		CornerRadius = theme.Metrics.RadiusPanel - 4,
+		Padding = { vPad, hPad },
+		Layout = {
+			Kind = "List",
+			FillDirection = Enum.FillDirection.Horizontal,
+			VerticalAlignment = Enum.VerticalAlignment.Center,
+			Padding = 8,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		},
+		[OnEvent("Activated")] = function()
+			if not clickable then
+				return
+			end
+			if props.OnClick then
+				props.OnClick()
+			end
+			if props.Page then
+				local nav = MenuNav.from(btn)
+				if nav then
+					nav.push(props.Page)
+				end
+				return
+			end
+			if props.OnClose then
+				props.OnClose()
+			end
+		end,
+		[Children] = {
+			-- Left: icon + label; fills remaining width
+			scope:Frame({
+				Name = "Left",
+				BackgroundTransparency = 1,
+				Size = UDim2.new(0, 0, 1, 0),
+				LayoutOrder = 1,
+				Flex = { FlexMode = Enum.UIFlexMode.Fill },
+				Layout = {
+					Kind = "List",
+					FillDirection = Enum.FillDirection.Horizontal,
+					VerticalAlignment = Enum.VerticalAlignment.Center,
+					Padding = theme.Metrics.SpaceSm,
+					SortOrder = Enum.SortOrder.LayoutOrder,
+				},
+				[Children] = {
+					if leadingInst
+						then scope:Hydrate(leadingInst)({ LayoutOrder = 1 })
+						elseif leadingName
+						then scope:Hydrate(Icon(scope, {
+							Theme = theme,
+							Name = leadingName,
+							IconSize = iconSize,
+							Color = fg,
+						}))({
+							LayoutOrder = 1,
+							ImageTransparency = if disabled then 0.38 else 0,
+						})
+						else nil,
+					scope:TextLabel({
+						BackgroundTransparency = 1,
+						FontFace = if disabled
+							then theme.Typography.Body.Font
+							else theme.Typography.Button.Font,
+						TextSize = theme.Typography.Button.Size,
+						TextColor3 = fg,
+						TextTransparency = if disabled then 0.38 else 0,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						Text = props.Text,
+						AutomaticSize = Enum.AutomaticSize.XY,
+						LayoutOrder = 2,
+					}),
+				},
+			}),
+			-- Right / trailing: hug content
+			scope:Frame({
+				Name = "Right",
+				BackgroundTransparency = 1,
+				Size = UDim2.new(0, 0, 1, 0),
+				AutomaticSize = Enum.AutomaticSize.X,
+				LayoutOrder = 2,
+				Layout = {
+					Kind = "List",
+					FillDirection = Enum.FillDirection.Horizontal,
+					VerticalAlignment = Enum.VerticalAlignment.Center,
+					Padding = 4,
+					SortOrder = Enum.SortOrder.LayoutOrder,
+				},
+				[Children] = {
+					if trailingName
+						then scope:Hydrate(Icon(scope, {
+							Theme = theme,
+							Name = trailingName,
+							IconSize = iconSize,
+							Color = fg,
+						}))({
+							LayoutOrder = 1,
+							ImageTransparency = if disabled then 0.38 else 0,
+						})
+						else nil,
+					if trailingInst
+						then scope:Hydrate(trailingInst)({ LayoutOrder = 2 })
+						else nil,
+				},
+			}),
+			props.Children,
+		},
+	})) :: TextButton
+
+	if props.Page then
+		btn:SetAttribute("EstuaryMenuPushPage", props.Page)
+	end
+	ix.wire(btn)
+	return btn
+end

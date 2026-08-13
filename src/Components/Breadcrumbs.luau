@@ -7,7 +7,7 @@ local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolve
 local Children = Fusion.Children
 local OnEvent = Fusion.OnEvent
 
-return function(scope: Types.Scope, props: Types.BreadcrumbsProps): Frame
+return function(scope: Types.Scope, props: Types.BreadcrumbsProps): Instance
 	local theme = resolveTheme(props)
 	local nodes = {}
 	for i, item in props.Items do

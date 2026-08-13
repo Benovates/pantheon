@@ -6,7 +6,7 @@ local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolve
 
 local Children = Fusion.Children
 
-return function(scope: Types.Scope, props: Types.AvatarProps): Frame
+return function(scope: Types.Scope, props: Types.AvatarProps): Instance
 	local theme = resolveTheme(props)
 	local size = props.AvatarSize or 40
 	return scope:Frame({

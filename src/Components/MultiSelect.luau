@@ -7,6 +7,7 @@ local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local CanvasFade = require(script.Parent.Parent.Internal.CanvasFade)
 local Interaction = require(script.Parent.Parent.Internal.Interaction)
 local Layer = require(script.Parent.Parent.Internal.Layer)
 local Icon = require(script.Parent.Icon)
@@ -61,7 +62,7 @@ local function labelFor(options: { Types.SelectOption }, value: string): string
 	return value
 end
 
-return function(scope: Types.Scope, props: Types.MultiSelectProps): Frame
+return function(scope: Types.Scope, props: Types.MultiSelectProps): Instance
 	local theme = resolveTheme(props)
 	local open = scope:Value(false)
 	local openS = scope:Spring(
@@ -374,12 +375,8 @@ return function(scope: Types.Scope, props: Types.MultiSelectProps): Frame
 		BackgroundColor3 = theme.Colors.Surface,
 		Size = UDim2.fromOffset(0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
-		Visible = scope:Computed(function(use)
-			return use(openS) > 0.02
-		end),
-		BackgroundTransparency = scope:Computed(function(use)
-			return 1 - use(openS)
-		end),
+		Visible = CanvasFade.shown(scope, openS, nil, { Theme = theme }),
+		BackgroundTransparency = CanvasFade.surfaceTransparency(scope, openS, { Theme = theme }),
 		ZIndex = 200,
 		[Children] = popKids,
 	})
@@ -412,12 +409,17 @@ return function(scope: Types.Scope, props: Types.MultiSelectProps): Frame
 		},
 	}) :: Frame
 
-	local mounted = Layer.mount(scope, props, popover)
-	if not mounted then
-		popover.Parent = field
+	local chrome = CanvasFade.host(scope, popover, openS, { Theme = theme })
+	if chrome ~= popover then
 		popover.Size = UDim2.new(1, 0, 0, 0)
 		popover.AutomaticSize = Enum.AutomaticSize.Y
-		popover.Position = UDim2.fromOffset(0, closedHeight + 4)
+	end
+	local mounted = Layer.mount(scope, props, chrome)
+	if not mounted then
+		chrome.Parent = field
+		chrome.Size = UDim2.new(1, 0, 0, 0)
+		chrome.AutomaticSize = Enum.AutomaticSize.Y
+		chrome.Position = UDim2.fromOffset(0, closedHeight + 4)
 	else
 		table.insert(
 			scope,
@@ -432,8 +434,8 @@ return function(scope: Types.Scope, props: Types.MultiSelectProps): Frame
 				local tp = trigger.AbsolutePosition
 				local ts = trigger.AbsoluteSize
 				local lp = layer.AbsolutePosition
-				popover.Position = UDim2.fromOffset(tp.X - lp.X, tp.Y - lp.Y + ts.Y + 4)
-				popover.Size = UDim2.fromOffset(math.max(ts.X, 160), 0)
+				chrome.Position = UDim2.fromOffset(tp.X - lp.X, tp.Y - lp.Y + ts.Y + 4)
+				chrome.Size = UDim2.fromOffset(math.max(ts.X, 160), 0)
 			end)
 		)
 	end

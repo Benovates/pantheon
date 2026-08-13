@@ -6,6 +6,7 @@
 export type Scope = any
 export type UsedAs<T> = T | any
 
+
 export type ThemeMode = "Light" | "Dark"
 
 export type ThemeColors = {
@@ -163,13 +164,20 @@ export type BaseProps = {
 	ZIndex: UsedAs<number>?,
 	--- Top-level UI frame for overlays (dialogs, menus, toasts, drawers).
 	--- Prefer providing this so overlays do not shift content layout.
-	Layer: GuiObject?,
+	Layer: Instance?,
+	[string]: any,
 }
 
-export type ButtonProps = BaseProps & {
+export type ButtonProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Text: UsedAs<string>?,
 	--- Style: Filled | Tonal | Outlined | Text (legacy Primary/Destructive still work)
-	Variant: ButtonVariant?,
+	Variant: (ButtonVariant | string)?,
 	--- Palette name, Color3, hex, RGB table, or ThemeColorRole
 	Color: UsedAs<ColorInput>?,
 	OnClick: (() -> ())?,
@@ -179,13 +187,23 @@ export type ButtonProps = BaseProps & {
 	LeadingIcon: string?,
 	--- Lucide icon after label
 	TrailingIcon: string?,
+	HorizontalAlignment: Enum.HorizontalAlignment?,
+	CornerRadius: number?,
+	Padding: { number }?,
+	[string]: any,
 }
 
 export type TextFieldResize = "None" | "Y" | "X" | "Both"
 
 export type Validator = (value: any) -> (boolean, string?)
 
-export type TextFieldProps = BaseProps & {
+export type TextFieldProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Text: UsedAs<string>?,
 	Placeholder: UsedAs<string>?,
 	Label: UsedAs<string>?,
@@ -203,42 +221,70 @@ export type TextFieldProps = BaseProps & {
 	Validators: { Validator }?,
 	--- Validate on focus lost (default true when Validators set)
 	ValidateOnBlur: boolean?,
+	[string]: any,
 }
 
-export type TextProps = BaseProps & {
+export type TextProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Text: UsedAs<string>,
 	Variant: TextVariant?,
 	Color: UsedAs<Color3>?,
 	TextXAlignment: Enum.TextXAlignment?,
 	TextWrapped: boolean?,
+	[string]: any,
 }
 
-export type ListItemProps = BaseProps & {
+export type ListItemProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Title: UsedAs<string>,
 	Subtitle: UsedAs<string>?,
 	OnClick: (() -> ())?,
 	Leading: Instance?,
 	Trailing: Instance?,
 	Disabled: UsedAs<boolean>?,
+	[string]: any,
 }
 
-export type ChipProps = BaseProps & {
+export type ChipProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Text: UsedAs<string>,
 	Selected: UsedAs<boolean>?,
 	OnClick: (() -> ())?,
 	Disabled: UsedAs<boolean>?,
 	LeadingIcon: string?,
 	TrailingIcon: string?,
+	[string]: any,
 }
 
 export type DialogAction = {
 	Text: string,
-	Variant: ButtonVariant?,
+	Variant: (ButtonVariant | string)?,
 	Color: ColorInput?,
 	OnClick: (() -> ())?,
 }
 
-export type DialogProps = BaseProps & {
+export type DialogProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Title: UsedAs<string>,
 	Body: UsedAs<string>?,
 	Actions: { DialogAction }?,
@@ -250,46 +296,115 @@ export type DialogProps = BaseProps & {
 	Icon: string?,
 	IconColor: UsedAs<Color3>?,
 	IconSize: number?,
+	[string]: any,
 }
 
-export type SurfaceProps = BaseProps & {
+
+export type PromptProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
+	Title: UsedAs<string>,
+	Body: UsedAs<string>?,
+	Actions: { DialogAction }?,
+	OnClose: (() -> ())?,
+	Open: UsedAs<boolean>?,
+	Children: any?,
+	Icon: string?,
+	IconColor: UsedAs<Color3>?,
+	IconSize: number?,
+	OnConfirm: (() -> ())?,
+	ConfirmText: string?,
+	CancelText: string?,
+	Destructive: boolean?,
+	[string]: any,
+}
+
+export type ConfirmDialogProps = PromptProps
+
+export type SurfaceProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Name: string?,
 	Elevated: boolean?,
+	[string]: any,
 }
 
-export type OverlayProps = BaseProps & {
+export type OverlayProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	OnClick: (() -> ())?,
+	[string]: any,
 }
 
-export type IconProps = BaseProps & {
+export type IconProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Name: string?, -- Lucide icon id
 	Image: string?,
 	Color: UsedAs<Color3>?,
 	IconSize: number?,
 	AssetSize: number?,
+	[string]: any,
 }
 
-export type IconButtonProps = BaseProps & {
+export type IconButtonProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Name: string?,
 	Image: string?,
 	OnClick: (() -> ())?,
 	Disabled: UsedAs<boolean>?,
+	[string]: any,
 }
 
-export type CheckboxProps = BaseProps & {
+export type CheckboxProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Checked: UsedAs<boolean>?,
 	Label: UsedAs<string>?,
 	OnChanged: ((boolean) -> ())?,
 	Disabled: UsedAs<boolean>?,
+	[string]: any,
 }
 
-export type SwitchProps = BaseProps & {
+export type SwitchProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Checked: UsedAs<boolean>?,
 	Label: UsedAs<string>?,
 	OnChanged: ((boolean) -> ())?,
 	Disabled: UsedAs<boolean>?,
 	--- Override Theme.Controls.SwitchIcons for this switch.
 	Icons: boolean?,
+	[string]: any,
 }
 
 export type RadioOption = {
@@ -297,18 +412,32 @@ export type RadioOption = {
 	Label: string,
 }
 
-export type RadioProps = BaseProps & {
+export type RadioProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Checked: UsedAs<boolean>,
 	Label: UsedAs<string>?,
 	OnActivated: (() -> ())?,
 	Disabled: UsedAs<boolean>?,
+	[string]: any,
 }
 
-export type RadioGroupProps = BaseProps & {
+export type RadioGroupProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Options: { RadioOption },
 	Value: UsedAs<string>?,
 	OnChanged: ((string) -> ())?,
 	Disabled: UsedAs<boolean>?,
+	[string]: any,
 }
 
 export type SelectOption = {
@@ -316,7 +445,13 @@ export type SelectOption = {
 	Label: string,
 }
 
-export type SelectProps = BaseProps & {
+export type SelectProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Options: { SelectOption },
 	Value: UsedAs<string>?,
 	Placeholder: UsedAs<string>?,
@@ -325,9 +460,16 @@ export type SelectProps = BaseProps & {
 	Disabled: UsedAs<boolean>?,
 	Filterable: boolean?,
 	Validators: { Validator }?,
+	[string]: any,
 }
 
-export type MultiSelectProps = BaseProps & {
+export type MultiSelectProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Options: { SelectOption },
 	Value: UsedAs<{ string }>?,
 	Placeholder: UsedAs<string>?,
@@ -337,13 +479,27 @@ export type MultiSelectProps = BaseProps & {
 	Validators: { Validator }?,
 	--- `Chips` (default) shows a chip per selection; `Count` shows "N selected".
 	Display: ("Chips" | "Count")?,
+	[string]: any,
 }
 
-export type SpinnerProps = BaseProps & {
+export type SpinnerProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	SizePx: number?,
+	[string]: any,
 }
 
-export type SliderProps = BaseProps & {
+export type SliderProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Value: UsedAs<number>?,
 	Min: number?,
 	Max: number?,
@@ -351,43 +507,86 @@ export type SliderProps = BaseProps & {
 	OnChanged: ((number) -> ())?,
 	Disabled: UsedAs<boolean>?,
 	Label: UsedAs<string>?,
+	[string]: any,
 }
 
-export type RangeSliderProps = BaseProps & {
+export type RangeSliderProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Value: UsedAs<NumberRange>?,
 	Min: number?,
 	Max: number?,
 	OnChanged: ((NumberRange) -> ())?,
 	Disabled: UsedAs<boolean>?,
+	[string]: any,
 }
 
-export type AlertProps = BaseProps & {
+export type AlertProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Title: UsedAs<string>?,
 	Text: UsedAs<string>,
 	Tone: AlertTone?,
+	[string]: any,
 }
 
-export type SnackbarProps = BaseProps & {
+export type SnackbarProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Message: UsedAs<string>,
 	ActionText: string?,
 	OnAction: (() -> ())?,
+	[string]: any,
 }
 
-export type SnackbarHostProps = BaseProps & {
+export type SnackbarHostProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	-- Host manages queue via returned API; see Components.SnackbarHost
+	[string]: any,
 }
 
-export type ProgressProps = BaseProps & {
+export type ProgressProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Value: UsedAs<number>?,
 	Buffer: UsedAs<number>?,
 	Variant: ProgressVariant?,
 	Mode: ProgressMode?,
+	[string]: any,
 }
 
-export type BadgeProps = BaseProps & {
+export type BadgeProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Content: Instance,
 	Count: UsedAs<number>?,
 	Dot: boolean?,
+	[string]: any,
 }
 
 export type TabItem = {
@@ -395,45 +594,124 @@ export type TabItem = {
 	Label: string,
 }
 
-export type TabsProps = BaseProps & {
+export type TabsProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Items: { TabItem },
 	Selected: UsedAs<string>?,
 	OnChanged: ((string) -> ())?,
+	[string]: any,
 }
 
-export type DividerProps = BaseProps & {
+export type DividerProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Vertical: boolean?,
+	[string]: any,
 }
 
-export type CardProps = BaseProps & {
+export type CardProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Title: UsedAs<string>?,
 	Subtitle: UsedAs<string>?,
 	Children: any?,
+	[string]: any,
 }
 
-export type AppBarProps = BaseProps & {
+export type AppBarProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Title: UsedAs<string>?,
 	Leading: Instance?,
 	Actions: { Instance }?,
+	[string]: any,
 }
 
-export type NavigationDrawerProps = BaseProps & {
+export type NavigationDrawerProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Open: UsedAs<boolean>?,
 	Title: UsedAs<string>?,
 	Subtitle: UsedAs<string>?,
 	AvatarImage: string?,
 	AvatarInitials: string?,
-	Items: { ListItemProps }?,
+	--- Flat actions (Menu-style). Prefer `Sections` for categories.
+	Items: { any }?,
+	Sections: { MenuSectionProps }?,
 	OnClose: (() -> ())?,
 	Children: any?,
+	--- Gap (px) from the parent edges — use `4` inside Window.
+	Inset: number?,
+	--- Panel corner radius (px). Window drawers typically use `RadiusPanel + 4`.
+	CornerRadius: number?,
+	--- First MenuPage id when composing `Children`.
+	InitialPage: string?,
+	Page: UsedAs<string>?,
+	OnPageChanged: ((string) -> ())?,
+	--- Cap embedded menu height (px). Omit to fill.
+	MaxHeight: number?,
+	[string]: any,
 }
 
-export type NavigationRailProps = BaseProps & {
+export type NavigationRailProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Items: { { Id: string, Icon: string?, Label: string?, OnClick: (() -> ())? } },
 	Selected: UsedAs<string>?,
 	OnChanged: ((string) -> ())?,
 	--- Default `Vertical` (side rail). `Horizontal` lays items in a row.
 	Orientation: ("Vertical" | "Horizontal")?,
+	[string]: any,
+}
+
+--- App chrome shell: elevated Sheet colors + optional AppBar / NavigationRail / content / overlays.
+export type WindowProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
+	AppBar: Instance?,
+	NavigationRail: Instance?,
+	--- Main content; fills space beside/above the rail.
+	Children: any?,
+	--- Drawers, menus, dialogs — reparented onto the window overlay layer.
+	Overlays: { Instance }?,
+	--- Layout for the rail slot. Defaults by inferring from `NavigationRail.Size`
+	--- (horizontal rails use full-width × ~72px). Prefer setting explicitly when unsure.
+	--- Also set `NavigationRail.Orientation` to match.
+	RailOrientation: ("Vertical" | "Horizontal")?,
+	--- Outer chrome radius (default `RadiusPanel`).
+	CornerRadius: number?,
+	--- Sheet elevation (default true).
+	Elevated: boolean?,
+	[string]: any,
 }
 
 export type BreadcrumbItem = {
@@ -441,86 +719,268 @@ export type BreadcrumbItem = {
 	OnClick: (() -> ())?,
 }
 
-export type BreadcrumbsProps = BaseProps & {
+export type BreadcrumbsProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Items: { BreadcrumbItem },
+	[string]: any,
 }
 
-export type PaginationProps = BaseProps & {
+export type PaginationProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Page: UsedAs<number>?,
 	PageCount: number,
 	OnChanged: ((number) -> ())?,
+	[string]: any,
 }
 
-export type ContainerProps = BaseProps & {
+export type ContainerProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	MaxWidth: number?,
 	Children: any?,
+	[string]: any,
 }
+
+export type MenuSlot = string | Instance
 
 export type MenuItemProps = {
-	Text: string,
+	Text: UsedAs<string>,
 	OnClick: (() -> ())?,
-	Disabled: boolean?,
+	Disabled: UsedAs<boolean>?,
+	--- Lucide icon or custom instance before the label.
+	Leading: MenuSlot?,
+	--- Lucide icon or custom instance after the label.
+	Trailing: MenuSlot?,
+	--- Alias for `Leading` when it is a Lucide icon name.
+	LeadingIcon: string?,
+	--- Alias for `Trailing` when it is a Lucide icon name.
+	TrailingIcon: string?,
+	--- Palette / Color3 tint for label + icons (e.g. `"error"`).
+	Color: UsedAs<ColorInput>?,
+	--- Push this MenuPage id (does not close the menu).
+	Page: string?,
+	[string]: any,
 }
 
-export type MenuProps = BaseProps & {
-	Items: { MenuItemProps },
+export type MenuButtonProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
+	Text: UsedAs<string>,
+	OnClick: (() -> ())?,
+	Disabled: UsedAs<boolean>?,
+	Leading: MenuSlot?,
+	Trailing: MenuSlot?,
+	LeadingIcon: string?,
+	TrailingIcon: string?,
+	Color: UsedAs<ColorInput>?,
+	Page: string?,
+	--- Compact row (40px). False uses the taller header-menu row (44px). Default true.
+	Compact: boolean?,
+	--- Invoked after `OnClick` (Menu wires this when building from Items/Sections).
+	OnClose: (() -> ())?,
+	Children: any?,
+	[string]: any,
+}
+
+export type MenuSectionProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	--- Optional category label above this group of items.
+	Title: UsedAs<string>?,
+	--- Lucide icon before the category title (prepend only).
+	Icon: string?,
+	--- Data-driven rows (built as MenuButtons). Prefer `Children` when composing.
+	Items: { any }?,
+	--- Composed MenuButtons (or other content).
+	Children: any?,
+	--- Category header can collapse/expand its items.
+	Collapsible: boolean?,
+	--- Initial open state when collapsible (default true).
+	DefaultExpanded: boolean?,
+	--- Controlled expanded state.
+	Expanded: UsedAs<boolean>?,
+	OnExpandedChanged: ((boolean) -> ())?,
+	Compact: boolean?,
+	OnClose: (() -> ())?,
+	[string]: any,
+}
+
+export type MenuPageProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
+	Id: string,
+	--- Subpage bar title; also enables the back control.
+	Title: UsedAs<string>?,
+	Children: any?,
+	[string]: any,
+}
+
+export type MenuProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
+	--- Flat item list (used when `Sections` is nil). Prefer composing MenuButton.
+	Items: { any }?,
+	--- Grouped items with optional category titles. Prefer composing MenuSection.
+	Sections: { MenuSectionProps }?,
 	Open: UsedAs<boolean>?,
 	OnClose: (() -> ())?,
+	--- Optional content above the item list (e.g. AvatarMenu profile header).
+	Header: any?,
+	--- Composed MenuSection / MenuButton / MenuPage (also appended after Items/Sections).
+	Children: any?,
+	--- Cap list height; scrolls when content exceeds this (px).
+	MaxHeight: number?,
+	--- When true, list fills remaining height and scrolls (fixed `Size` required).
+	Fill: boolean?,
+	--- Override panel corner radius (default `RadiusPanel`).
+	CornerRadius: number?,
+	--- Outer padding (default 4).
+	Padding: number?,
+	--- When true, skip Layer.mount — parent owns overlay / layering (AvatarMenu, Popover).
+	Embedded: boolean?,
+	--- First MenuPage id (default: first page child).
+	InitialPage: string?,
+	--- Controlled page id; Menu pushes/pops to match.
+	Page: UsedAs<string>?,
+	OnPageChanged: ((string) -> ())?,
+	[string]: any,
 }
 
-export type PopoverProps = BaseProps & {
+export type PopoverProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Open: UsedAs<boolean>?,
 	OnClose: (() -> ())?,
 	--- Anchor to position relative to (screen space).
-	Target: GuiObject?,
+	Target: Instance?,
 	--- Preferred placement relative to Target.
 	Placement: ("Bottom" | "Top" | "Left" | "Right")?,
-	Items: { MenuItemProps }?,
+	Items: { any }?,
+	Sections: { MenuSectionProps }?,
+	MaxHeight: number?,
 	Children: any?,
 	Width: number?,
+	[string]: any,
 }
 
-export type AvatarMenuProps = BaseProps & {
+export type AvatarMenuProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Open: UsedAs<boolean>?,
 	OnClose: (() -> ())?,
-	Target: GuiObject?,
+	Target: Instance?,
+	Sections: { MenuSectionProps }?,
+	MaxHeight: number?,
 	Image: string?,
 	Initials: string?,
 	Name: UsedAs<string>?,
 	Subtitle: UsedAs<string>?,
-	Items: { MenuItemProps }?,
+	Items: { any }?,
+	[string]: any,
 }
 
 export type TooltipPlacement = "Top" | "Bottom" | "Left" | "Right" | "Auto"
 
-export type TooltipProps = BaseProps & {
+export type TooltipProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Text: UsedAs<string>,
-	Target: GuiObject?,
+	Target: Instance?,
 	--- Preferred side of the target. `Auto` picks the side with most room.
 	Placement: TooltipPlacement?,
 	Gap: number?,
+	[string]: any,
 }
 
-export type DatePickerProps = BaseProps & {
+export type DatePickerProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Value: UsedAs<string>?, -- YYYY-MM-DD
 	OnChanged: ((string) -> ())?,
+	[string]: any,
 }
 
-export type TimePickerProps = BaseProps & {
+export type TimePickerProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Value: UsedAs<number>?, -- seconds from midnight
 	OnChanged: ((number) -> ())?,
+	[string]: any,
 }
 
-export type ColorPickerProps = BaseProps & {
+export type ColorPickerProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Value: UsedAs<Color3>?,
 	OnChanged: ((Color3) -> ())?,
+	[string]: any,
 }
 
-export type VirtualListProps = BaseProps & {
+export type VirtualListProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	ItemCount: UsedAs<number>,
 	ItemHeight: number,
 	RenderItem: (scope: Scope, index: number) -> Instance,
 	Padding: number?,
+	[string]: any,
 }
 
 export type DataTableColumn = {
@@ -530,7 +990,13 @@ export type DataTableColumn = {
 	Sortable: boolean?,
 }
 
-export type DataTableProps = BaseProps & {
+export type DataTableProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Columns: { DataTableColumn },
 	Rows: UsedAs<{ { [string]: any } }>,
 	RowHeight: number?,
@@ -542,16 +1008,30 @@ export type DataTableProps = BaseProps & {
 	Filter: UsedAs<string>?,
 }
 
-export type AvatarProps = BaseProps & {
+export type AvatarProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Image: string?,
 	Initials: string?,
 	AvatarSize: number?,
+	[string]: any,
 }
 
-export type EmptyStateProps = BaseProps & {
+export type EmptyStateProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Title: UsedAs<string>,
 	Subtitle: UsedAs<string>?,
 	Action: ButtonProps?,
+	[string]: any,
 }
 
 export type SettingsListItem = {
@@ -563,19 +1043,33 @@ export type SettingsListItem = {
 	Trailing: Instance?,
 	ShowChevron: boolean?,
 	Disabled: boolean?,
+	[string]: any,
 }
 
-export type SettingsListProps = BaseProps & {
+export type SettingsListProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	--- Hub rows (iOS Settings style cards)
-	Items: { SettingsListItem }?,
+	Items: { any }?,
 	--- Section title above the card group
 	Header: UsedAs<string>?,
 	Footer: UsedAs<string>?,
 	Children: any?,
 	InsetGrouped: boolean?,
+	[string]: any,
 }
 
-export type AppSheetProps = BaseProps & {
+export type AppSheetProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Open: UsedAs<boolean>?,
 	Title: UsedAs<string>?,
 	OnClose: (() -> ())?,
@@ -583,21 +1077,36 @@ export type AppSheetProps = BaseProps & {
 	--- Detent height scale 0–1 of host. Default 0.92
 	Detent: number?,
 	ShowGrabber: boolean?,
+	[string]: any,
 }
 
-export type StarRatingProps = BaseProps & {
+export type StarRatingProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Value: UsedAs<number>?,
 	Max: number?,
 	OnChanged: ((number) -> ())?,
 	ReadOnly: boolean?,
 	IconSize: number?,
+	[string]: any,
 }
 
-export type SegmentedControlProps = BaseProps & {
+export type SegmentedControlProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Items: { { Id: string, Label: string, Icon: string? } },
 	Selected: UsedAs<string>?,
 	OnChanged: ((string) -> ())?,
 	Disabled: UsedAs<boolean>?,
+	[string]: any,
 }
 
 export type TreeNode = {
@@ -607,19 +1116,33 @@ export type TreeNode = {
 	Children: { TreeNode }?,
 }
 
-export type TreeViewProps = BaseProps & {
+export type TreeViewProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Nodes: { TreeNode },
 	Expanded: UsedAs<{ [string]: boolean }>?,
 	Selected: UsedAs<string>?,
 	OnSelect: ((id: string) -> ())?,
 	OnToggle: ((id: string, expanded: boolean) -> ())?,
+	[string]: any,
 }
 
-export type CollapsibleProps = BaseProps & {
+export type CollapsibleProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Title: UsedAs<string>,
 	Open: UsedAs<boolean>?,
 	OnChanged: ((boolean) -> ())?,
 	Children: any?,
+	[string]: any,
 }
 
 export type ChoiceGroupOption = {
@@ -628,7 +1151,13 @@ export type ChoiceGroupOption = {
 	Disabled: boolean?,
 }
 
-export type ChoiceGroupProps = BaseProps & {
+export type ChoiceGroupProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Options: { ChoiceGroupOption },
 	Value: UsedAs<string>?,
 	OnChanged: ((string) -> ())?,
@@ -637,9 +1166,16 @@ export type ChoiceGroupProps = BaseProps & {
 	Variant: ("Radio" | "Segmented")?,
 	Validators: { Validator }?,
 	Label: UsedAs<string>?,
+	[string]: any,
 }
 
-export type ScrollAreaProps = BaseProps & {
+export type ScrollAreaProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
 	Children: any?,
 	--- Scroll axis. Default "Vertical".
 	Orientation: ("Vertical" | "Horizontal")?,
@@ -662,12 +1198,23 @@ export type ScrollAreaProps = BaseProps & {
 	ScrollButtonStep: number?,
 	ScrollOffset: UsedAs<number>?,
 	OnScroll: ((offset: number) -> ())?,
-	--- Rubber-band overscroll. Default true when Inertia.
+	--- Rubber-band overscroll for drag / top-edge wheel pull (when OnRefresh is set).
+	--- Mid-list and bottom edges hard-clamp on wheel/trackpad. Default true when Inertia.
 	Overscroll: boolean?,
-	--- Pull-to-refresh callback (fires after pull threshold). Vertical only.
+	--- Pull action (fires on release past threshold). Vertical only. Not limited to refresh.
 	OnRefresh: (() -> ())?,
+	--- Called when pull is cancelled (released below threshold after pulling).
+	OnPullCancel: (() -> ())?,
 	RefreshThreshold: number?,
-	--- Drag anywhere to scroll (touch/mouse). Default true.
+	--- Show built-in pull hint. Default true when OnRefresh is set.
+	PullIndicator: boolean?,
+	--- Below threshold while pulling.
+	PullHint: string?,
+	--- Past threshold — release finger/mouse to confirm.
+	ReleaseHint: string?,
+	--- Shown under ReleaseHint while armed.
+	CancelHint: string?,
+	--- Drag anywhere to scroll (touch/mouse). Default: touch, or mouse when OnRefresh is set.
 	DragToScroll: boolean?,
 	--- "List" (default) stacks children; "None" for absolute/virtual content.
 	ContentLayout: ("List" | "None")?,
@@ -675,6 +1222,7 @@ export type ScrollAreaProps = BaseProps & {
 	ContentPadding: number?,
 	--- Gap between list children. Default theme SpaceLg.
 	ListPadding: number?,
+	[string]: any,
 }
 
 return nil

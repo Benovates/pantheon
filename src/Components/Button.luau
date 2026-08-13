@@ -13,7 +13,7 @@ local OnEvent = Fusion.OnEvent
 local peek = Fusion.peek
 
 local function normalizeVariant(
-	variant: Types.ButtonVariant?,
+	variant: string?,
 	colorProp: Types.ColorInput?
 ): (string, Types.ColorInput?)
 	local v = variant or "Filled"
@@ -48,7 +48,7 @@ local function styleFromRole(
 	return role.Base, role.OnBase, 0, false, role.OnBase
 end
 
-return function(scope: Types.Scope, props: Types.ButtonProps): TextButton
+return function(scope: Types.Scope, props: Types.ButtonProps): Instance
 	local theme = resolveTheme(props)
 	local style, colorInput = normalizeVariant(props.Variant, peek(props.Color) :: Types.ColorInput?)
 	local role = Color.resolve(colorInput, theme, "primary")
@@ -130,13 +130,13 @@ return function(scope: Types.Scope, props: Types.ButtonProps): TextButton
 		ZIndex = props.ZIndex,
 		-- Clipping cuts UIStroke; only clip filled variants.
 		ClipsDescendants = not outlined,
-		CornerRadius = theme.Metrics.RadiusPill,
-		Padding = { padY, padX },
+		CornerRadius = if props.CornerRadius then props.CornerRadius else theme.Metrics.RadiusPill,
+		Padding = if props.Padding then props.Padding else { padY, padX },
 		Layout = {
 			Kind = "List",
 			FillDirection = Enum.FillDirection.Horizontal,
 			VerticalAlignment = Enum.VerticalAlignment.Center,
-			HorizontalAlignment = Enum.HorizontalAlignment.Center,
+			HorizontalAlignment = if props.HorizontalAlignment then props.HorizontalAlignment else Enum.HorizontalAlignment.Center,
 			Padding = 6,
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		},

@@ -14,6 +14,6 @@ return StoryUtil.story(function(scope, C, ctx)
 				Trailing = C.Switch(scope, { Checked = false }),
 				ShowChevron = false,
 			},
-		},
+		} :: { any },
 	})
 end)

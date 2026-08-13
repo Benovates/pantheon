@@ -2,7 +2,7 @@
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
 
-return function(scope: Types.Scope, props: Types.DividerProps?): Frame
+return function(scope: Types.Scope, props: Types.DividerProps?): Instance
 	local p: Types.DividerProps = props or {}
 	local theme = resolveTheme(p)
 	local vertical = p.Vertical == true

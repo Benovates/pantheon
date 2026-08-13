@@ -6,10 +6,11 @@ local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolve
 
 local OnEvent = Fusion.OnEvent
 
-return function(scope: Types.Scope, props: Types.OverlayProps?): TextButton
+return function(scope: Types.Scope, props: Types.OverlayProps?): Instance
 	local p: Types.OverlayProps = props or {}
 	local theme = resolveTheme(p)
-	-- TextButton sinks clicks; AppSheet panel (Active) sits above and blocks dismiss.
+	-- Full-screen TextButton scrim. Panels above must also be GuiButtons
+	-- (or otherwise sink input); Frame.Active alone does not block Activated.
 	return scope:TextButton({
 		Name = "Overlay",
 		Text = "",

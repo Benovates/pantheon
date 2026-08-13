@@ -13,7 +13,7 @@ local peek = Fusion.peek
 
 export type StoryContext = {
 	theme: any,
-	overlayLayer: Frame,
+	overlayLayer: Instance,
 	EstuaryUI: typeof(EstuaryUI),
 	controls: any,
 }
@@ -92,7 +92,7 @@ function StoryUtil.story(build: BuildFn, extraControls: { [string]: any }?): any
 						BackgroundTransparency = 1,
 						Size = UDim2.fromScale(1, 1),
 						ZIndex = 50,
-					}) :: Frame
+					})
 
 					local content = build(scope, EstuaryUI.Components, {
 						theme = theme,
@@ -119,7 +119,7 @@ function StoryUtil.story(build: BuildFn, extraControls: { [string]: any }?): any
 									Padding = 12,
 									SortOrder = Enum.SortOrder.LayoutOrder,
 								},
-								[Children] = if content then { content } else nil,
+					[Children] = if content then { content :: Instance } else nil,
 							}),
 							overlayLayer,
 						},
@@ -156,7 +156,7 @@ function StoryUtil.panel(scope: any, height: number, child: Instance): Frame
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, 0, 0, height),
 		ClipsDescendants = false,
-		[Children] = { child },
+		[Children] = { child :: Instance },
 	}) :: Frame
 end
 

@@ -2,7 +2,7 @@
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
 
-return function(scope: Types.Scope, props: Types.TextProps): TextLabel
+return function(scope: Types.Scope, props: Types.TextProps): Instance
 	local theme = resolveTheme(props)
 	local variant: Types.TextVariant = props.Variant or "Body"
 	local scale = theme.Typography[variant] or theme.Typography.Body

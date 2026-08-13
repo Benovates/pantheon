@@ -8,7 +8,7 @@ local Button = require(script.Parent.Button)
 local Children = Fusion.Children
 local peek = Fusion.peek
 
-return function(scope: Types.Scope, props: Types.PaginationProps): Frame
+return function(scope: Types.Scope, props: Types.PaginationProps): Instance
 	local theme = resolveTheme(props)
 	local page = scope:Value(peek(props.Page) or 1)
 	local count = math.max(props.PageCount, 1)

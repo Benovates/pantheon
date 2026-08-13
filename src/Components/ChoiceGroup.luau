@@ -15,7 +15,7 @@ local Children = Fusion.Children
 local OnEvent = Fusion.OnEvent
 local peek = Fusion.peek
 
-return function(scope: Types.Scope, props: Types.ChoiceGroupProps): Frame
+return function(scope: Types.Scope, props: Types.ChoiceGroupProps): Instance
 	local theme = resolveTheme(props)
 	local variant = props.Variant or "Radio"
 	local disabled = peek(props.Disabled) == true
