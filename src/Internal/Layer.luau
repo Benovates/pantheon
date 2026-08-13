@@ -21,18 +21,38 @@ function Layer.use(): GuiObject?
 	return layerContext:now() or rootLayer
 end
 
-function Layer.resolve(props: { Layer: GuiObject? }?): GuiObject?
+function Layer.asGui(inst: Instance?): GuiObject?
+	if inst ~= nil and inst:IsA("GuiObject") then
+		return inst
+	end
+	return nil
+end
+
+function Layer.resolve(props: { Layer: Instance? }?): GuiObject?
 	if props and props.Layer ~= nil then
-		return props.Layer
+		local layer = props.Layer
+		if layer:IsA("GuiObject") then
+			return layer
+		end
+		return nil
 	end
 	return Layer.use()
+end
+
+--- Set the fallback overlay layer (e.g. Window chrome) for mounts without an explicit Layer prop.
+function Layer.bind(layer: Instance?)
+	if layer ~= nil and layer:IsA("GuiObject") then
+		rootLayer = layer
+	else
+		rootLayer = nil
+	end
 end
 
 --[[
 	Parent `instance` onto the resolved overlay layer when one exists.
 	Returns true if mounted to a layer (caller should not also put it in layout).
 ]]
-function Layer.mount(scope: Types.Scope, props: { Layer: GuiObject? }?, instance: Instance): boolean
+function Layer.mount(scope: Types.Scope, props: { Layer: Instance? }?, instance: Instance): boolean
 	local layer = Layer.resolve(props)
 	if layer == nil then
 		return false
