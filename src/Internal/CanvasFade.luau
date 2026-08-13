@@ -95,15 +95,14 @@ local function wrapTarget(scope: Types.Scope, target: GuiObject, progress: any):
 		return found
 	end
 
-	local auto = target.AutomaticSize
 	local group = scope:CanvasGroup({
 		Name = "FadeWrap",
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
-		Size = target.Size,
-		AutomaticSize = auto,
-		Position = target.Position,
-		AnchorPoint = target.AnchorPoint,
+		Size = FILL,
+		AutomaticSize = Enum.AutomaticSize.None,
+		Position = ZERO_POS,
+		AnchorPoint = Vector2.zero,
 		LayoutOrder = target.LayoutOrder,
 		ZIndex = target.ZIndex,
 		GroupTransparency = scope:Computed(function(use)
@@ -116,34 +115,7 @@ local function wrapTarget(scope: Types.Scope, target: GuiObject, progress: any):
 		[Children] = { target },
 	}) :: CanvasGroup
 	target:SetAttribute("EstuaryFadeWrap", true)
-	target.Position = UDim2.fromScale(0.5, 0.5)
-	target.AnchorPoint = Vector2.new(0.5, 0.5)
-	if auto == Enum.AutomaticSize.None then
-		target.Size = FILL
-	end
 
-	table.insert(
-		scope,
-		target:GetPropertyChangedSignal("Position"):Connect(function()
-			local pos = target.Position
-			if pos == ZERO_POS then
-				return
-			end
-			group.Position = pos
-			target.Position = ZERO_POS
-		end)
-	)
-	table.insert(
-		scope,
-		target:GetPropertyChangedSignal("AnchorPoint"):Connect(function()
-			local a = target.AnchorPoint
-			if a == Vector2.zero then
-				return
-			end
-			group.AnchorPoint = a
-			target.AnchorPoint = Vector2.zero
-		end)
-	)
 	table.insert(
 		scope,
 		target:GetPropertyChangedSignal("LayoutOrder"):Connect(function()
@@ -156,19 +128,6 @@ local function wrapTarget(scope: Types.Scope, target: GuiObject, progress: any):
 			group.ZIndex = target.ZIndex
 		end)
 	)
-	if auto == Enum.AutomaticSize.None then
-		table.insert(
-			scope,
-			target:GetPropertyChangedSignal("Size"):Connect(function()
-				local size = target.Size
-				if size == FILL then
-					return
-				end
-				group.Size = size
-				target.Size = FILL
-			end)
-		)
-	end
 
 	return group
 end
@@ -239,10 +198,10 @@ function CanvasFade.play(scope: Types.Scope, target: GuiObject, opts: FadeOpts?)
 		Name = "FadeWrap",
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
-		Size = target.Size,
-		AutomaticSize = target.AutomaticSize,
-		Position = target.Position,
-		AnchorPoint = target.AnchorPoint,
+		Size = FILL,
+		AutomaticSize = Enum.AutomaticSize.None,
+		Position = ZERO_POS,
+		AnchorPoint = Vector2.zero,
 		LayoutOrder = target.LayoutOrder,
 		ZIndex = target.ZIndex,
 		Visible = true,
