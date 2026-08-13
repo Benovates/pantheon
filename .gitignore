@@ -1,11 +1,11 @@
 # Dependencies
-/Packages/
 /ServerPackages/
-!/packages/
-!/packages/**
+/Packages/
+/Packages/**
 
 *.rbxl
 *.rbxlx
 sourcemap.json
 .DS_Store
 .env
+
