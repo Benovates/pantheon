@@ -16,7 +16,7 @@ local function normalizeVariant(
 	variant: string?,
 	colorProp: Types.ColorInput?
 ): (string, Types.ColorInput?)
-	local v = variant or "Filled"
+	local v = variant or "Text"
 	-- Legacy variants that encoded color
 	if v == "Primary" then
 		return "Filled", colorProp or "primary"
@@ -27,7 +27,8 @@ local function normalizeVariant(
 	if v == "Tonal" or v == "Outlined" or v == "Text" or v == "Filled" then
 		return v, colorProp
 	end
-	return "Filled", colorProp
+
+	return "Text", colorProp
 end
 
 local function styleFromRole(
@@ -41,11 +42,12 @@ local function styleFromRole(
 	if style == "Outlined" then
 		return theme.Colors.Surface, role.Base, 0, true, role.Base
 	end
-	if style == "Text" then
-		return role.Base, role.Base, 1, false, role.Base
+	if style == "Filled" then
+		return role.Base, role.OnBase, 0, false, role.OnBase
 	end
-	-- Filled
-	return role.Base, role.OnBase, 0, false, role.OnBase
+
+	-- Text
+	return theme.Colors.OnSurface, theme.Colors.OnSurface, 1, false, theme.Colors.OnSurface
 end
 
 return function(scope: Types.Scope, props: Types.IconButtonProps): Instance
