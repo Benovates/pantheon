@@ -9,6 +9,8 @@ return {
 	Validators = require(script.Validators),
 	Color = require(script.Color),
 	MaterialColors = require(script.MaterialColors),
+	Flags = require(script.Flags),
+	CanvasFade = require(script.CanvasFade),
 	Calendar = require(script.Picker.Calendar),
 	HSV = require(script.Picker.HSV),
 }
