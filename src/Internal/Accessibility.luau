@@ -79,7 +79,8 @@ function Accessibility.apply(theme: any, prefs: Prefs?): any
 	out.Accessibility = resolved
 
 	if resolved.ReduceMotion then
-		out.Motion.SpringSpeed = 120
+		-- Critically damped Fusion spring (ratio 1) + fast settle
+		out.Motion.SpringSpeed = math.max(out.Motion.SpringSpeed, 400)
 		out.Motion.SpringDamping = 1
 		out.Motion.PressScale = 1
 	end
@@ -89,7 +90,7 @@ function Accessibility.apply(theme: any, prefs: Prefs?): any
 	local t = math.clamp(resolved.PreferredTransparency, 0, 1)
 	if t < 0.5 then
 		local densify = (0.5 - t) * 2
-		local scrim = out.Colors.Scrim
+		local scrim = out.Colors.Scrim :: Color3
 		out.Colors.Scrim = Color3.new(
 			scrim.R * (1 - densify * 0.35),
 			scrim.G * (1 - densify * 0.35),
