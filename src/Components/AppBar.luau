@@ -12,6 +12,7 @@ return function(scope: Types.Scope, props: Types.AppBarProps): Instance
 	return scope:Frame({
 		Name = "AppBar",
 		BackgroundColor3 = theme.Colors.Surface,
+		CornerRadius = props.Radius or { theme.Metrics.RadiusPanel, 0 },
 		Size = props.Size or UDim2.new(1, 0, 0, theme.Metrics.AppBarHeight),
 		LayoutOrder = props.LayoutOrder or 0,
 		ZIndex = props.ZIndex or 10,
