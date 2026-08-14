@@ -24,6 +24,7 @@ return function(scope: Types.Scope, props: Types.OverlayProps?): Instance
 		ZIndex = p.ZIndex or 50,
 		Visible = p.Visible,
 		Active = true,
+		CornerRadius = p.CornerRadius or 0,
 		[OnEvent("Activated")] = p.OnClick,
 	}) :: TextButton
 end

@@ -101,6 +101,7 @@ return function(scope: Types.Scope, props: Types.NavigationDrawerProps): Instanc
 			scope:Hydrate(Overlay(scope, {
 				Theme = theme,
 				OnClick = props.OnClose,
+				CornerRadius = cornerRadius + inset,
 				ZIndex = 60,
 			}))({
 				BackgroundTransparency = scope:Computed(function(use)
