@@ -10,8 +10,8 @@ local peek = Fusion.peek
 
 return function(scope: Types.Scope, props: Types.RadioGroupProps): Instance
 	local theme = resolveTheme(props)
-	local selected =
-		scope:Value(peek(props.Value) or (props.Options[1] and props.Options[1].Value) or "")
+	local selected = if props.Value then props.Value else
+		scope:Value((props.Options[1] and props.Options[1].Value) or "")
 	local disabled = peek(props.Disabled) == true
 	local rows = {}
 
