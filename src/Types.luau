@@ -694,6 +694,8 @@ export type WindowProps = {
 	Theme: ThemeRef?,
 	LayoutOrder: UsedAs<number>?,
 	Size: UsedAs<UDim2>?,
+	Position: UsedAs<UDim2>?,
+	AnchorPoint: UsedAs<Vector2>?,
 	Visible: UsedAs<boolean>?,
 	ZIndex: UsedAs<number>?,
 	Layer: Instance?,
