@@ -1,16 +1,17 @@
-# estuary-ui
+# Estuary UI / Pantheon
 
-Cadence/Tithe **design system** for Roblox — Fusion + Iona + Lucide, with spring motion.
+A modern and slick Fusion 0.3+ components library for Roblox, with a focus on accessibility, theming, and performance.
 
-**Not published to Wally yet.** Path-link `src`; Iona via `../iona`; `wally install` for Fusion + Lucide.
+## Installation
 
-## Quick start
-
+Pantheon is still in development and is not published to Wally yet. To install, clone the repository and run the following commands in your project directory to get started:
 ```bash
 rokit install
 wally install
 rojo serve demo.project.json
 ```
+
+## Example Usage
 
 ```luau
 local EstuaryUI = require(Packages.EstuaryUI)
@@ -23,15 +24,17 @@ EstuaryUI.Theme.Provide(theme, function()
 end)
 ```
 
-## Highlights
+Brief API docs available in the [docs folder](./docs). Soon will be more comprehensive and covers all components and their properties.
 
-- **Theme.Provide** + root fallback (safe inside Fusion `Computed` re-evals)
-- **Lucide** icons via `Components.Icon` / `IconButton` (`Name = "bell"`)
-- **State layers** tint the control fill (no padded hover overlay); color-only press
-- **ScrollArea** — smooth scroll, inertia, keyboard, custom scrollbar, AutoCanvas
-- **Select** popover (does not push layout); rounded menu items; raised ZIndex when open
-- **TextField** — placeholder, helper, error, multiline + corner `Resize`, animated stroke
-- **Progress** — Determinate / Material-like Indeterminate (dual indicators) / Buffering
-- **Dialog / Prompt** — scrim modal with spring enter; `ConfirmDialog` for destructive
-- **Typography** — Montserrat Medium body (no Regular); Display/Headline/Title/Label/Mono
-- **Drawer / Menu** — spring slide / fade animations
+## License
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
+
+## Contributing
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+For contributions, please make sure to follow the coding style and write tests for any new features or bug fixes. Create components in the `src/Components` folder and add example usage in the `stories` folder. Follow the existing structure, naming conventions, design styleguide for consistency. Always use the Iona-based system to create new instances for components, and avoid using Roblox's built-in instances directly.
+
+Ensure to add types for all new components and their properties in the `src/Types.luau` file. This will help with type checking and improve the developer experience.
+
+## Version
+0.0.1 - Initial release.
