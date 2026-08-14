@@ -68,7 +68,7 @@ return function(scope: Types.Scope, props: Types.MenuButtonProps): Instance
 		Active = clickable,
 		ClipsDescendants = true,
 		CornerRadius = theme.Metrics.RadiusPanel - 4,
-		Padding = { vPad, hPad },
+		Padding = if trailingName then { vPad, hPad } else { vPad, hPad/2, vPad, hPad },
 		Layout = {
 			Kind = "List",
 			FillDirection = Enum.FillDirection.Horizontal,
