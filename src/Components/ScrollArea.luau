@@ -3,11 +3,14 @@
 	Custom scroll surface with chrome (vertical or horizontal).
 
 	Vertical:                 Horizontal:
-	  ^                         < ====[]==== >
-	  |
-	 | |
-	 | |
-	  V
+		^    
+		|                    < ====[]==== >
+		|
+	   | |
+	   | |
+		|
+		|
+		V
 ]]
 local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
