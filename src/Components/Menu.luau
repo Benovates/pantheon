@@ -312,7 +312,7 @@ return function(scope: Types.Scope, props: Types.MenuProps): Instance
 						Padding = theme.Metrics.Space2xs,
 						SortOrder = Enum.SortOrder.LayoutOrder,
 					},
-					Padding = { 0, 0, theme.Metrics.SpaceSm, 0 },
+					Padding = { 0, 0, theme.Metrics.Space2xs, 0 },
 					[Children] = {
 						scope:Hydrate(Button(scope, {
 							Theme = theme,
