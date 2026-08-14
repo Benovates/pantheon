@@ -6,21 +6,10 @@
       "$className": "ReplicatedStorage",
       "Packages": {
         "$className": "Folder",
+        "$path": "Packages",
+        
         "EstuaryUI": {
           "$path": "src"
-        },
-        "Fusion": {
-          "$path": "Packages/Fusion.lua"
-        },
-        "Lucide": {
-          "$path": "Packages/Lucide.lua"
-        },
-        "Iona": {
-          "$path": "Packages/Iona.lua"
-        },
-        "_Index": {
-          "$className": "Folder",
-          "$path": "Packages/_Index"
         }
       },
       "Stories": {
