@@ -155,8 +155,10 @@ local function typography(): Types.ThemeTypography
 		Headline = { Font = MontserratBold, Size = 24, LineHeight = 1.25 },
 		Title = { Font = MontserratSemi, Size = 18, LineHeight = 1.3 },
 		Button = { Font = MontserratSemi, Size = 16, LineHeight = 1.4 },
+		BoldBody = { Font = MontserratBold, Size = 16, LineHeight = 1.4 },
 		Body = { Font = MontserratMedium, Size = 16, LineHeight = 1.4 },
-		Label = { Font = MontserratSemi, Size = 12, LineHeight = 1.3 },
+		Label = { Font = MontserratSemi, Size = 14, LineHeight = 1.3 },
+		Caption = { Font = MontserratSemi, Size = 12, LineHeight = 1.3 },
 		Mono = { Font = Mono, Size = 13, LineHeight = 1.35 },
 	}
 end
