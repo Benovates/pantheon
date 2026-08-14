@@ -2,9 +2,6 @@
 --[[
 	Rounded app chrome shell (elevated Sheet colors) that hosts AppBar,
 	NavigationRail, content, and overlay layers (NavigationDrawer, menus, dialogs).
-
-	Uses CanvasGroup so UICorner actually clips chrome children (Frame + UICorner
-	only rounds the background; AppBar/rail would otherwise square off the corners).
 ]]
 local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
@@ -108,7 +105,7 @@ return function(scope: Types.Scope, props: Types.WindowProps): Instance
 	end
 
 	-- CanvasGroup + CornerRadius clips descendants to the rounded rect (Sheet-equivalent fill).
-	local window = scope:CanvasGroup({
+	local window = scope:Frame({
 		Name = "Window",
 		BackgroundColor3 = if elevated
 			then theme.Colors.SurfaceContainerHigh
@@ -118,7 +115,6 @@ return function(scope: Types.Scope, props: Types.WindowProps): Instance
 			Offset = UDim2.new(0, 0, 0, 4),
 			Transparency = 0.75,
 		},
-		GroupTransparency = 0,
 		BorderSizePixel = 0,
 		Size = props.Size or UDim2.fromScale(1, 1),
 		LayoutOrder = props.LayoutOrder or 0,
@@ -127,7 +123,7 @@ return function(scope: Types.Scope, props: Types.WindowProps): Instance
 		ClipsDescendants = true,
 		CornerRadius = radius,
 		[Children] = chrome,
-	}) :: CanvasGroup
+	}) :: Frame
 
 	local overlays = props.Overlays
 	if overlays then
