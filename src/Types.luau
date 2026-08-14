@@ -6,7 +6,6 @@
 export type Scope = any
 export type UsedAs<T> = T | any
 
-
 export type ThemeMode = "Light" | "Dark"
 
 export type ThemeColors = {
@@ -632,6 +631,7 @@ export type CardProps = {
 }
 
 export type AppBarProps = {
+	Radius: any?,
 	Theme: ThemeRef?,
 	LayoutOrder: UsedAs<number>?,
 	Size: UsedAs<UDim2>?,
