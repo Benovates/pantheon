@@ -356,7 +356,8 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Instanc
 
 	local track = scope:Frame({
 		Name = "SegmentedControl",
-		BackgroundColor3 = theme.Colors.SurfaceContainerHigh,
+		BackgroundColor3 = theme.Colors.OnSurfaceVariant,
+		BackgroundTransparency = 0.9,
 		Size = props.Size or UDim2.new(1, 0, 0, 36),
 		LayoutOrder = props.LayoutOrder or 0,
 		Visible = props.Visible,
