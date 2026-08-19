@@ -32,7 +32,7 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Instanc
 	local xS = scope:Spring(indicatorX, theme.Motion.SpringSpeed * 0.8, theme.Motion.SpringDamping)
 	local wS = scope:Spring(indicatorW, theme.Motion.SpringSpeed * 0.8, theme.Motion.SpringDamping)
 	local dragging = scope:Value(0)
-	local draggingS = scope:Spring(dragging, theme.Motion.SpringSpeed, theme.Motion.SpringDamping)
+	local draggingS = scope:Spring(dragging, theme.Motion.SpringSpeed, theme.Motion.SpringDamping * 0.8)
 
 	local segments: { TextButton } = {}
 	local host: Frame
