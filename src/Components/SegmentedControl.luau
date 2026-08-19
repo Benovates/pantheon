@@ -309,6 +309,9 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Instanc
 					scope:Frame({
 						Name = "Pill",
 						BackgroundColor3 = theme.Colors.Surface,
+						BackgroundTransparency = scope:Computed(function(use)
+							return 0 + (use(draggingS) :: number) * 0.4
+						end),
 						Size = UDim2.fromScale(1, 1),
 						ZIndex = 1,
 						CornerRadius = theme.Metrics.RadiusPill,
@@ -319,6 +322,16 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Instanc
 							Transparency = scope:Computed(function(use)
 								return 1 - (use(draggingS) :: number) * 0.2
 							end),
+						},
+						Outline = {
+							Color = theme.Colors.Outline,
+							Thickness = scope:Computed(function(use)
+								return 2 - (use(draggingS) :: number) * 2
+							end),
+							Transparency = scope:Computed(function(use)
+								return (use(draggingS) :: number) * 0.1
+							end),
+							Mode = Enum.ApplyStrokeMode.Border,
 						}
 					}),
 				},
