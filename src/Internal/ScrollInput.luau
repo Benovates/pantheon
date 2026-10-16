@@ -222,15 +222,6 @@ local function unbindSinkIfIdle()
 	end
 end
 
-local function hookGuiWheel(gui: GuiObject, bucket: { RBXScriptConnection })
-	table.insert(
-		bucket,
-		gui.InputChanged:Connect(function(input)
-			handleWheel(input, gui)
-		end)
-	)
-end
-
 local ScrollInput = {}
 
 function ScrollInput.findPluginGui(from: Instance?): PluginGui?
@@ -345,21 +336,28 @@ end
 function ScrollInput.register(reg: Registration): () -> ()
 	table.insert(registrations, reg)
 
-	local wheelConns: { RBXScriptConnection } = {}
-	hookGuiWheel(reg.root, wheelConns)
-	for _, inst in reg.root:GetDescendants() do
-		if inst:IsA("GuiObject") then
-			hookGuiWheel(inst, wheelConns)
+	-- One connection per live GuiObject; dropped on DescendantRemoving so churning
+	-- children (virtual lists, snackbars) don't accumulate dead connections.
+	local wheelConns: { [Instance]: RBXScriptConnection } = {}
+	local function hook(inst: Instance)
+		if inst:IsA("GuiObject") and wheelConns[inst] == nil then
+			wheelConns[inst] = inst.InputChanged:Connect(function(input)
+				handleWheel(input, inst :: GuiObject)
+			end)
 		end
 	end
-	table.insert(
-		wheelConns,
-		reg.root.DescendantAdded:Connect(function(inst)
-			if inst:IsA("GuiObject") then
-				hookGuiWheel(inst, wheelConns)
-			end
-		end)
-	)
+	hook(reg.root)
+	for _, inst in reg.root:GetDescendants() do
+		hook(inst)
+	end
+	local added = reg.root.DescendantAdded:Connect(hook)
+	local removing = reg.root.DescendantRemoving:Connect(function(inst)
+		local conn = wheelConns[inst]
+		if conn then
+			conn:Disconnect()
+			wheelConns[inst] = nil
+		end
+	end)
 
 	local function syncHost()
 		if isGameHost(reg.root) and reg.root.Parent then
@@ -374,9 +372,12 @@ function ScrollInput.register(reg: Registration): () -> ()
 
 	return function()
 		ancestry:Disconnect()
+		added:Disconnect()
+		removing:Disconnect()
 		for _, conn in wheelConns do
 			conn:Disconnect()
 		end
+		table.clear(wheelConns)
 		local i = table.find(registrations, reg)
 		if i then
 			table.remove(registrations, i)
