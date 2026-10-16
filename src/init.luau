@@ -34,6 +34,7 @@ local EstuaryUI = {
 	Validators = require(script.Internal.Validators),
 	Accessibility = require(script.Internal.Accessibility),
 	Shadow = require(script.Internal.Shadow),
+	Style = require(script.Style),
 	Color = require(script.Internal.Color),
 	Material = require(script.Internal.MaterialColors),
 	Fusion = Fusion,

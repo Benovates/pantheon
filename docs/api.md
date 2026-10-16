@@ -58,6 +58,50 @@ rojo serve demo.project.json
 
 Storyboard: light/dark toggle, sectioned gallery for shipped components.
 
+## Style (typed theme tokens)
+
+Tokens are plain, type-checked values read from the theme given to `Theme.Provide`; there are no strings or new syntax.
+
+```luau
+local S = EstuaryUI.Style
+
+EstuaryUI.Theme.Provide(theme, function()
+	scope:Frame({
+		BackgroundColor3 = S.Color.SurfaceContainer,
+		Padding = { S.Space.Md, S.Space.Lg },
+		CornerRadius = { S.Radius.Lg },
+		Layout = S.Row(S.Space.Sm),
+		[Children] = { ... },
+	})
+end)
+```
+
+- `S.Color.*` (theme.Colors), `S.Font.*`, `S.Type.*` (typography scales)
+- `S.Space.Xs2|Xs|Sm|Md|Lg|Xl`, `S.Radius.None|Xs2|Xs|Sm|Md|Lg|Xl|Xl2|Xl3|Panel|Pill`
+- `S.Row(gap)` / `S.Column(gap)` layout presets; `S.merge(a, b, …)` composes reusable prop bags
+- Values are read when the expression runs, so rebuild the tree (or wrap in a Computed) on theme change.
+
+### Component styles
+
+```luau
+local S = EstuaryUI.Style
+
+local Primary = S.define({ Variant = "Filled" })
+local Danger = Primary:extend(function(theme) -- theme-aware
+	return { Color = theme.Colors.Error }
+end)
+
+local PrimaryButton = S.styled(EstuaryUI.Components.Button, Primary)
+local DangerButton = S.styled(EstuaryUI.Components.Button, Danger)
+
+PrimaryButton(scope, { Text = "Save" })
+DangerButton(scope, { Text = "Delete", Variant = "Outlined" }) -- call-site props override
+```
+
+- Precedence: base style < `extend`ed styles < props passed at the call site.
+- Keyed tables such as `Layout` / `Shadow` deep-merge; arrays (`Padding = {…}`), Instances and states replace.
+- `style:apply(props)` returns a plain prop bag for use with `scope:Frame` etc.
+
 ## `scope:Apply` (Hydrate replacement)
 
 Fusion's `Hydrate` is slated for deprecation. Estuary scopes (`EstuaryUI.scoped()`) provide their own `Apply`, built only on Fusion's public API (`Observer`, `peek`, SpecialKeys):
