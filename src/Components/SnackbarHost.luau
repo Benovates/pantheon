@@ -7,7 +7,6 @@ local Layer = require(script.Parent.Parent.Internal.Layer)
 local Snackbar = require(script.Parent.Snackbar)
 
 local Children = Fusion.Children
-local peek = Fusion.peek
 
 export type HostApi = {
 	Instance: Frame,
@@ -28,13 +27,14 @@ return function(scope: Types.Scope, props: Types.SnackbarHostProps?): HostApi
 		Size = UDim2.fromOffset(0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
 		ZIndex = p.ZIndex or 100,
-		[Children] = scope:Computed(function(use)
+		[Children] = scope:Computed(function(use, inner)
+			-- `inner` is destroyed on each recompute, so dismissed snackbars free their springs.
 			local item = use(current)
 			if not item then
 				return {} :: { Instance }
 			end
 			return {
-				Snackbar(scope, {
+				Snackbar(inner, {
 					Theme = theme,
 					Message = item.message,
 					ActionText = item.actionText,
@@ -46,11 +46,13 @@ return function(scope: Types.Scope, props: Types.SnackbarHostProps?): HostApi
 
 	Layer.mount(scope, p, host)
 
+	local token = 0
 	local function show(message: string, actionText: string?, onAction: (() -> ())?)
+		token += 1
+		local mine = token
 		current:set({ message = message, actionText = actionText, onAction = onAction })
 		task.delay(3, function()
-			local now = peek(current)
-			if now and now.message == message then
+			if token == mine then
 				current:set(nil)
 			end
 		end)
