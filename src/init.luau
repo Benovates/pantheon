@@ -13,6 +13,8 @@ local Components = require(script.Components)
 local Types = require(script.Types)
 local Layer = require(script.Internal.Layer)
 
+require(script.Internal.FusionPerf).apply()
+
 export type Theme = Types.Theme
 export type ThemeMode = Types.ThemeMode
 export type Scope = Types.Scope
