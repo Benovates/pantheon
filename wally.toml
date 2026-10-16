@@ -12,3 +12,4 @@ description = "Estuary UI primitives — Fusion + Iona, Cadence/Tithe MD3 langua
 Fusion = "elttob/fusion@0.3.0"
 Lucide = "latte-soft/lucide-icons@0.1.3"
 Iona = "koterahq/iona@0.3.0"
+Snapdragon = "vorlias/snapdragon@2.0.0"
