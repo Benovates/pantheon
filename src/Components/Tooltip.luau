@@ -5,10 +5,9 @@ local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
 local CanvasFade = require(script.Parent.Parent.Internal.CanvasFade)
 local Layer = require(script.Parent.Parent.Internal.Layer)
+local Follow = require(script.Parent.Parent.Internal.Follow)
 
 local Children = Fusion.Children
-local peek = Fusion.peek
-local RunService = game:GetService("RunService")
 local GuiService = game:GetService("GuiService")
 
 local function place(
@@ -158,14 +157,9 @@ return function(scope: Types.Scope, props: Types.TooltipProps): Instance
 				visible:set(0)
 			end)
 		)
-		table.insert(
-			scope,
-			RunService.RenderStepped:Connect(function()
-				if peek(visible) > 0.5 then
-					updatePosition()
-				end
-			end)
-		)
+		Follow(scope, visible, function(v)
+			return v > 0.5
+		end, updatePosition)
 	end
 
 	return host

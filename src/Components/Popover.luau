@@ -7,12 +7,12 @@ local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
 local Layer = require(script.Parent.Parent.Internal.Layer)
+local Follow = require(script.Parent.Parent.Internal.Follow)
 local Overlay = require(script.Parent.Overlay)
 local Menu = require(script.Parent.Menu)
 
 local Children = Fusion.Children
 local peek = Fusion.peek
-local RunService = game:GetService("RunService")
 
 return function(scope: Types.Scope, props: Types.PopoverProps): Instance
 	local theme = resolveTheme(props)
@@ -49,7 +49,7 @@ return function(scope: Types.Scope, props: Types.PopoverProps): Instance
 		ZIndex = (props.ZIndex or 90) + 1,
 	})
 
-	scope:Hydrate(menu)({
+	scope:Apply(menu)({
 		Name = "PopoverPanel",
 		Position = pos,
 	})
@@ -92,14 +92,9 @@ return function(scope: Types.Scope, props: Types.PopoverProps): Instance
 		pos:set(UDim2.fromOffset(math.max(8, x), math.max(8, y)))
 	end
 
-	table.insert(
-		scope,
-		RunService.RenderStepped:Connect(function()
-			if peek(open) then
-				updatePosition()
-			end
-		end)
-	)
+	Follow(scope, open, function(v)
+		return v == true
+	end, updatePosition)
 
 	local root = scope:Frame({
 		Name = "Popover",
@@ -110,7 +105,7 @@ return function(scope: Types.Scope, props: Types.PopoverProps): Instance
 		end),
 		ZIndex = props.ZIndex or 90,
 		[Children] = {
-			scope:Hydrate(Overlay(scope, {
+			scope:Apply(Overlay(scope, {
 				Theme = theme,
 				OnClick = props.OnClose,
 				ZIndex = props.ZIndex or 90,

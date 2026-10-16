@@ -10,6 +10,7 @@ local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolve
 local CanvasFade = require(script.Parent.Parent.Internal.CanvasFade)
 local Interaction = require(script.Parent.Parent.Internal.Interaction)
 local Layer = require(script.Parent.Parent.Internal.Layer)
+local Follow = require(script.Parent.Parent.Internal.Follow)
 local Icon = require(script.Parent.Icon)
 local Chip = require(script.Parent.Chip)
 local Validators = require(script.Parent.Parent.Internal.Validators)
@@ -18,7 +19,6 @@ local P = require(script.Parent.Parent.Internal.props)
 local Children = Fusion.Children
 local OnEvent = Fusion.OnEvent
 local peek = Fusion.peek
-local RunService = game:GetService("RunService")
 
 local function copyList(list: { string }): { string }
 	local out = {}
@@ -135,7 +135,7 @@ return function(scope: Types.Scope, props: Types.MultiSelectProps): Instance
 					Size = UDim2.new(1, 0, 1, 0),
 					LayoutOrder = 1,
 				}),
-				scope:Hydrate(Icon(scope, {
+				scope:Apply(Icon(scope, {
 					Theme = theme,
 					Name = "check",
 					IconSize = 18,
@@ -171,7 +171,7 @@ return function(scope: Types.Scope, props: Types.MultiSelectProps): Instance
 
 	local chips = scope:ForPairs(selectedMap, function(_use, chipScope, value: string)
 		return value,
-			chipScope:Hydrate(Chip(chipScope, {
+			chipScope:Apply(Chip(chipScope, {
 				Theme = theme,
 				Text = labelFor(props.Options, value),
 				Selected = true,
@@ -208,7 +208,7 @@ return function(scope: Types.Scope, props: Types.MultiSelectProps): Instance
 				Size = UDim2.new(1, -24, 1, 0),
 				LayoutOrder = 1,
 			}),
-			scope:Hydrate(Icon(scope, {
+			scope:Apply(Icon(scope, {
 				Theme = theme,
 				Name = "chevron-down",
 				IconSize = 18,
@@ -250,7 +250,7 @@ return function(scope: Types.Scope, props: Types.MultiSelectProps): Instance
 					chips,
 				},
 			}),
-			scope:Hydrate(Icon(scope, {
+			scope:Apply(Icon(scope, {
 				Theme = theme,
 				Name = "chevron-down",
 				IconSize = 18,
@@ -434,23 +434,19 @@ return function(scope: Types.Scope, props: Types.MultiSelectProps): Instance
 		chrome.AutomaticSize = Enum.AutomaticSize.Y
 		chrome.Position = UDim2.fromOffset(0, closedHeight + 4)
 	else
-		table.insert(
-			scope,
-			RunService.RenderStepped:Connect(function()
-				if not peek(open) then
-					return
-				end
-				local layer = Layer.resolve(props)
-				if layer == nil then
-					return
-				end
-				local tp = trigger.AbsolutePosition
-				local ts = trigger.AbsoluteSize
-				local lp = layer.AbsolutePosition
-				chrome.Position = UDim2.fromOffset(tp.X - lp.X, tp.Y - lp.Y + ts.Y + 4)
-				chrome.Size = UDim2.fromOffset(math.max(ts.X, 160), 0)
-			end)
-		)
+		Follow(scope, open, function(v)
+			return v == true
+		end, function()
+			local layer = Layer.resolve(props)
+			if layer == nil then
+				return
+			end
+			local tp = trigger.AbsolutePosition
+			local ts = trigger.AbsoluteSize
+			local lp = layer.AbsolutePosition
+			chrome.Position = UDim2.fromOffset(tp.X - lp.X, tp.Y - lp.Y + ts.Y + 4)
+			chrome.Size = UDim2.fromOffset(math.max(ts.X, 160), 0)
+		end)
 	end
 
 	return field

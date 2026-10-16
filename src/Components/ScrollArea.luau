@@ -17,6 +17,7 @@ local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
 local Interaction = require(script.Parent.Parent.Internal.Interaction)
+local whileActive = require(script.Parent.Parent.Internal.Follow)
 local ScrollInput = require(script.Parent.Parent.Internal.ScrollInput)
 local Icon = require(script.Parent.Icon)
 local P = require(script.Parent.Parent.Internal.props)
@@ -25,7 +26,6 @@ local Children = Fusion.Children
 local OnEvent = Fusion.OnEvent
 local peek = Fusion.peek
 local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 
 return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 	local theme = resolveTheme(props)
@@ -66,19 +66,27 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 	local offset = scope:Value(peek(props.ScrollOffset) or 0)
 	local velocity = scope:Value(0)
 	local target = scope:Value(peek(props.ScrollOffset) or 0)
-	local scrollSpring = scope:Spring(target, if smooth then theme.Motion.SpringSpeed * 1 else theme.Motion.SpringSpeed * 2, theme.Motion.SpringDamping)
+	local scrollSpring = scope:Spring(
+		target,
+		if smooth then theme.Motion.SpringSpeed * 1 else theme.Motion.SpringSpeed * 2,
+		theme.Motion.SpringDamping
+	)
 
 	local barVisible = scope:Value(1)
-	local barVisibleS = scope:Spring(barVisible, theme.Motion.SpringSpeed * 0.05, theme.Motion.SpringDamping)
+	local barVisibleS =
+		scope:Spring(barVisible, theme.Motion.SpringSpeed * 0.05, theme.Motion.SpringDamping)
 	local hoveringBar = scope:Value(0)
 	local hoveringBarS =
 		scope:Spring(hoveringBar, theme.Motion.SpringSpeed, theme.Motion.SpringDamping)
 	local draggingBar = scope:Value(0)
-	local draggingBarS = scope:Spring(draggingBar, theme.Motion.SpringSpeed * 1.2, theme.Motion.SpringDamping)
+	local draggingBarS =
+		scope:Spring(draggingBar, theme.Motion.SpringSpeed * 1.2, theme.Motion.SpringDamping)
 	local railPressed = scope:Value(0)
-	local railPressedS = scope:Spring(railPressed, theme.Motion.SpringSpeed * 1.4, theme.Motion.SpringDamping)
+	local railPressedS =
+		scope:Spring(railPressed, theme.Motion.SpringSpeed * 1.4, theme.Motion.SpringDamping)
 	local stretch = scope:Value(0)
-	local stretchS = scope:Spring(stretch, theme.Motion.SpringSpeed * 0.06, theme.Motion.SpringDamping)
+	local stretchS =
+		scope:Spring(stretch, theme.Motion.SpringSpeed * 0.06, theme.Motion.SpringDamping)
 	local lastActivity = scope:Value(os.clock())
 
 	local function axisOf(v: Vector2): number
@@ -357,86 +365,94 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 		)
 	end
 
-	if inertia then
-		table.insert(
-			scope,
-			RunService.RenderStepped:Connect(function(dt: number)
-				if peek(contentDragging) then
-					return
-				end
-				local v = peek(velocity)
-				local y = peek(target)
-				local max = maxScroll()
-				-- Rubber-band settle when past edges (after coasting stops).
-				if overscrollEnabled and (y < 0 or y > max) and math.abs(v) < 0.35 then
-					if y < 0 then
-						local armed = not horizontal and props.OnRefresh ~= nil and y <= -refreshThreshold
-						if armed then
-							settleIfNeeded()
-						else
-							if didPull and props.OnPullCancel then
-								didPull = false
-								task.defer(props.OnPullCancel)
-							end
-							didPull = false
-							local nextY = y + (0 - y) * math.min(1, dt * 10)
-							if math.abs(nextY) < 0.5 then
-								nextY = 0
-								velocity:set(0)
-								pullDepth:set(0)
-							end
-							target:set(nextY)
-						end
-					else
-						local nextY = y + (max - y) * math.min(1, dt * 10)
-						if math.abs(nextY - max) < 0.5 then
-							nextY = max
-							velocity:set(0)
-						end
-						target:set(nextY)
-					end
-				elseif math.abs(v) >= 0.35 then
-					local nextY = y + v * dt
-					-- Inertia may finish a touch rubber-band, but wheel momentum hard-stops at edges
-					-- (except top pull). Decelerate gently so coast stays controllable.
-					local decay = math.max(0, 1 - dt * 3.2)
-					if overscrollEnabled and (y < -0.5 or y > max + 0.5) then
-						target:set(clampOverscrollTarget(nextY))
-						velocity:set(v * decay)
-					else
-						local clamped = clampScroll(nextY)
-						target:set(clamped)
-						if clamped ~= nextY then
-							velocity:set(0)
-						else
-							velocity:set(v * decay)
-						end
-					end
+	-- Step only while something is moving, overscrolled, or the bar is waiting to hide.
+	local function scrollStep(dt: number)
+		if peek(contentDragging) then
+			return
+		end
+		local v = peek(velocity)
+		local y = peek(target)
+		local max = maxScroll()
+		-- Rubber-band settle when past edges (after coasting stops).
+		if overscrollEnabled and (y < 0 or y > max) and math.abs(v) < 0.35 then
+			if y < 0 then
+				local armed = not horizontal and props.OnRefresh ~= nil and y <= -refreshThreshold
+				if armed then
+					settleIfNeeded()
 				else
+					if didPull and props.OnPullCancel then
+						didPull = false
+						task.defer(props.OnPullCancel)
+					end
+					didPull = false
+					local nextY = y + (0 - y) * math.min(1, dt * 10)
+					if math.abs(nextY) < 0.5 then
+						nextY = 0
+						velocity:set(0)
+						pullDepth:set(0)
+					end
+					target:set(nextY)
+				end
+			else
+				local nextY = y + (max - y) * math.min(1, dt * 10)
+				if math.abs(nextY - max) < 0.5 then
+					nextY = max
 					velocity:set(0)
-					if overscrollEnabled and (y < 0 or y > max) then
-						settleIfNeeded()
-					end
 				end
+				target:set(nextY)
+			end
+		elseif math.abs(v) >= 0.35 then
+			local nextY = y + v * dt
+			-- Inertia may finish a touch rubber-band, but wheel momentum hard-stops at edges
+			-- (except top pull). Decelerate gently so coast stays controllable.
+			local decay = math.max(0, 1 - dt * 3.2)
+			if overscrollEnabled and (y < -0.5 or y > max + 0.5) then
+				target:set(clampOverscrollTarget(nextY))
+				velocity:set(v * decay)
+			else
+				local clamped = clampScroll(nextY)
+				target:set(clamped)
+				if clamped ~= nextY then
+					velocity:set(0)
+				else
+					velocity:set(v * decay)
+				end
+			end
+		else
+			velocity:set(0)
+			if overscrollEnabled and (y < 0 or y > max) then
+				settleIfNeeded()
+			end
+		end
 
-				if autoHide and peek(draggingBar) < 0.5 and peek(hoveringBar) < 0.5 then
-					if os.clock() - peek(lastActivity) > hideDelay then
-						barVisible:set(0)
-					end
+		if autoHide and peek(draggingBar) < 0.5 and peek(hoveringBar) < 0.5 then
+			if os.clock() - peek(lastActivity) > hideDelay then
+				barVisible:set(0)
+			end
+		end
+	end
+
+	if inertia or autoHide then
+		local needsStep = scope:Computed(function(use)
+			if inertia then
+				local y = use(target)
+				if use(velocity) ~= 0 or y < 0 or y > maxScroll() then
+					return true
 				end
-			end)
-		)
-	elseif autoHide then
-		table.insert(
-			scope,
-			RunService.RenderStepped:Connect(function()
-				if peek(draggingBar) < 0.5 and peek(hoveringBar) < 0.5 then
-					if os.clock() - peek(lastActivity) > hideDelay then
-						barVisible:set(0)
-					end
+			end
+			return autoHide and use(barVisible) ~= 0
+		end)
+		whileActive(scope, needsStep, function(on)
+			return on == true
+		end, function(dt: number)
+			if inertia then
+				scrollStep(dt)
+			elseif autoHide and peek(draggingBar) < 0.5 and peek(hoveringBar) < 0.5 then
+				if os.clock() - peek(lastActivity) > hideDelay then
+					barVisible:set(0)
 				end
-			end)
-		)
+			end
+		end)
 	end
 
 	local requestCanvasSync: (() -> ())? = nil
@@ -464,8 +480,7 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 		end),
 		AutomaticSize = if not autoCanvas
 			then Enum.AutomaticSize.None
-			elseif horizontal
-			then Enum.AutomaticSize.X
+			elseif horizontal then Enum.AutomaticSize.X
 			else Enum.AutomaticSize.Y,
 		Position = scope:Computed(function(use)
 			local off = use(offset) :: number
@@ -505,7 +520,9 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 		local function measureAlong(): number
 			-- Prefer layout AbsoluteContentSize (includes list padding, ignores clip).
 			if layout then
-				local along = if horizontal then layout.AbsoluteContentSize.X else layout.AbsoluteContentSize.Y
+				local along = if horizontal
+					then layout.AbsoluteContentSize.X
+					else layout.AbsoluteContentSize.Y
 				-- UIPadding is outside AbsoluteContentSize.
 				return math.max(along + padInset * 2, 1)
 			end
@@ -562,11 +579,20 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 			-- Layout already reports AbsoluteContentSize; child AbsoluteSize
 			-- would recurse when the gutter reflows the row.
 			if layout then
-				table.insert(childConns, child:GetPropertyChangedSignal("Visible"):Connect(scheduleCanvasSync))
+				table.insert(
+					childConns,
+					child:GetPropertyChangedSignal("Visible"):Connect(scheduleCanvasSync)
+				)
 				return
 			end
-			table.insert(childConns, child:GetPropertyChangedSignal("AbsoluteSize"):Connect(scheduleCanvasSync))
-			table.insert(childConns, child:GetPropertyChangedSignal("Visible"):Connect(scheduleCanvasSync))
+			table.insert(
+				childConns,
+				child:GetPropertyChangedSignal("AbsoluteSize"):Connect(scheduleCanvasSync)
+			)
+			table.insert(
+				childConns,
+				child:GetPropertyChangedSignal("Visible"):Connect(scheduleCanvasSync)
+			)
 		end
 		local function rebindChildren()
 			for _, conn in childConns do
@@ -736,7 +762,7 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 				pressed:set(0)
 			end,
 			[Children] = {
-				scope:Hydrate(Icon(scope, {
+				scope:Apply(Icon(scope, {
 					Theme = theme,
 					Name = iconName,
 					IconSize = 14,
@@ -744,7 +770,11 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 						return Interaction.lerpColor(
 							theme.Colors.OnSurfaceVariant,
 							activeColor,
-							math.clamp((use(pressedS) :: number) + (use(hoveringBarS) :: number) * 0.5, 0, 1)
+							math.clamp(
+								(use(pressedS) :: number) + (use(hoveringBarS) :: number) * 0.5,
+								0,
+								1
+							)
 						)
 					end),
 				}))({
@@ -848,7 +878,7 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 					Size = UDim2.fromOffset(18, 18),
 					LayoutOrder = 1,
 					[Children] = {
-						scope:Hydrate(Icon(scope, {
+						scope:Apply(Icon(scope, {
 							Theme = theme,
 							Name = "arrow-down",
 							IconSize = 18,
@@ -858,7 +888,7 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 								return not use(pullArmed)
 							end),
 						}),
-						scope:Hydrate(Icon(scope, {
+						scope:Apply(Icon(scope, {
 							Theme = theme,
 							Name = "arrow-up",
 							IconSize = 18,
@@ -873,7 +903,9 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 					FontFace = theme.Typography.Label.Font,
 					TextSize = theme.Typography.Label.Size,
 					TextColor3 = scope:Computed(function(use)
-						return if use(pullArmed) then theme.Colors.Primary else theme.Colors.OnSurfaceVariant
+						return if use(pullArmed)
+							then theme.Colors.Primary
+							else theme.Colors.OnSurfaceVariant
 					end),
 					Text = scope:Computed(function(use)
 						return if use(pullArmed) then releaseHint else pullHint
@@ -1000,31 +1032,28 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 				local lastPos = if horizontal then input.Position.X else input.Position.Y
 				local lastT = os.clock()
 				local pointerType = input.UserInputType
-				local stopCapture = ScrollInput.capture(
-					root,
-					function(changed)
-						return changed.UserInputType == pointerType
-							or (pointerType == Enum.UserInputType.MouseButton1 and changed.UserInputType == Enum.UserInputType.MouseMovement)
-							or (pointerType == Enum.UserInputType.Touch and changed.UserInputType == Enum.UserInputType.Touch)
-					end,
-					function(endedInput)
-						return endedInput.UserInputType == pointerType
-					end,
-					function(pos)
-						local now = os.clock()
-						local dt = math.max(now - lastT, 1 / 240)
-						local cur = if horizontal then pos.X else pos.Y
-						local d = cur - lastPos
-						lastPos = cur
-						lastT = now
-						scrollBy(-d, true)
-						velocity:set(-d / dt)
-					end,
-					function()
-						contentDragging:set(false)
-						settleIfNeeded()
-					end
-				)
+				local stopCapture = ScrollInput.capture(root, function(changed)
+					return changed.UserInputType == pointerType
+						or (pointerType == Enum.UserInputType.MouseButton1 and changed.UserInputType == Enum.UserInputType.MouseMovement)
+						or (
+							pointerType == Enum.UserInputType.Touch
+							and changed.UserInputType == Enum.UserInputType.Touch
+						)
+				end, function(endedInput)
+					return endedInput.UserInputType == pointerType
+				end, function(pos)
+					local now = os.clock()
+					local dt = math.max(now - lastT, 1 / 240)
+					local cur = if horizontal then pos.X else pos.Y
+					local d = cur - lastPos
+					lastPos = cur
+					lastT = now
+					scrollBy(-d, true)
+					velocity:set(-d / dt)
+				end, function()
+					contentDragging:set(false)
+					settleIfNeeded()
+				end)
 				table.insert(scope, stopCapture)
 			end)
 		)
@@ -1080,36 +1109,30 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 				local lastT = os.clock()
 				local travel = math.max(trackLen - thumbPx, 1)
 
-				local stopCapture = ScrollInput.capture(
-					root,
-					function(changed)
-						return changed.UserInputType == Enum.UserInputType.MouseMovement
-							or changed.UserInputType == Enum.UserInputType.Touch
-					end,
-					function(endedInput)
-						return endedInput.UserInputType == Enum.UserInputType.MouseButton1
-							or endedInput.UserInputType == Enum.UserInputType.Touch
-					end,
-					function(pos)
-						local now = os.clock()
-						local dt = math.max(now - lastT, 1 / 240)
-						local cur = if horizontal then pos.X else pos.Y
-						local vel = (cur - lastAxis) / dt
-						lastAxis = cur
-						lastT = now
-						stretch:set(math.clamp(vel * 0.055, -36, 36))
+				local stopCapture = ScrollInput.capture(root, function(changed)
+					return changed.UserInputType == Enum.UserInputType.MouseMovement
+						or changed.UserInputType == Enum.UserInputType.Touch
+				end, function(endedInput)
+					return endedInput.UserInputType == Enum.UserInputType.MouseButton1
+						or endedInput.UserInputType == Enum.UserInputType.Touch
+				end, function(pos)
+					local now = os.clock()
+					local dt = math.max(now - lastT, 1 / 240)
+					local cur = if horizontal then pos.X else pos.Y
+					local vel = (cur - lastAxis) / dt
+					lastAxis = cur
+					lastT = now
+					stretch:set(math.clamp(vel * 0.055, -36, 36))
 
-						local p = cur
-							- (if horizontal then track.AbsolutePosition.X else track.AbsolutePosition.Y)
-							- grabOffset
-						local t = math.clamp(p / travel, 0, 1)
-						scrollTo(t * max)
-					end,
-					function()
-						draggingBar:set(0)
-						stretch:set(0)
-					end
-				)
+					local p = cur
+						- (if horizontal then track.AbsolutePosition.X else track.AbsolutePosition.Y)
+						- grabOffset
+					local t = math.clamp(p / travel, 0, 1)
+					scrollTo(t * max)
+				end, function()
+					draggingBar:set(0)
+					stretch:set(0)
+				end)
 				table.insert(scope, stopCapture)
 			elseif railClick then
 				railPressed:set(1)

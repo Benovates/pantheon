@@ -6,11 +6,11 @@ local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolve
 local CanvasFade = require(script.Parent.Parent.Internal.CanvasFade)
 local Interaction = require(script.Parent.Parent.Internal.Interaction)
 local Layer = require(script.Parent.Parent.Internal.Layer)
+local whileActive = require(script.Parent.Parent.Internal.Follow)
 
 local Children = Fusion.Children
 local OnEvent = Fusion.OnEvent
 local peek = Fusion.peek
-local RunService = game:GetService("RunService")
 
 return function(scope: Types.Scope, props: Types.SelectProps): Instance
 	local theme = resolveTheme(props)
@@ -51,9 +51,13 @@ return function(scope: Types.Scope, props: Types.SelectProps): Instance
 				local isSelected = tostring(use(selected)) == optValue
 				local hover = scope:Value(0)
 				local press = scope:Value(0)
-				local hoverS = scope:Spring(hover, theme.Motion.SpringSpeed, theme.Motion.SpringDamping)
-				local pressS = scope:Spring(press, theme.Motion.SpringSpeed, theme.Motion.SpringDamping)
-				local base = if isSelected then theme.Colors.PrimaryContainer else theme.Colors.Surface
+				local hoverS =
+					scope:Spring(hover, theme.Motion.SpringSpeed, theme.Motion.SpringDamping)
+				local pressS =
+					scope:Spring(press, theme.Motion.SpringSpeed, theme.Motion.SpringDamping)
+				local base = if isSelected
+					then theme.Colors.PrimaryContainer
+					else theme.Colors.Surface
 				local item = scope:TextButton({
 					Text = opt.Label,
 					FontFace = theme.Typography.Body.Font,
@@ -61,7 +65,11 @@ return function(scope: Types.Scope, props: Types.SelectProps): Instance
 					TextColor3 = theme.Colors.OnSurface,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					BackgroundColor3 = scope:Computed(function(u)
-						local alpha = math.clamp((u(hoverS) :: number) * 0.08 + (u(pressS) :: number) * 0.12, 0, 0.2)
+						local alpha = math.clamp(
+							(u(hoverS) :: number) * 0.08 + (u(pressS) :: number) * 0.12,
+							0,
+							0.2
+						)
 						return Interaction.lerpColor(base, theme.Colors.OnSurface, alpha)
 					end),
 					Size = UDim2.new(1, 0, 0, 40),
@@ -105,16 +113,19 @@ return function(scope: Types.Scope, props: Types.SelectProps): Instance
 
 	local fieldKids: { any } = {}
 	if hasLabel then
-		table.insert(fieldKids, scope:TextLabel({
-			BackgroundTransparency = 1,
-			FontFace = theme.Typography.Label.Font,
-			TextSize = theme.Typography.Label.Size,
-			TextColor3 = theme.Colors.OnSurfaceVariant,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			Text = props.Label,
-			Size = UDim2.new(1, 0, 0, 16),
-			LayoutOrder = 1,
-		}))
+		table.insert(
+			fieldKids,
+			scope:TextLabel({
+				BackgroundTransparency = 1,
+				FontFace = theme.Typography.Label.Font,
+				TextSize = theme.Typography.Label.Size,
+				TextColor3 = theme.Colors.OnSurfaceVariant,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				Text = props.Label,
+				Size = UDim2.new(1, 0, 0, 16),
+				LayoutOrder = 1,
+			})
+		)
 	end
 
 	local trigger = scope:TextButton({
@@ -222,23 +233,19 @@ return function(scope: Types.Scope, props: Types.SelectProps): Instance
 		chrome.AutomaticSize = Enum.AutomaticSize.Y
 		chrome.Position = UDim2.fromOffset(0, closedHeight + 4)
 	else
-		table.insert(
-			scope,
-			RunService.RenderStepped:Connect(function()
-				if not peek(open) then
-					return
-				end
-				local layer = Layer.resolve(props)
-				if layer == nil then
-					return
-				end
-				local tp = trigger.AbsolutePosition
-				local ts = trigger.AbsoluteSize
-				local lp = layer.AbsolutePosition
-				chrome.Position = UDim2.fromOffset(tp.X - lp.X, tp.Y - lp.Y + ts.Y + 4)
-				chrome.Size = UDim2.fromOffset(math.max(ts.X, 160), 0)
-			end)
-		)
+		whileActive(scope, open, function(isOpen)
+			return isOpen == true
+		end, function()
+			local layer = Layer.resolve(props)
+			if layer == nil then
+				return
+			end
+			local tp = trigger.AbsolutePosition
+			local ts = trigger.AbsoluteSize
+			local lp = layer.AbsolutePosition
+			chrome.Position = UDim2.fromOffset(tp.X - lp.X, tp.Y - lp.Y + ts.Y + 4)
+			chrome.Size = UDim2.fromOffset(math.max(ts.X, 160), 0)
+		end)
 	end
 
 	return field

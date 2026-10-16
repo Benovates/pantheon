@@ -3,6 +3,7 @@ return {
 	resolveTheme = require(script.resolveTheme).resolveTheme,
 	Interaction = require(script.Interaction),
 	Layer = require(script.Layer),
+	Follow = require(script.Follow),
 	Apply = require(script.Apply),
 	props = require(script.props),
 	Accessibility = require(script.Accessibility),
