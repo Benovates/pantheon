@@ -198,7 +198,7 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Instanc
 		if item.Icon then
 			table.insert(
 				kids,
-				scope:Hydrate(Icon(scope, {
+				scope:Apply(Icon(scope, {
 					Theme = theme,
 					Name = item.Icon,
 					IconSize = 16,

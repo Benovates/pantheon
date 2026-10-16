@@ -74,7 +74,7 @@ return function(scope: Types.Scope, props: Types.VirtualListProps): Instance
 	local rows = scope:ForPairs(visibleMap, function(_use, rowScope, index: number, _value: number)
 		local row = props.RenderItem(rowScope, index)
 		return index,
-			rowScope:Hydrate(row)({
+			rowScope:Apply(row)({
 				Name = "VirtualRow_" .. tostring(index),
 				Position = UDim2.fromOffset(0, (index - 1) * stride),
 				Size = UDim2.new(1, 0, 0, itemHeight),

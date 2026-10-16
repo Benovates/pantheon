@@ -232,7 +232,7 @@ return function(scope: Types.Scope, props: Types.DialogProps): Instance
 		ZIndex = baseZ,
 		LayoutOrder = props.LayoutOrder or 0,
 		[Children] = {
-			scope:Hydrate(Overlay(scope, {
+			scope:Apply(Overlay(scope, {
 				Theme = theme,
 				OnClick = props.OnClose,
 				ZIndex = baseZ,

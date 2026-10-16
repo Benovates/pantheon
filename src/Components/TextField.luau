@@ -114,7 +114,7 @@ return function(scope: Types.Scope, props: Types.TextFieldProps): Instance
 	if props.LeadingIcon then
 		table.insert(
 			adornments,
-			scope:Hydrate(Icon(scope, {
+			scope:Apply(Icon(scope, {
 				Theme = theme,
 				Name = props.LeadingIcon,
 				IconSize = 18,
@@ -129,7 +129,7 @@ return function(scope: Types.Scope, props: Types.TextFieldProps): Instance
 	if props.TrailingIcon then
 		table.insert(
 			adornments,
-			scope:Hydrate(Icon(scope, {
+			scope:Apply(Icon(scope, {
 				Theme = theme,
 				Name = props.TrailingIcon,
 				IconSize = 18,

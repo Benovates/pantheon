@@ -78,7 +78,7 @@ return function(scope: Types.Scope, props: Types.NavigationDrawerProps): Instanc
 		ZIndex = 61,
 	})
 
-	scope:Hydrate(menu)({
+	scope:Apply(menu)({
 		Name = "DrawerPanel",
 		Position = scope:Computed(function(use)
 			local t = use(openS) :: number
@@ -98,7 +98,7 @@ return function(scope: Types.Scope, props: Types.NavigationDrawerProps): Instanc
 		end),
 		ZIndex = props.ZIndex or 60,
 		[Children] = {
-			scope:Hydrate(Overlay(scope, {
+			scope:Apply(Overlay(scope, {
 				Theme = theme,
 				OnClick = props.OnClose,
 				CornerRadius = cornerRadius + inset,

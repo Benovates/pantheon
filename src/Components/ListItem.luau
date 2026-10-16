@@ -45,7 +45,7 @@ return function(scope: Types.Scope, props: Types.ListItemProps): Instance
 
 	local kids: { any } = {}
 	if props.Leading then
-		table.insert(kids, scope:Hydrate(props.Leading)({ LayoutOrder = 1 }))
+		table.insert(kids, scope:Apply(props.Leading)({ LayoutOrder = 1 }))
 	end
 	table.insert(
 		kids,
@@ -63,7 +63,7 @@ return function(scope: Types.Scope, props: Types.ListItemProps): Instance
 		})
 	)
 	if props.Trailing then
-		table.insert(kids, scope:Hydrate(props.Trailing)({ LayoutOrder = 3 }))
+		table.insert(kids, scope:Apply(props.Trailing)({ LayoutOrder = 3 }))
 	end
 
 	-- Flex the middle text column

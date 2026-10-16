@@ -68,7 +68,7 @@ return function(scope: Types.Scope, props: Types.CollapsibleProps): Instance
 							return (use(openS) :: number) * 90
 						end),
 						[Children] = {
-							scope:Hydrate(Icon(scope, {
+							scope:Apply(Icon(scope, {
 								Theme = theme,
 								Name = "chevron-right",
 								IconSize = 18,

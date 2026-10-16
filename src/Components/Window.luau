@@ -52,7 +52,7 @@ return function(scope: Types.Scope, props: Types.WindowProps): Instance
 	}) :: Frame
 
 	if props.AppBar then
-		scope:Hydrate(props.AppBar)({
+		scope:Apply(props.AppBar)({
 			Position = UDim2.fromOffset(0, 0),
 			Size = UDim2.new(1, 0, 0, appBarHeight),
 			ZIndex = 10,
@@ -60,7 +60,7 @@ return function(scope: Types.Scope, props: Types.WindowProps): Instance
 	end
 
 	if props.NavigationRail then
-		scope:Hydrate(props.NavigationRail)({
+		scope:Apply(props.NavigationRail)({
 			Position = if verticalRail
 				then UDim2.fromOffset(0, appBarHeight)
 				else UDim2.new(0, 0, 1, -railBottom),

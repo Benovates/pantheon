@@ -55,7 +55,7 @@ return function(scope: Types.Scope, props: Types.StarRatingProps): Instance
 					end
 				end,
 			[Children] = {
-				scope:Hydrate(starIcon)({
+				scope:Apply(starIcon)({
 					AnchorPoint = Vector2.new(0.5, 0.5),
 					Position = UDim2.fromScale(0.5, 0.5),
 				}),

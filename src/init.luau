@@ -41,8 +41,19 @@ local EstuaryUI = {
 	Version = { major = 0, minor = 3, isRelease = false },
 }
 
+-- Fusion's Hydrate is slated for deprecation. Estuary scopes expose its own
+-- `Apply` (and keep `Hydrate` as an alias so Iona / older code keeps working)
+-- without touching Fusion's implementation.
+local Apply = require(script.Internal.Apply)
+local FusionMethods = table.clone(Fusion :: any)
+FusionMethods.Hydrate = Apply
+FusionMethods.Apply = Apply
+table.freeze(FusionMethods)
+
+EstuaryUI.Apply = Apply
+
 function EstuaryUI.scoped(): Types.Scope
-	return Fusion.scoped(Fusion, Iona) :: any
+	return Fusion.scoped(FusionMethods, Iona) :: any
 end
 
 return EstuaryUI

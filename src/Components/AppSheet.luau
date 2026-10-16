@@ -43,7 +43,7 @@ return function(scope: Types.Scope, props: Types.AppSheetProps): Instance
 			Size = UDim2.new(1, 0, 1, 0),
 			LayoutOrder = 1,
 		}),
-		scope:Hydrate(IconButton(scope, {
+		scope:Apply(IconButton(scope, {
 			Theme = theme,
 			Name = "x",
 			OnClick = props.OnClose,
@@ -135,7 +135,7 @@ return function(scope: Types.Scope, props: Types.AppSheetProps): Instance
 	})
 
 	local host = CanvasFade.host(scope, panel, openS, { Theme = theme })
-	scope:Hydrate(host)({
+	scope:Apply(host)({
 		Size = UDim2.new(1, 0, detent, 0),
 		AnchorPoint = Vector2.new(0, 1),
 		Position = scope:Computed(function(use)
@@ -155,7 +155,7 @@ return function(scope: Types.Scope, props: Types.AppSheetProps): Instance
 		ZIndex = props.ZIndex or 110,
 		LayoutOrder = props.LayoutOrder or 0,
 		[Children] = {
-			scope:Hydrate(Overlay(scope, {
+			scope:Apply(Overlay(scope, {
 				Theme = theme,
 				OnClick = props.OnClose,
 				ZIndex = 110,

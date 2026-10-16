@@ -19,7 +19,7 @@ return function(scope: Types.Scope, props: Types.AppBarProps): Instance
 		Outline = { Color = theme.Colors.OutlineVariant, Thickness = 1 },
 		[Children] = {
 			if props.Leading
-				then scope:Hydrate(props.Leading)({
+				then scope:Apply(props.Leading)({
 					AnchorPoint = Vector2.new(0, 0.5),
 					Position = UDim2.new(0, 8, 0.5, 0),
 					Size = UDim2.fromOffset(40, 40),

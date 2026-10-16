@@ -73,7 +73,7 @@ return function(scope: Types.Scope, props: Types.TreeViewProps): Instance
 							return (use(expandS) :: number) * 90
 						end),
 						[Children] = {
-							scope:Hydrate(Icon(scope, {
+							scope:Apply(Icon(scope, {
 								Theme = theme,
 								Name = "chevron-right",
 								IconSize = 16,
@@ -135,7 +135,7 @@ return function(scope: Types.Scope, props: Types.TreeViewProps): Instance
 					LayoutOrder = 0,
 				}),
 				chevron,
-				scope:Hydrate(Icon(scope, {
+				scope:Apply(Icon(scope, {
 					Theme = theme,
 					Name = iconName,
 					IconSize = 16,

@@ -314,7 +314,7 @@ return function(scope: Types.Scope, props: Types.MenuProps): Instance
 					},
 					Padding = { 0, 0, theme.Metrics.Space2xs, 0 },
 					[Children] = {
-						scope:Hydrate(Button(scope, {
+						scope:Apply(Button(scope, {
 							Theme = theme,
 							Variant = "Text" :: "Text",
 							Text = titleAttr :: string,
@@ -336,7 +336,7 @@ return function(scope: Types.Scope, props: Types.MenuProps): Instance
 							LayoutOrder = 2,
 							ClipsDescendants = false,
 							[Children] = {
-								scope:Hydrate(Divider(scope, {
+								scope:Apply(Divider(scope, {
 									Theme = theme,
 								}))({
 									Size = UDim2.new(1, pad * 2, 0, 1),

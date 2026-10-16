@@ -214,7 +214,7 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 			CornerRadius = theme.Metrics.RadiusPill,
 			[OnEvent("Activated")] = onClick,
 			[Children] = {
-				scope:Hydrate(Icon(scope, {
+				scope:Apply(Icon(scope, {
 					Theme = theme,
 					Name = iconName,
 					IconSize = 18,

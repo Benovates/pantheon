@@ -70,7 +70,7 @@ return function(scope: Types.Scope, props: Types.MenuSectionProps): Instance
 		if props.Icon ~= nil and props.Icon ~= "" then
 			table.insert(
 				titleKids,
-				scope:Hydrate(Icon(scope, {
+				scope:Apply(Icon(scope, {
 					Theme = theme,
 					Name = props.Icon,
 					IconSize = categoryIconSize,
@@ -126,7 +126,7 @@ return function(scope: Types.Scope, props: Types.MenuSectionProps): Instance
 									return (use(expandedS) :: number) * 90
 								end),
 								[Children] = {
-									scope:Hydrate(Icon(scope, {
+									scope:Apply(Icon(scope, {
 										Theme = theme,
 										Name = "chevron-right",
 										IconSize = 16,

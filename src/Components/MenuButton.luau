@@ -111,9 +111,9 @@ return function(scope: Types.Scope, props: Types.MenuButtonProps): Instance
 				},
 				[Children] = {
 					if leadingInst
-						then scope:Hydrate(leadingInst)({ LayoutOrder = 1 })
+						then scope:Apply(leadingInst)({ LayoutOrder = 1 })
 						elseif leadingName
-						then scope:Hydrate(Icon(scope, {
+						then scope:Apply(Icon(scope, {
 							Theme = theme,
 							Name = leadingName,
 							IconSize = iconSize,
@@ -154,7 +154,7 @@ return function(scope: Types.Scope, props: Types.MenuButtonProps): Instance
 				},
 				[Children] = {
 					if trailingName
-						then scope:Hydrate(Icon(scope, {
+						then scope:Apply(Icon(scope, {
 							Theme = theme,
 							Name = trailingName,
 							IconSize = iconSize,
@@ -165,7 +165,7 @@ return function(scope: Types.Scope, props: Types.MenuButtonProps): Instance
 						})
 						else nil,
 					if trailingInst
-						then scope:Hydrate(trailingInst)({ LayoutOrder = 2 })
+						then scope:Apply(trailingInst)({ LayoutOrder = 2 })
 						else nil,
 				},
 			}),

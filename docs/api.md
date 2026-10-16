@@ -57,3 +57,18 @@ rojo serve demo.project.json
 ```
 
 Storyboard: light/dark toggle, sectioned gallery for shipped components.
+
+## `scope:Apply` (Hydrate replacement)
+
+Fusion's `Hydrate` is slated for deprecation. Estuary scopes (`EstuaryUI.scoped()`) provide their own `Apply`, built only on Fusion's public API (`Observer`, `peek`, SpecialKeys):
+
+```luau
+scope:Apply(existingInstance)({
+	LayoutOrder = 1,
+	Visible = someState,
+	[OnEvent("Activated")] = onClick,
+	[Children] = { ... },
+})
+```
+
+`scope:Hydrate` remains as an alias to the same implementation, so Iona and older code keep working. `EstuaryUI.Apply(scope, instance)(props)` is also available standalone.

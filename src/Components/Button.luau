@@ -72,7 +72,7 @@ return function(scope: Types.Scope, props: Types.ButtonProps): Instance
 	if leading then
 		table.insert(
 			kids,
-			scope:Hydrate(Icon(scope, {
+			scope:Apply(Icon(scope, {
 				Theme = theme,
 				Name = leading,
 				IconSize = 18,
@@ -100,7 +100,7 @@ return function(scope: Types.Scope, props: Types.ButtonProps): Instance
 	if trailing then
 		table.insert(
 			kids,
-			scope:Hydrate(Icon(scope, {
+			scope:Apply(Icon(scope, {
 				Theme = theme,
 				Name = trailing,
 				IconSize = 18,

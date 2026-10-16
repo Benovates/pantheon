@@ -210,7 +210,7 @@ return function(scope: Types.Scope, props: Types.DataTableProps): Instance
 				Size = UDim2.new(1, 0, 0, 1),
 				Position = UDim2.fromOffset(0, 44),
 			}),
-			scope:Hydrate(body)({
+			scope:Apply(body)({
 				Position = UDim2.fromOffset(0, 45),
 				Size = UDim2.new(1, 0, 1, -45),
 			}),

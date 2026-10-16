@@ -88,7 +88,7 @@ return function(scope: Types.Scope, props: Types.NavigationRailProps): Instance
 			StateColor = theme.Colors.OnSurface,
 		})
 
-		local icon = scope:Hydrate(Icon(scope, {
+		local icon = scope:Apply(Icon(scope, {
 			Theme = theme,
 			Name = item.Icon or "circle",
 			IconSize = if horizontal then 22 else 24,

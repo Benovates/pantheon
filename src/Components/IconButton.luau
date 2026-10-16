@@ -84,7 +84,7 @@ return function(scope: Types.Scope, props: Types.IconButtonProps): Instance
 		CornerRadius = theme.Metrics.RadiusPill,
 		[OnEvent("Activated")] = if disabled then nil else props.OnClick,
 		[Children] = {
-			scope:Hydrate(Icon(scope, {
+			scope:Apply(Icon(scope, {
 				Theme = theme,
 				Name = props.Name,
 				Image = props.Image,

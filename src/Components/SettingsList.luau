@@ -37,7 +37,7 @@ return function(scope: Types.Scope, props: Types.SettingsListProps): Instance
 					LayoutOrder = 1,
 					CornerRadius = theme.Metrics.RadiusPill,
 					[Children] = {
-						scope:Hydrate(Icon(scope, {
+						scope:Apply(Icon(scope, {
 							Theme = theme,
 							Name = item.Icon,
 							IconSize = 20,
@@ -94,11 +94,11 @@ return function(scope: Types.Scope, props: Types.SettingsListProps): Instance
 		)
 
 		if item.Trailing then
-			table.insert(kids, scope:Hydrate(item.Trailing)({ LayoutOrder = 3 }))
+			table.insert(kids, scope:Apply(item.Trailing)({ LayoutOrder = 3 }))
 		elseif item.ShowChevron ~= false and item.OnClick then
 			table.insert(
 				kids,
-				scope:Hydrate(Icon(scope, {
+				scope:Apply(Icon(scope, {
 					Theme = theme,
 					Name = "chevron-right",
 					IconSize = 18,
@@ -156,7 +156,7 @@ return function(scope: Types.Scope, props: Types.SettingsListProps): Instance
 		}))
 	end
 	for i, row in rows do
-		table.insert(kids, scope:Hydrate(row)({ LayoutOrder = i }))
+		table.insert(kids, scope:Apply(row)({ LayoutOrder = i }))
 	end
 	if props.Children then
 		table.insert(kids, props.Children)
