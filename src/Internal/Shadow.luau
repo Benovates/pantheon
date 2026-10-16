@@ -12,7 +12,6 @@ local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.resolveTheme).resolveTheme
 
 local Children = Fusion.Children
-local peek = Fusion.peek
 
 export type ShadowLevel = number
 
@@ -138,84 +137,74 @@ function Shadow.create(scope: Types.Scope, props: ShadowProps?): Frame
 	local p: ShadowProps = props or {}
 	local theme = resolveTheme(p)
 
-	local elevation = scope:Computed(function(use)
-		return resolveElevation(readUsed(use, p.Elevation, 2))
+	local isDynamic = typeof(p.Elevation) == "table"
+
+	-- Single spring over the elevation *index*; each layer lerps between adjacent
+	-- specs. Was 12 springs + 12 computeds per shadow.
+	local function indexOf(level: number): number
+		return table.find(ELEVATION_KEYS, level) or 1
+	end
+
+	local targetIndex: any = scope:Computed(function(use)
+		return indexOf(resolveElevation(readUsed(use, p.Elevation, 2)))
 	end)
+	local index: any = targetIndex
+	if isDynamic then
+		-- ~0.1s settle (matches roact-material TweenInfo)
+		index = scope:Spring(targetIndex, theme.Motion.SpringSpeed * 2.4, 1)
+	end
 
 	local color = scope:Computed(function(use)
 		return readUsed(use, p.Color, Color3.new(0, 0, 0))
 	end)
 
-	-- ~0.1s settle (matches roact-material TweenInfo)
-	local speed = theme.Motion.SpringSpeed * 2.4
-	local damp = 1
-
-	local function layerSpring(pick: (ElevationSpec) -> (number, number, UDim2))
-		local transparency = scope:Spring(
-			scope:Computed(function(use)
-				local t = pick(SHADOW_SETTINGS[use(elevation)])
-				return t
-			end),
-			speed,
-			damp
-		)
-		local blur = scope:Spring(
-			scope:Computed(function(use)
-				local _, b = pick(SHADOW_SETTINGS[use(elevation)])
-				return b
-			end),
-			speed,
-			damp
-		)
-		local offsetX = scope:Spring(
-			scope:Computed(function(use)
-				local _, _, off = pick(SHADOW_SETTINGS[use(elevation)])
-				return off.X.Offset
-			end),
-			speed,
-			damp
-		)
-		local offsetY = scope:Spring(
-			scope:Computed(function(use)
-				local _, _, off = pick(SHADOW_SETTINGS[use(elevation)])
-				return off.Y.Offset
-			end),
-			speed,
-			damp
-		)
-		return transparency, blur, offsetX, offsetY
+	local function sample(i: number, pick: (ElevationSpec) -> LayerSpec): (number, number, UDim2)
+		local lo = math.clamp(math.floor(i), 1, #ELEVATION_KEYS)
+		local hi = math.clamp(lo + 1, 1, #ELEVATION_KEYS)
+		local t = math.clamp(i - lo, 0, 1)
+		local a = pick(SHADOW_SETTINGS[ELEVATION_KEYS[lo]])
+		local b = pick(SHADOW_SETTINGS[ELEVATION_KEYS[hi]])
+		local ao, bo = a.Offset or ZERO, b.Offset or ZERO
+		return a.Transparency + (b.Transparency - a.Transparency) * t,
+			a.Blur + (b.Blur - a.Blur) * t,
+			UDim2.fromOffset(
+				ao.X.Offset + (bo.X.Offset - ao.X.Offset) * t,
+				ao.Y.Offset + (bo.Y.Offset - ao.Y.Offset) * t
+			)
 	end
 
-	local umbraT, umbraBlur, umbraOX, umbraOY = layerSpring(function(spec)
-		return spec.Umbra.Transparency, spec.Umbra.Blur, spec.Umbra.Offset or ZERO
+	local function layerState(pick: (ElevationSpec) -> LayerSpec)
+		return scope:Computed(function(use)
+			local tr, blur, off = sample(use(index), pick)
+			return { Transparency = tr, Blur = blur, Offset = off }
+		end)
+	end
+
+	local umbra = layerState(function(spec)
+		return spec.Umbra
 	end)
-	local penumbraT, penumbraBlur, penumbraOX, penumbraOY = layerSpring(function(spec)
-		return spec.Penumbra.Transparency, spec.Penumbra.Blur, spec.Penumbra.Offset or ZERO
+	local penumbra = layerState(function(spec)
+		return spec.Penumbra
 	end)
-	local ambientT, ambientBlur, ambientOX, ambientOY = layerSpring(function(spec)
-		return spec.Ambient.Transparency, spec.Ambient.Blur, spec.Ambient.Offset or ZERO
+	local ambient = layerState(function(spec)
+		return spec.Ambient
 	end)
 
-	local function makeLayer(
-		name: string,
-		transparency: any,
-		blur: any,
-		offsetX: any,
-		offsetY: any,
-		z: number
-	): ImageLabel
+	local function makeLayer(name: string, layer: any, z: number): ImageLabel
 		return scope:ImageLabel({
 			Name = name,
 			BackgroundTransparency = 1,
 			Image = SHADOW_IMAGE,
 			ImageColor3 = color,
-			ImageTransparency = transparency,
+			ImageTransparency = scope:Computed(function(use)
+				return use(layer).Transparency
+			end),
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = scope:Computed(function(use)
-				return CENTER + UDim2.fromOffset(use(offsetX), use(offsetY))
+				return CENTER + use(layer).Offset
 			end),
 			Size = scope:Computed(function(use)
-				local b = use(blur) :: number
+				local b = use(layer).Blur
 				return UDim2.new(1, b, 1, b)
 			end),
 			ScaleType = Enum.ScaleType.Slice,
@@ -236,9 +225,9 @@ function Shadow.create(scope: Types.Scope, props: ShadowProps?): Frame
 		LayoutOrder = p.LayoutOrder,
 		Active = false,
 		[Children] = {
-			makeLayer("Umbra", umbraT, umbraBlur, umbraOX, umbraOY, 1),
-			makeLayer("Penumbra", penumbraT, penumbraBlur, penumbraOX, penumbraOY, 2),
-			makeLayer("Ambient", ambientT, ambientBlur, ambientOX, ambientOY, 3),
+			makeLayer("Umbra", umbra, 1),
+			makeLayer("Penumbra", penumbra, 2),
+			makeLayer("Ambient", ambient, 3),
 		},
 	}) :: Frame
 end
@@ -246,7 +235,11 @@ end
 --- Parent a shadow under `parent` (replaces any previous Estuary shadow roots).
 function Shadow.apply(scope: Types.Scope, parent: GuiObject, level: number?, color: Color3?): Frame
 	for _, child in parent:GetChildren() do
-		if child.Name == "Shadow" or child.Name == "EstuaryShadow" or child.Name == "ShadowRoot" then
+		if
+			child.Name == "Shadow"
+			or child.Name == "EstuaryShadow"
+			or child.Name == "ShadowRoot"
+		then
 			-- Only remove our elevation roots, not unrelated UI named Shadow.
 			if child:IsA("Frame") and child:FindFirstChild("Umbra") then
 				child:Destroy()
