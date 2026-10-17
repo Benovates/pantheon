@@ -6,7 +6,7 @@ tags:
 
 # DatePicker
 
-DatePicker is a calendar for choosing a day. The header opens a month picker and a year picker, and the grid of days animates when the month changes.
+DatePicker is a calendar for choosing a day. The header opens a month picker and a year picker, and the grid of days animates when the month changes. A pill slides to the day you pick, today has a ring, and days shrink a little while pressed.
 
 ## Usage
 

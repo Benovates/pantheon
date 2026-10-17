@@ -1,6 +1,6 @@
 --!strict
 --[[
-	Date picker — `<  Aug 2026 >` header; Aug / year are separate hit targets.
+	Date picker: `<  Aug 2026 >` header; Aug / year are separate hit targets.
 	Month & year pickers; day grid animates diagonally on period change.
 ]]
 local Packages = script.Parent.Parent.Parent
@@ -24,6 +24,8 @@ local COLS = 7
 local ROWS = 6
 local GRID_W = COLS * CELL + (COLS - 1) * GAP
 local BODY_H = ROWS * CELL + (ROWS - 1) * GAP
+local WEEK_H = 24 -- the row of weekday letters above the days
+local WEEKDAYS = { "S", "M", "T", "W", "T", "F", "S" }
 local NAV = 36
 
 type ViewMode = "Days" | "Months" | "Years"
@@ -310,6 +312,45 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 		end
 	)
 
+	-- The pill behind the picked day, sliding to it (and fading with the Days view).
+	local selectorTarget = scope:Computed(function(use)
+		local order = Calendar.weekday(use(year), use(month), 1) + use(day)
+		local col = (order - 1) % COLS
+		local row = math.floor((order - 1) / COLS)
+		return UDim2.fromOffset(col * (CELL + GAP), WEEK_H + row * (CELL + GAP))
+	end)
+	local selector = scope:Frame({
+		Name = "Selection",
+		BackgroundColor3 = theme.Colors.Primary,
+		BackgroundTransparency = scope:Computed(function(use)
+			return 1 - math.clamp(use(daysModeS) :: number, 0, 1)
+		end),
+		Position = scope:Spring(
+			selectorTarget,
+			theme.Motion.SpringSpeed * 1.2,
+			theme.Motion.SpringDamping
+		),
+		Size = UDim2.fromOffset(CELL, CELL),
+		CornerRadius = theme.Metrics.RadiusPill,
+		ZIndex = 1,
+	})
+	local weekdayRow = {}
+	for index, letter in WEEKDAYS do
+		table.insert(
+			weekdayRow,
+			scope:TextLabel({
+				Name = "Weekday",
+				BackgroundTransparency = 1,
+				Position = UDim2.fromOffset((index - 1) * (CELL + GAP), 0),
+				Size = UDim2.fromOffset(CELL, WEEK_H),
+				FontFace = theme.Fonts.Body,
+				TextSize = 12,
+				TextColor3 = theme.Colors.OnSurfaceVariant,
+				Text = letter,
+			})
+		)
+	end
+
 	local dayCells = scope:ForPairs(
 		daySlots,
 		function(_use, innerScope, key: number, info: { day: number, order: number })
@@ -319,17 +360,6 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 			local col = (order - 1) % COLS
 			local row = math.floor((order - 1) / COLS)
 			local delay = (row + col) * 0.018
-
-			-- Radial weight for "explode from center to outer" during Days exit.
-			local centerCol = (COLS - 1) * 0.5
-			local centerRow = (ROWS - 1) * 0.5
-			local dx = col - centerCol
-			local dy = row - centerRow
-			local dist = math.sqrt(dx * dx + dy * dy)
-			local maxDist = math.sqrt(centerCol * centerCol + centerRow * centerRow)
-			local distN = if maxDist > 0 then dist / maxDist else 0
-			-- Larger power => faster fade as daysModeS approaches 0.
-			local fadePower = 0.85 + distN * 0.75
 
 			local alive = true
 			table.insert(cellScope, function()
@@ -354,6 +384,18 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 			local selectedS = cellScope:Computed(function(use)
 				return use(day) == dayNum
 			end)
+			-- The selection pill is a separate frame that slides between days; the cell only
+			-- fades its text to match.
+			local pickedS = cellScope:Spring(
+				cellScope:Computed(function(use)
+					return if use(selectedS) then 1 else 0
+				end),
+				theme.Motion.SpringSpeed * 1.2,
+				theme.Motion.SpringDamping
+			)
+			local isToday = peek(year) == now.year
+				and peek(month) == now.month
+				and dayNum == now.day
 
 			local btn = cellScope:TextButton(P({
 				Name = "Day_" .. dayNum,
@@ -363,18 +405,18 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 				end),
 				TextSize = 13,
 				TextColor3 = cellScope:Computed(function(use)
-					return if use(selectedS)
-						then use(theme.Colors.OnPrimary)
-						else use(theme.Colors.OnSurface)
+					return Interaction.lerpColor(
+						use(theme.Colors.OnSurface),
+						use(theme.Colors.OnPrimary),
+						math.clamp(use(pickedS) :: number, 0, 1),
+						use
+					)
 				end),
 				TextTransparency = cellScope:Computed(function(use)
-					local t = (use(appearS) :: number) * ((use(daysModeS) :: number) ^ fadePower)
+					local t = (use(appearS) :: number) * use(daysModeS) :: number
 					return 1 - t
 				end),
 				BackgroundColor3 = cellScope:Computed(function(use)
-					if use(selectedS) then
-						return use(theme.Colors.Primary)
-					end
 					return Interaction.lerpColor(
 						use(theme.Colors.SurfaceContainer),
 						use(theme.Colors.OnSurface),
@@ -383,12 +425,11 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 					)
 				end),
 				BackgroundTransparency = cellScope:Computed(function(use)
-					local t = (use(appearS) :: number) * ((use(daysModeS) :: number) ^ fadePower)
+					local t = (use(appearS) :: number) * use(daysModeS) :: number
 					local fade = 1 - t
-					if use(selectedS) then
-						return fade * 0.55
-					end
-					return math.clamp(fade * 0.85, 0, 1)
+					-- Picked cells are clear so the sliding pill shows through.
+					local base = math.clamp(fade * 0.85, 0, 1)
+					return base + (1 - base) * math.clamp(use(pickedS) :: number, 0, 1)
 				end),
 				Size = UDim2.fromOffset(CELL, CELL),
 				LayoutOrder = order,
@@ -402,15 +443,27 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 					end
 				end,
 				[Children] = {
+					if isToday
+						then cellScope:New("UIStroke")({
+							Color = theme.Colors.Primary,
+							Thickness = 1.5,
+							ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+							Transparency = cellScope:Computed(function(use)
+								return 1
+									- (1 - math.clamp(use(pickedS) :: number, 0, 1))
+										* (use(appearS) :: number)
+							end),
+						})
+						else nil,
 					cellScope:New("UIScale")({
 						Scale = cellScope:Computed(function(use)
 							local t = use(appearS)
 							local mode = use(daysModeS)
-							local explode = 1 - mode
 							local base = 1.22 - 0.22 * t
-							-- Outer cells scale a bit more as we leave Days mode.
-							local radial = 1 + distN * 0.18 * explode
-							return base * radial
+							-- Shrinks a little as the view leaves, to match the cells arriving small.
+							local radial = 0.92 + 0.08 * mode
+							local pressed = 1 - 0.12 * (use(ix.Press) :: number)
+							return base * radial * pressed
 						end),
 					}),
 				},
@@ -420,9 +473,36 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 		end
 	)
 
+	-- Booleans, so building the cells doesn't depend on every frame of the spring.
+	local monthsShown = scope:Computed(function(use)
+		return use(monthsModeS) > 0.001
+	end)
+	local yearsShown = scope:Computed(function(use)
+		return use(yearsModeS) > 0.001
+	end)
+
+	--- Fade and scale for the cell at `index` of a `columns` wide grid as its view comes in:
+	--- cells arrive in a diagonal wave and settle from slightly small.
+	local function arrival(scopeFor: Types.Scope, modeS: any, index: number, columns: number)
+		local col = (index - 1) % columns
+		local row = math.floor((index - 1) / columns)
+		local lag = (row + col) * 0.07
+		return scopeFor:Computed(function(use)
+			return math.clamp((use(modeS) :: number) * (1 + lag) - lag, 0, 1)
+		end)
+	end
+
+	local function arrivalScale(scopeFor: Types.Scope, progress: any): Instance
+		return scopeFor:New("UIScale")({
+			Scale = scopeFor:Computed(function(use)
+				return 0.86 + 0.14 * (use(progress) :: number)
+			end),
+		})
+	end
+
 	local monthCells = scope:Computed(function(use, innerScope)
 		local cellScope: Types.Scope = innerScope :: any
-		if use(monthsModeS) < 0.001 then
+		if not use(monthsShown) then
 			return {}
 		end
 		local nodes = {}
@@ -434,8 +514,16 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 				HoverOpacity = 0.1,
 				PressOpacity = 0.16,
 			})
+			local progress = arrival(cellScope, monthsModeS, monthNum, 3)
 			local btn = cellScope:TextButton(P({
 				Text = monthLabel(monthNum),
+				TextTransparency = cellScope:Computed(function(useT)
+					return 1 - (useT(progress) :: number)
+				end),
+				BackgroundTransparency = cellScope:Computed(function(useT)
+					return 1 - (useT(progress) :: number)
+				end),
+				[Children] = { arrivalScale(cellScope, progress) },
 				FontFace = if selected then theme.Fonts.Heading else theme.Fonts.Body,
 				TextSize = 13,
 				TextColor3 = if selected
@@ -473,7 +561,7 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 
 	local yearCells = scope:Computed(function(use, innerScope)
 		local cellScope: Types.Scope = innerScope :: any
-		if use(yearsModeS) < 0.001 then
+		if not use(yearsShown) then
 			return {}
 		end
 		local center = use(year) :: number
@@ -487,8 +575,16 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 				HoverOpacity = 0.1,
 				PressOpacity = 0.16,
 			})
+			local progress = arrival(cellScope, yearsModeS, i + 1, 4)
 			local btn = cellScope:TextButton(P({
 				Text = tostring(y),
+				TextTransparency = cellScope:Computed(function(useT)
+					return 1 - (useT(progress) :: number)
+				end),
+				BackgroundTransparency = cellScope:Computed(function(useT)
+					return 1 - (useT(progress) :: number)
+				end),
+				[Children] = { arrivalScale(cellScope, progress) },
 				FontFace = if selected then theme.Fonts.Heading else theme.Fonts.Body,
 				TextSize = 13,
 				TextColor3 = if selected
@@ -560,7 +656,7 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 			scope:Frame({
 				Name = "Body",
 				BackgroundTransparency = 1,
-				Size = UDim2.new(1, 0, 0, BODY_H),
+				Size = UDim2.new(1, 0, 0, BODY_H + WEEK_H),
 				LayoutOrder = 2,
 				ClipsDescendants = false,
 				[Children] = {
@@ -579,17 +675,28 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 						},
 						[Children] = {
 							scope:Frame({
-								Name = "DayGrid",
+								Name = "DayArea",
 								BackgroundTransparency = 1,
-								Size = UDim2.fromOffset(GRID_W, BODY_H),
-								Layout = {
-									Kind = "Grid",
-									CellSize = UDim2.fromOffset(CELL, CELL),
-									CellPadding = UDim2.fromOffset(GAP, GAP),
-									FillDirectionMaxCells = COLS,
-									SortOrder = Enum.SortOrder.LayoutOrder,
+								Size = UDim2.fromOffset(GRID_W, BODY_H + WEEK_H),
+								[Children] = {
+									weekdayRow,
+									selector,
+									scope:Frame({
+										Name = "DayGrid",
+										BackgroundTransparency = 1,
+										Position = UDim2.fromOffset(0, WEEK_H),
+										Size = UDim2.fromOffset(GRID_W, BODY_H),
+										ZIndex = 2,
+										Layout = {
+											Kind = "Grid",
+											CellSize = UDim2.fromOffset(CELL, CELL),
+											CellPadding = UDim2.fromOffset(GAP, GAP),
+											FillDirectionMaxCells = COLS,
+											SortOrder = Enum.SortOrder.LayoutOrder,
+										},
+										[Children] = { blankCells, dayCells },
+									}),
 								},
-								[Children] = { blankCells, dayCells },
 							}),
 						},
 					}),
