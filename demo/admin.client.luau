@@ -1,20 +1,20 @@
+--!strict
 if true then
 	return
 end
 
---!strict
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Packages = ReplicatedStorage:WaitForChild("Packages")
-local EstuaryUI = require(Packages.EstuaryUI)
+local Pantheon = require(Packages.Pantheon)
 local Snapdragon = require(Packages.Snapdragon)
-local Fusion = EstuaryUI.Fusion
+local Fusion = Pantheon.Fusion
 local Children = Fusion.Children
 
 local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
-local rootScope = EstuaryUI.scoped()
-local C = EstuaryUI.Components
+local rootScope = Pantheon.scoped()
+local C = Pantheon.Components
 local peek = Fusion.peek
 
 local mode = rootScope:Value("Light" :: "Light" | "Dark")
@@ -31,9 +31,9 @@ local function rebuild()
 	local navDrawerOpen = scope:Value(false)
 	local pageName = rootScope:Value("Home" :: string)
 	local dragController = nil
-	local theme = peek(EstuaryUI.Theme.createAnimated(scope, mode, { Animate = true })) :: any
+	local theme = peek(Pantheon.Theme.createAnimated(scope, mode, { Animate = true })) :: any
 
-	EstuaryUI.Theme.Provide(theme, function()
+	Pantheon.Theme.Provide(theme, function()
 		local function close()
 			navDrawerOpen:set(false)
 		end
@@ -80,7 +80,7 @@ local function rebuild()
 									Padding = theme.Metrics.SpaceSm,
 									[Children] = {
 										C.Text(scope, {
-											Text = "Estuary",
+											Text = "Pantheon",
 											Variant = "BoldBody",
 											Size = UDim2.fromScale(1, 0),
 											LayoutOrder = 0,
@@ -265,7 +265,7 @@ local function rebuild()
 			DragGui = rootWindow,
 		})
 		scope:New("ScreenGui")({
-			Name = "EstuaryUIStoryboard",
+			Name = "PantheonStoryboard",
 			ResetOnSpawn = false,
 			Parent = playerGui,
 			[Children] = {
