@@ -1,0 +1,196 @@
+site_name: Pantheon
+repo_name: kotdes/pantheon
+repo_url: https://github.com/kotdes/pantheon
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  logo: assets/branding/pantheon-icon.svg
+  favicon: assets/branding/pantheon-icon.svg
+  palette:
+    - scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Dark theme
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Light theme
+  font:
+    text: Figtree
+    code: Overpass Mono
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tabs
+    - navigation.top
+    - navigation.indexes
+    - content.action.edit
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+
+  language: en
+
+plugins:
+  - search
+  - tags:
+      tags_file: Tags.md
+  - glightbox
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+      title: On this page
+  - attr_list
+  - md_in_html
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - tables
+
+nav:
+  - Home: index.md
+  - Tutorials:
+      - Installing Pantheon: Tutorials/InstallingPantheon.md
+      - Using Pantheon: Tutorials/UsingPantheon.md
+  - Guides:
+      - Common properties: Guides/CommonProperties.md
+      - Theming: Guides/Theming.md
+      - Persisting state: Guides/PersistingState.md
+      - Overlay layers: Guides/OverlayLayers.md
+      - Accessibility: Guides/Accessibility.md
+      - Performance: Guides/Performance.md
+      - Customising the HUD: Guides/CustomisingTheHud.md
+      - Philosophy: Guides/Philosophy.md
+  - Components:
+    - Foundations:
+        - Components/Foundations/Avatar.md
+        - Components/Foundations/Badge.md
+        - Components/Foundations/Button.md
+        - Components/Foundations/Card.md
+        - Components/Foundations/Chip.md
+        - Components/Foundations/Container.md
+        - Components/Foundations/Divider.md
+        - Components/Foundations/Icon.md
+        - Components/Foundations/IconButton.md
+        - Components/Foundations/Sheet.md
+        - Components/Foundations/Spacer.md
+        - Components/Foundations/Surface.md
+        - Components/Foundations/Text.md
+    - Forms:
+        - Components/Forms/Checkbox.md
+        - Components/Forms/ChoiceGroup.md
+        - Components/Forms/Combobox.md
+        - Components/Forms/Form.md
+        - Components/Forms/ListItem.md
+        - Components/Forms/MultiSelect.md
+        - Components/Forms/NumberField.md
+        - Components/Forms/NumberSpinner.md
+        - Components/Forms/Radio.md
+        - Components/Forms/RadioGroup.md
+        - Components/Forms/RangeSlider.md
+        - Components/Forms/SegmentedControl.md
+        - Components/Forms/Select.md
+        - Components/Forms/SettingsList.md
+        - Components/Forms/Slider.md
+        - Components/Forms/StarRating.md
+        - Components/Forms/Switch.md
+        - Components/Forms/TextField.md
+    - Feedback:
+        - Components/Feedback/Alert.md
+        - Components/Feedback/EmptyState.md
+        - Components/Feedback/Loader.md
+        - Components/Feedback/LoadingIndicator.md
+        - Components/Feedback/Progress.md
+        - Components/Feedback/Snackbar.md
+        - Components/Feedback/SnackbarHost.md
+        - Components/Feedback/Spinner.md
+    - Navigation:
+        - Components/Navigation/AppBar.md
+        - Components/Navigation/Breadcrumbs.md
+        - Components/Navigation/NavigationDrawer.md
+        - Components/Navigation/NavigationRail.md
+        - Components/Navigation/Pagination.md
+        - Components/Navigation/StatusBar.md
+        - Components/Navigation/Tabs.md
+        - Components/Navigation/Toolbar.md
+        - Components/Navigation/Window.md
+    - Layout:
+        - Components/Layout/Collapsible.md
+        - Components/Layout/DataTable.md
+        - Components/Layout/DockPanel.md
+        - Components/Layout/Explorer.md
+        - Components/Layout/ScrollArea.md
+        - Components/Layout/SplitPane.md
+        - Components/Layout/TreeView.md
+        - Components/Layout/VirtualList.md
+    - Overlays:
+        - Components/Overlays/AppSheet.md
+        - Components/Overlays/AvatarMenu.md
+        - Components/Overlays/Coachmark.md
+        - Components/Overlays/ConfirmDialog.md
+        - Components/Overlays/Dialog.md
+        - Components/Overlays/Menu.md
+        - Components/Overlays/MenuButton.md
+        - Components/Overlays/MenuPage.md
+        - Components/Overlays/MenuSection.md
+        - Components/Overlays/Overlay.md
+        - Components/Overlays/Popover.md
+        - Components/Overlays/Prompt.md
+        - Components/Overlays/RadialMenu.md
+        - Components/Overlays/Tooltip.md
+    - Pickers:
+        - Components/Pickers/ColorPicker.md
+        - Components/Pickers/CurveEditor.md
+        - Components/Pickers/DatePicker.md
+        - Components/Pickers/GradientPicker.md
+        - Components/Pickers/TimePicker.md
+  - Game:
+      - Game/TopBar.md
+      - Game/Hotbar.md
+      - Game/Backpack.md
+      - Game/Leaderboard.md
+  - Modules:
+      - Modules/Bind.md
+      - Modules/DevTools.md
+      - Modules/Pantheon.md
+      - Modules/Features.md
+      - Modules/Flags.md
+      - Modules/Focus.md
+      - Modules/GroupFade.md
+      - Modules/Layer.md
+      - Modules/Persist.md
+      - Modules/Style.md
+      - Modules/Theme.md
+      - Modules/Validators.md
+  - Notes: notes.md
+  - Tags: Tags.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/kotdes/pantheon
+
+copyright: Copyright &copy; 2026 kotdes
+
+extra_css:
+  - stylesheets/theme.css
+
+extra_javascript:
+  - javascripts/preview.js
