@@ -1,6 +1,6 @@
 --!strict
 --[[
-	Public types for estuary-ui (Cadence/Tithe design system).
+	Public types for pantheon (Cadence/Tithe design system).
 ]]
 
 export type Scope = any
@@ -30,6 +30,10 @@ export type ThemeColors = {
 	Warning: Color3,
 	OnWarning: Color3,
 	Scrim: Color3,
+	--- Contrasting surface for toasts / tips: dark in light mode, light in dark mode.
+	InverseSurface: Color3,
+	InverseOnSurface: Color3,
+	InversePrimary: Color3,
 	Info: Color3,
 	OnInfo: Color3,
 }
@@ -67,7 +71,6 @@ export type ThemeMetrics = {
 	ButtonPadX: number,
 	ButtonPadY: number,
 }
-
 
 export type TypeScale = {
 	Font: Font,
@@ -141,18 +144,14 @@ export type Theme = {
 export type ThemeRef = UsedAs<Theme>
 
 --- Style only (Vuetify-like). Legacy names still accepted on Button.
-export type ButtonVariant =
-	"Filled"
-	| "Tonal"
-	| "Outlined"
-	| "Text"
-	| "Primary"
-	| "Destructive"
+export type ButtonVariant = "Filled" | "Tonal" | "Outlined" | "Text" | "Primary" | "Destructive"
 
 export type TextVariant = string
 export type AlertTone = "Info" | "Success" | "Warning" | "Error"
 export type ProgressVariant = "Linear" | "Circular"
 export type ProgressMode = "Determinate" | "Indeterminate" | "Buffering"
+--- Determinate circular look: "Standard" = Material 3 (round caps, track gap); "Classic" = Material 2 (butt caps, full track).
+export type ProgressStyle = "Standard" | "Classic"
 
 -- Shared base
 export type BaseProps = {
@@ -220,6 +219,15 @@ export type TextFieldProps = {
 	Validators: { Validator }?,
 	--- Validate on focus lost (default true when Validators set)
 	ValidateOnBlur: boolean?,
+	--- Small variant for in-widget fields: 28px tall, tighter padding, 13px text.
+	Compact: boolean?,
+	--- Input height in px (default 40, or 28 when `Compact`).
+	Height: number?,
+	--- Static text shown inside the left edge, e.g. "#".
+	Prefix: string?,
+	--- Called when the box loses focus (Enter or click away) with the text and the TextBox,
+	--- so the caller can commit the value or restore the old text.
+	OnSubmit: ((text: string, box: TextBox) -> ())?,
 	[string]: any,
 }
 
@@ -297,7 +305,6 @@ export type DialogProps = {
 	IconSize: number?,
 	[string]: any,
 }
-
 
 export type PromptProps = {
 	Theme: ThemeRef?,
@@ -489,6 +496,123 @@ export type SpinnerProps = {
 	ZIndex: UsedAs<number>?,
 	Layer: Instance?,
 	SizePx: number?,
+	--- "Morph" (default) = shape-morphing LoadingIndicator; "Arc" = spinning ring arc.
+	Style: ("Morph" | "Arc")?,
+	--- Arc style only: colour the arc "erases" with. Match the surface behind the spinner.
+	Background: Color3?,
+	--- Draw the shape inside a round PrimaryContainer disc (Material 3 "contained").
+	Contained: boolean?,
+	[string]: any,
+}
+
+export type LoadingIndicatorProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	--- Container diameter in px (default 48).
+	SizePx: number?,
+	--- Draw the shape inside a round PrimaryContainer disc (Material 3 "contained").
+	Contained: boolean?,
+	--- Shape names to cycle through (see LoadingIndicator); default is the Material 3 sequence.
+	Shapes: { string }?,
+	[string]: any,
+}
+
+export type LoaderKind = "Beachball" | "Dots" | "Bars" | "Ripple" | "Orbit" | "Gnome" | "Icon"
+export type LoaderMotion = "Spin" | "Pulse" | "Bounce" | "Flip" | "Wiggle"
+
+export type LoaderProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	--- Which loader to draw (default "Dots").
+	Kind: LoaderKind?,
+	--- Square size in px (default 32).
+	SizePx: number?,
+	--- Static colour (default theme Primary). Ignored by Beachball, which is rainbow.
+	Color: Color3?,
+	--- Icon kind: Lucide icon name (default "loader").
+	Icon: string?,
+	--- Icon kind: motion preset (default "Spin").
+	Motion: LoaderMotion?,
+	[string]: any,
+}
+
+export type NumberSpinnerProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	--- The number to show; digits roll when it changes.
+	Value: UsedAs<number>,
+	--- Digits after the decimal point (default 0).
+	Decimals: number?,
+	--- Thousands separators (default true).
+	Grouping: boolean?,
+	Prefix: string?,
+	Suffix: string?,
+	TextSize: number?,
+	FontFace: Font?,
+	Color: Color3?,
+	--- Width of one digit column in px (default ≈ 0.62 × TextSize).
+	DigitWidth: number?,
+	--- Integer digit slots to reserve so the box never resizes (default: initial digits + 1, min 4).
+	Digits: number?,
+	--- Fixed box width in px; overrides `Digits`.
+	Width: number?,
+	--- "Numeric" (default): iOS's numericText: a changed digit goes straight to its new value,
+	--- sliding, scaling and blurring in and out, columns cascading left to right. "Roll": an
+	--- odometer wheel through every digit in between.
+	Style: ("Numeric" | "Roll")?,
+	--- "Numeric" only: playback speed, 1 = default (< 1 slower, > 1 faster).
+	Speed: number?,
+	--- "Numeric" only: how much the landing overshoots, 0 = none to 1 = very bouncy
+	--- (default 0.8, about a 25% overshoot; iOS itself is closer to 0.6).
+	Bounce: number?,
+	--- Padding in px around the digits for their travel and blur (default derived from the
+	--- text size). The box clips to it.
+	Padding: number?,
+	--- "Roll" only: spring speed (default 11) and damping ratio (default 0.6, < 1 overshoots).
+	SpringSpeed: number?,
+	SpringDamping: number?,
+	Align: Enum.HorizontalAlignment?,
+	[string]: any,
+}
+
+export type CoachmarkProps = {
+	Theme: ThemeRef?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
+	--- The element to point at.
+	Target: Instance,
+	--- Shown while true. Pass a Value so the card can close itself.
+	Open: UsedAs<boolean>?,
+	Title: string?,
+	Text: string?,
+	--- Small caption above the title, e.g. "1 of 3".
+	Step: string?,
+	--- Action button label (default "Got it"); it also dismisses.
+	ActionText: string?,
+	OnAction: (() -> ())?,
+	OnDismiss: (() -> ())?,
+	Placement: TooltipPlacement?,
+	--- Dim everything but the target (default true).
+	Spotlight: boolean?,
+	--- Scrim opacity 0–1 (default 0.55).
+	Dim: number?,
+	--- Tapping the dimmed area dismisses.
+	DismissOnScrim: boolean?,
+	--- px of breathing room around the target's cutout (default 6).
+	TargetPadding: number?,
+	--- px between target and card (default 16).
+	Gap: number?,
+	Width: number?,
+	--- "Primary" (default, solid brand colour) or "Surface".
+	Tone: ("Primary" | "Surface")?,
 	[string]: any,
 }
 
@@ -547,6 +671,18 @@ export type SnackbarProps = {
 	Message: UsedAs<string>,
 	ActionText: string?,
 	OnAction: (() -> ())?,
+	--- Element before the message. Wins over `Icon`.
+	Leading: Instance?,
+	--- Lucide icon before the message.
+	Icon: string?,
+	--- Element after the action button.
+	Trailing: Instance?,
+	--- Show a close button at the end.
+	Dismissible: boolean?,
+	--- Called when the close button is pressed.
+	OnDismiss: (() -> ())?,
+	--- Let the message wrap and fill the width, for a fixed-width card (the host does this).
+	Fill: boolean?,
 	[string]: any,
 }
 
@@ -557,7 +693,11 @@ export type SnackbarHostProps = {
 	Visible: UsedAs<boolean>?,
 	ZIndex: UsedAs<number>?,
 	Layer: Instance?,
-	-- Host manages queue via returned API; see Components.SnackbarHost
+	--- Most toasts kept at once; the oldest is dismissed past this (default 5).
+	MaxVisible: number?,
+	--- Width of the stack in px (default 360).
+	Width: number?,
+	-- The host is driven by the table it returns; see Components.SnackbarHost
 	[string]: any,
 }
 
@@ -572,6 +712,16 @@ export type ProgressProps = {
 	Buffer: UsedAs<number>?,
 	Variant: ProgressVariant?,
 	Mode: ProgressMode?,
+	--- Circular only. Outer diameter in px (default 40).
+	SizePx: number?,
+	--- Circular only.
+	Style: ProgressStyle?,
+	--- Circular only. Stroke thickness in px.
+	Thickness: number?,
+	--- Circular indeterminate only: "Morph" (default) or "Arc".
+	Indicator: ("Morph" | "Arc")?,
+	--- Circular "Arc" indeterminate only: colour the arc erases with (default Surface).
+	Background: Color3?,
 	[string]: any,
 }
 
@@ -641,6 +791,20 @@ export type AppBarProps = {
 	Title: UsedAs<string>?,
 	Leading: Instance?,
 	Actions: { Instance }?,
+	--- At the top of the scroll the fill becomes `FadeTo` and the divider and shadow are hidden.
+	--- They come back as content scrolls under the bar.
+	FadeAtTop: boolean?,
+	--- Scroll offset in px (state or number) that drives FadeAtTop.
+	ScrollOffset: UsedAs<number>?,
+	--- Scroll distance in px over which the bar goes from flat to raised (default 24).
+	FadeRamp: number?,
+	--- Fill at the top of the scroll. Match your content or window fill
+	--- (default SurfaceContainerHigh, the elevated Window fill).
+	FadeTo: Color3?,
+	--- Fill once the bar is raised (default Surface).
+	RaisedColor: Color3?,
+	--- false removes the shadow (default on).
+	Shadow: boolean?,
 	[string]: any,
 }
 
@@ -661,7 +825,7 @@ export type NavigationDrawerProps = {
 	Sections: { MenuSectionProps }?,
 	OnClose: (() -> ())?,
 	Children: any?,
-	--- Gap (px) from the parent edges — use `4` inside Window.
+	--- Gap in px from the parent edges. Use `4` inside a Window.
 	Inset: number?,
 	--- Panel corner radius (px). Window drawers typically use `RadiusPanel + 4`.
 	CornerRadius: number?,
@@ -675,6 +839,9 @@ export type NavigationDrawerProps = {
 }
 
 export type NavigationRailProps = {
+	--- Vertical rails only: a control shown above the items, e.g. a menu button (so it can
+	--- live in the rail instead of the app bar).
+	Leading: Instance?,
 	Theme: ThemeRef?,
 	LayoutOrder: UsedAs<number>?,
 	Size: UsedAs<UDim2>?,
@@ -686,6 +853,8 @@ export type NavigationRailProps = {
 	OnChanged: ((string) -> ())?,
 	--- Default `Vertical` (side rail). `Horizontal` lays items in a row.
 	Orientation: ("Vertical" | "Horizontal")?,
+	--- false removes the shadow (default on).
+	Shadow: boolean?,
 	[string]: any,
 }
 
@@ -703,7 +872,7 @@ export type WindowProps = {
 	NavigationRail: Instance?,
 	--- Main content; fills space beside/above the rail.
 	Children: any?,
-	--- Drawers, menus, dialogs — reparented onto the window overlay layer.
+	--- Drawers, menus and dialogs. They are reparented onto the window overlay layer.
 	Overlays: { Instance }?,
 	--- Layout for the rail slot. Defaults by inferring from `NavigationRail.Size`
 	--- (horizontal rails use full-width × ~72px). Prefer setting explicitly when unsure.
@@ -713,6 +882,32 @@ export type WindowProps = {
 	CornerRadius: number?,
 	--- Sheet elevation (default true).
 	Elevated: boolean?,
+	--- Drag the window by its app bar.
+	Draggable: boolean?,
+	--- "Titlebar" (default): the window may leave the screen but its handle stays reachable;
+	--- "Screen": keep it fully on screen; "Free": no limit.
+	DragBounds: ("Titlebar" | "Screen" | "Free")?,
+	--- px of the window that must stay on screen horizontally for "Titlebar" (default 120).
+	DragKeepVisible: number?,
+	--- Show resize handles on the window's edges and corners (default off).
+	Resizable: boolean?,
+	--- Smallest size in px while resizing (default 240 × 160).
+	MinSize: Vector2?,
+	--- Largest size in px while resizing (default: the screen).
+	MaxSize: Vector2?,
+	--- Lock the aspect ratio (width / height) while resizing. Defaults to the window's own
+	--- `AspectRatio` constraint if it has one.
+	ResizeRatio: number?,
+	--- Which handles to show: any of "Left", "Right", "Top", "Bottom", "TopLeft", "TopRight",
+	--- "BottomLeft", "BottomRight" (default all).
+	ResizeHandles: { string }?,
+	--- Width of the edge handles in px (default 6; corners are twice that).
+	ResizeHandleSize: number?,
+	--- Snap the size to multiples of this many px.
+	ResizeSnap: number?,
+	--- Called with the new size on every resize step. Pass a Value as `Size` / `Position` to
+	--- keep them across rebuilds.
+	OnResized: ((Vector2) -> ())?,
 	[string]: any,
 }
 
@@ -867,7 +1062,7 @@ export type MenuProps = {
 	CornerRadius: number?,
 	--- Outer padding (default 4).
 	Padding: number?,
-	--- When true, skip Layer.mount — parent owns overlay / layering (AvatarMenu, Popover).
+	--- When true, skip Layer.mount. The parent owns layering (AvatarMenu, Popover).
 	Embedded: boolean?,
 	--- First MenuPage id (default: first page child).
 	InitialPage: string?,
@@ -968,6 +1163,58 @@ export type ColorPickerProps = {
 	Layer: Instance?,
 	Value: UsedAs<Color3>?,
 	OnChanged: ((Color3) -> ())?,
+	--- Opacity 0–1 (default 1). Pass a Value to keep it controlled.
+	Alpha: UsedAs<number>?,
+	OnAlphaChanged: ((number) -> ())?,
+	--- Colour and opacity together.
+	OnChange: ((Color3, number) -> ())?,
+	--- Show the alpha slider (default true).
+	ShowAlpha: boolean?,
+	--- Tabs, in order: "Grid" (swatches), "Spectrum" (saturation/value + hue) and "Sliders".
+	Modes: { string }?,
+	--- Tab shown first (default: the first of `Modes`).
+	Mode: string?,
+	--- Colour models offered under the "Sliders" tab: "RGB", "HSB" (or "HSV"), "HSL", "LAB",
+	--- "Hex". Default: all of them, in that order.
+	Models: { string }?,
+	--- Model shown first (default: the first of `Models`).
+	Model: string?,
+	--- "Square" (default) or "Wheel" for the Spectrum tab: a hue ring around the saturation/
+	--- value square. The ring needs conical gradients (Studio beta) and falls back to the square.
+	Area: ("Square" | "Wheel")?,
+	--- Swatches for the Grid tab (default: a grey ramp plus a hue/lightness grid).
+	Palette: { Color3 }?,
+	--- Show the swatch / hex / alpha footer (default true).
+	Footer: boolean?,
+	--- Fill colour of the picker (default theme Surface).
+	Background: Color3?,
+	[string]: any,
+}
+
+export type GradientPickerProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	--- Persist key (with a Persist store provided).
+	Id: string?,
+	--- Where button tooltips are mounted. Without a layer, or one set with Layer.Provide / Layer.bind, there are no tooltips.
+	Layer: Instance?,
+	--- Starting gradient, one stop per keypoint, and its transparency (alpha = 1 - transparency).
+	Gradient: UsedAs<ColorSequence>?,
+	GradientTransparency: UsedAs<NumberSequence>?,
+	GradientRotation: number?,
+	--- Show the Alpha box (default true).
+	ShowAlpha: boolean?,
+	--- Called as stops are added, dragged, recoloured or removed. Feed straight into a
+	--- UIGradient's Color / Transparency / Rotation / Offset.
+	OnGradientChanged: ((ColorSequence, NumberSequence, number, Vector2) -> ())?,
+	--- Passed on to the node ColorPicker.
+	Modes: { string }?,
+	Models: { string }?,
+	Mode: string?,
+	Model: string?,
+	Area: ("Square" | "Wheel")?,
+	Palette: { Color3 }?,
 	[string]: any,
 }
 
@@ -982,6 +1229,10 @@ export type VirtualListProps = {
 	ItemHeight: number,
 	RenderItem: (scope: Scope, index: number) -> Instance,
 	Padding: number?,
+	--- Scroll position in px. A `Value` scrolls the list when it is set.
+	ScrollOffset: UsedAs<number>?,
+	--- Called with the scroll position in px.
+	OnScroll: ((offset: number) -> ())?,
 	[string]: any,
 }
 
@@ -1208,14 +1459,17 @@ export type ScrollAreaProps = {
 	--- Called when pull is cancelled (released below threshold after pulling).
 	OnPullCancel: (() -> ())?,
 	RefreshThreshold: number?,
+	--- Pass a boolean (or state) that is true while refreshing. The content then rests at the
+	--- threshold with a spinner until it turns false, like iOS / Android pull-to-refresh.
+	Refreshing: UsedAs<boolean>?,
+	--- Shown beside the spinner while Refreshing. Default "Refreshing…".
+	RefreshingHint: string?,
 	--- Show built-in pull hint. Default true when OnRefresh is set.
 	PullIndicator: boolean?,
 	--- Below threshold while pulling.
 	PullHint: string?,
-	--- Past threshold — release finger/mouse to confirm.
+	--- Past the threshold: release to confirm.
 	ReleaseHint: string?,
-	--- Shown under ReleaseHint while armed.
-	CancelHint: string?,
 	--- Drag anywhere to scroll (touch/mouse). Default: touch, or mouse when OnRefresh is set.
 	DragToScroll: boolean?,
 	--- "List" (default) stacks children; "None" for absolute/virtual content.
@@ -1227,5 +1481,252 @@ export type ScrollAreaProps = {
 	[string]: any,
 }
 
-return nil
+export type NumberFieldProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Id: string?,
+	--- The number. A `Value` is followed and set as the user edits.
+	Value: UsedAs<number>?,
+	Min: number?,
+	Max: number?,
+	--- Size of one step: the arrow keys and scrubbing move the value in steps of this (default 1).
+	Step: number?,
+	--- Digits shown after the decimal point (default: as many as `Step` needs).
+	Decimals: number?,
+	--- Short text at the start of the field. Dragging it sideways changes the value.
+	Label: string?,
+	--- Fixed text at the end of the field, such as a unit.
+	Suffix: string?,
+	--- Value change per pixel of scrubbing (default: the range over 300 px, or a step per 4 px).
+	ScrubSpeed: number?,
+	Disabled: UsedAs<boolean>?,
+	OnChanged: ((number) -> ())?,
+	[string]: any,
+}
 
+export type SplitPaneProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Id: string?,
+	--- The panes, in order. Each is sized to fill its slot.
+	Panes: { Instance },
+	--- `"Horizontal"` puts the panes side by side, `"Vertical"` stacks them (default "Horizontal").
+	Orientation: ("Horizontal" | "Vertical")?,
+	--- Share of the room each pane takes, in order. They are scaled to add up to 1 (default: equal).
+	--- A `Value` is followed and set as the user drags.
+	Ratios: UsedAs<{ number }>?,
+	--- Smallest size in px a pane can be dragged to (default 80).
+	MinSize: number?,
+	--- Width of the draggable strip between panes in px (default 8).
+	DividerSize: number?,
+	--- Called with the new ratios while a divider moves.
+	OnResized: ((ratios: { number }) -> ())?,
+	[string]: any,
+}
+
+export type DockTab = {
+	Id: string,
+	Title: string,
+	--- Shown while the tab is selected. It fills the area under the header.
+	Content: Instance,
+}
+
+export type DockPanelProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Id: string?,
+	--- Text of the header. Ignored when there are `Tabs`.
+	Title: string?,
+	--- Tabs in the header, each with the content it shows.
+	Tabs: { DockTab }?,
+	--- `Id` of the selected tab. A `Value` is followed and set when the user picks a tab.
+	Selected: UsedAs<string>?,
+	--- Content of a panel without tabs.
+	Children: any?,
+	--- Let the user collapse the panel to its header by pressing the arrow.
+	Collapsible: boolean?,
+	--- Whether the content is shown. A `Value` is followed and set (default true).
+	Open: UsedAs<boolean>?,
+	--- Elements at the end of the header.
+	Actions: { Instance }?,
+	--- Shows a close button that calls this.
+	OnClose: (() -> ())?,
+	OnTabChanged: ((id: string) -> ())?,
+	[string]: any,
+}
+
+export type ToolbarItem = {
+	Id: string?,
+	--- Lucide icon.
+	Icon: string?,
+	--- Label shown next to the icon.
+	Text: string?,
+	--- Tooltip text. Defaults to `Text`.
+	Tooltip: string?,
+	--- Shortcut shown in the tooltip, such as "Ctrl+S".
+	Shortcut: string?,
+	--- Draw the button as pressed in. A state is followed.
+	Toggled: UsedAs<boolean>?,
+	--- Flip `Toggled` when the button is pressed. A `Value` is set; otherwise the button keeps its own.
+	Toggle: boolean?,
+	Disabled: UsedAs<boolean>?,
+	OnClick: (() -> ())?,
+	--- Draw a thin line between groups of buttons.
+	Separator: boolean?,
+	--- Take the room that is left, pushing the items after it to the end.
+	Spacer: boolean?,
+	--- Place your own element in the bar.
+	Content: Instance?,
+}
+
+export type ToolbarProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
+	Items: { ToolbarItem },
+	--- Default "Horizontal".
+	Orientation: ("Horizontal" | "Vertical")?,
+	[string]: any,
+}
+
+export type StatusItem = {
+	Id: string?,
+	Text: UsedAs<string>?,
+	--- Lucide icon.
+	Icon: string?,
+	--- Colour of the text and icon: "Error", "Warning" or "Success". Left out, it is muted.
+	Tone: ("Error" | "Warning" | "Success")?,
+	--- Show a small spinner instead of the icon.
+	Busy: boolean?,
+	--- Show a thin progress bar from 0 to 1. A state is followed.
+	Progress: UsedAs<number>?,
+	Tooltip: string?,
+	--- Makes the item a button.
+	OnClick: (() -> ())?,
+}
+
+export type StatusBarProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
+	Start: { StatusItem }?,
+	Middle: { StatusItem }?,
+	End: { StatusItem }?,
+	[string]: any,
+}
+
+export type CurveEditorProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	Id: string?,
+	--- The curve. A `Value` is followed and set as the user edits. Default: a line from `Min` to `Max`.
+	Value: UsedAs<NumberSequence>?,
+	--- Lowest and highest value on the plot (default 0 and 1).
+	Min: number?,
+	Max: number?,
+	--- Height of the plot in px (default 180).
+	Height: number?,
+	--- Show and edit the envelope of each keypoint.
+	ShowEnvelope: boolean?,
+	Disabled: UsedAs<boolean>?,
+	OnChanged: ((sequence: NumberSequence) -> ())?,
+	[string]: any,
+}
+
+export type ExplorerProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	Size: UsedAs<UDim2>?,
+	Visible: UsedAs<boolean>?,
+	ZIndex: UsedAs<number>?,
+	--- The instances at the top of the tree.
+	Roots: { Instance },
+	--- Show only matching instances and the branches that lead to them. Matching is on the
+	--- name, case does not matter. A state is followed.
+	Filter: UsedAs<string>?,
+	--- Extra test for the filter: return true to count `instance` as a match for `text` (lower case).
+	Match: ((instance: Instance, text: string) -> boolean)?,
+	--- Return false to leave an instance, and what is under it, out.
+	Include: ((instance: Instance) -> boolean)?,
+	--- The selected instances. A `Value` is followed and set when the user selects.
+	Selected: UsedAs<{ Instance }>?,
+	--- Open the roots at first (default true).
+	DefaultExpanded: boolean?,
+	--- Lucide icon for an instance (default: by class).
+	Icon: ((instance: Instance) -> string)?,
+	--- Height of a row in px (default 24).
+	RowHeight: number?,
+	--- Indent per level in px (default 14).
+	Indent: number?,
+	--- F2 renames the selected instance (default true).
+	AllowRename: boolean?,
+	--- Dragging an instance onto another makes it the parent (default false).
+	AllowReparent: boolean?,
+	OnSelect: ((selected: { Instance }) -> ())?,
+	--- Set a `Value` to an instance to open the branches above it and scroll to it.
+	Reveal: UsedAs<Instance?>?,
+	--- Called with the instance under the pointer, and `nil` when it leaves.
+	OnHover: ((instance: Instance?) -> ())?,
+	--- Called on a double click or Enter.
+	OnActivate: ((instance: Instance) -> ())?,
+	--- Called with the new name. Without it the instance is renamed.
+	OnRename: ((instance: Instance, name: string) -> ())?,
+	--- Called with the instance and its new parent. Without it the parent is set.
+	OnReparent: ((instance: Instance, parent: Instance) -> ())?,
+	[string]: any,
+}
+
+export type RadialItem = {
+	Id: string,
+	--- Lucide icon.
+	Icon: string?,
+	--- Label shown in the middle while the choice is highlighted. Defaults to `Id`.
+	Text: string?,
+	Disabled: UsedAs<boolean>?,
+	OnSelect: (() -> ())?,
+}
+
+export type RadialMenuProps = {
+	Theme: ThemeRef?,
+	LayoutOrder: UsedAs<number>?,
+	ZIndex: UsedAs<number>?,
+	Layer: Instance?,
+	Id: string?,
+	--- The choices, placed round the ring clockwise from the top.
+	Items: { RadialItem },
+	--- Whether the ring is shown. A `Value` is followed and set when the ring closes.
+	Open: UsedAs<boolean>?,
+	--- A key that opens the ring while it is held, and picks the highlighted choice on release.
+	Hotkey: Enum.KeyCode?,
+	--- Where the ring opens, in the space of the layer (default: at the pointer).
+	Origin: Vector2?,
+	--- Distance of the choices from the centre in px (default 96).
+	Radius: number?,
+	--- Diameter of a choice in px (default 52).
+	ItemSize: number?,
+	--- Text in the middle while no choice is highlighted.
+	Title: string?,
+	OnSelect: ((id: string) -> ())?,
+	OnClose: (() -> ())?,
+	[string]: any,
+}
+
+return nil

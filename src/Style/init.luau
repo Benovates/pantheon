@@ -1,11 +1,11 @@
 --!strict
 --[[
-	Typed, ambient design tokens — no strings, no new syntax.
+	Typed, ambient design tokens: no strings, no new syntax.
 
 	Tokens read the theme provided by `Theme.Provide` (global context), so they
 	are plain values usable in any prop and fully type-checked / autocompleted:
 
-		local S = EstuaryUI.Style
+		local S = Pantheon.Style
 
 		scope:Frame({
 			BackgroundColor3 = S.Color.SurfaceContainer,
@@ -73,7 +73,7 @@ local function live<T>(pick: (Types.Theme) -> any): T
 			return pick(Theme.use())[key]
 		end,
 		__newindex = function()
-			error("EstuaryUI.Style tokens are read-only")
+			error("Pantheon.Style tokens are read-only")
 		end,
 	}) :: any
 end
@@ -83,12 +83,12 @@ local function mapped<T>(keys: { [string]: string }): T
 		__index = function(_, key: any)
 			local field = keys[key]
 			if field == nil then
-				error(`EstuaryUI.Style: unknown token "{tostring(key)}"`, 2)
+				error(`Pantheon.Style: unknown token "{tostring(key)}"`, 2)
 			end
 			return (Theme.use().Metrics :: any)[field]
 		end,
 		__newindex = function()
-			error("EstuaryUI.Style tokens are read-only")
+			error("Pantheon.Style tokens are read-only")
 		end,
 	}) :: any
 end

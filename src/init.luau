@@ -1,6 +1,6 @@
 --!strict
 --[[
-	koterahq/estuary-ui — Cadence/Tithe design system for Fusion + Iona.
+	koterahq/pantheon — Cadence/Tithe design system for Fusion + Iona.
 	Vuetify-scale component kit (unpublished; path-link siblings).
 ]]
 
@@ -26,16 +26,26 @@ export type ColorInput = Types.ColorInput
 export type ThemeColorRole = Types.ThemeColorRole
 export type ThemePalette = Types.ThemePalette
 
-local EstuaryUI = {
+local Pantheon = {
 	Theme = Theme,
 	Components = Components,
+	--- In-game HUD set (TopBar, Hotbar, ...), kept apart from the app components.
+	Game = require(script.Game),
 	Types = Types,
 	Layer = Layer,
 	Flags = require(script.Internal.Flags),
+	--- Inspect overlay + properties panel; needs Flags.DevTools (see DevTools/init).
+	DevTools = require(script.DevTools),
 	CanvasFade = require(script.Internal.CanvasFade),
 	Validators = require(script.Internal.Validators),
 	Accessibility = require(script.Internal.Accessibility),
 	Shadow = require(script.Internal.Shadow),
+	--- Fade a whole subtree by driving every descendant's transparency (no CanvasGroup).
+	GroupFade = require(script.Internal.GroupFade),
+	--- Opt-in state persistence across rebuilds (see Internal/Persist).
+	Persist = require(script.Internal.Persist),
+	--- Keyboard and gamepad focus (see Internal/Focus).
+	Focus = require(script.Internal.Focus),
 	Style = require(script.Style),
 	Color = require(script.Internal.Color),
 	Material = require(script.Internal.MaterialColors),
@@ -44,7 +54,7 @@ local EstuaryUI = {
 	Version = { major = 0, minor = 3, isRelease = false },
 }
 
--- Fusion's Hydrate is slated for deprecation. Estuary scopes expose its own
+-- Fusion's Hydrate is slated for deprecation. Pantheon scopes expose its own
 -- `Apply` (and keep `Hydrate` as an alias so Iona / older code keeps working)
 -- without touching Fusion's implementation.
 local Apply = require(script.Internal.Apply)
@@ -53,10 +63,10 @@ FusionMethods.Hydrate = Apply
 FusionMethods.Apply = Apply
 table.freeze(FusionMethods)
 
-EstuaryUI.Apply = Apply
+Pantheon.Apply = Apply
 
-function EstuaryUI.scoped(): Types.Scope
+function Pantheon.scoped(): Types.Scope
 	return Fusion.scoped(FusionMethods, Iona) :: any
 end
 
-return EstuaryUI
+return Pantheon

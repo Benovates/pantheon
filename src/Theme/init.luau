@@ -4,19 +4,22 @@ local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Types)
 local Accessibility = require(script.Parent.Internal.Accessibility)
 local Color = require(script.Parent.Internal.Color)
+local Flags = require(script.Parent.Internal.Flags)
 
 local peek = Fusion.peek
 
 local themeContext = Fusion.Contextual(nil :: Types.ThemeRef?)
 --[[
 	Fusion Contextual only applies during the Provide call stack. Computed /
-	Observer callbacks re-run later and lose context — keep a root fallback.
+	Observer callbacks re-run later and lose context, keep a root fallback.
 ]]
 local rootTheme: Types.ThemeRef? = nil
 
-local MontserratMedium = Font.new("rbxasset://fonts/families/Montserrat.json", Enum.FontWeight.Medium)
+local MontserratMedium =
+	Font.new("rbxasset://fonts/families/Montserrat.json", Enum.FontWeight.Medium)
 local MontserratBold = Font.new("rbxasset://fonts/families/Montserrat.json", Enum.FontWeight.Bold)
-local MontserratSemi = Font.new("rbxasset://fonts/families/Montserrat.json", Enum.FontWeight.SemiBold)
+local MontserratSemi =
+	Font.new("rbxasset://fonts/families/Montserrat.json", Enum.FontWeight.SemiBold)
 local Mono = Font.new("rbxasset://fonts/families/RobotoMono.json")
 
 local function lightColors(): Types.ThemeColors
@@ -40,9 +43,13 @@ local function lightColors(): Types.ThemeColors
 		Success = Color3.fromRGB(46, 125, 50),
 		OnSuccess = Color3.fromRGB(255, 255, 255),
 		Warning = Color3.fromRGB(237, 108, 2),
-		OnWarning = Color3.fromRGB(255, 255, 255),
+		OnWarning = Color3.fromRGB(33, 25, 0),
 		Scrim = Color3.fromRGB(16, 20, 24),
-		Info = Color3.fromRGB(2, 136, 209),
+		-- Contrasting roles for toasts / tips: dark on a light theme, light on a dark one.
+		InverseSurface = Color3.fromRGB(38, 45, 54),
+		InverseOnSurface = Color3.fromRGB(240, 243, 247),
+		InversePrimary = Color3.fromRGB(77, 182, 172),
+		Info = Color3.fromRGB(1, 115, 180),
 		OnInfo = Color3.fromRGB(255, 255, 255),
 	}
 end
@@ -70,6 +77,9 @@ local function darkColors(): Types.ThemeColors
 		Warning = Color3.fromRGB(255, 183, 77),
 		OnWarning = Color3.fromRGB(26, 31, 38),
 		Scrim = Color3.fromRGB(0, 0, 0),
+		InverseSurface = Color3.fromRGB(226, 230, 237),
+		InverseOnSurface = Color3.fromRGB(28, 27, 31),
+		InversePrimary = Color3.fromRGB(0, 105, 92),
 		Info = Color3.fromRGB(79, 195, 247),
 		OnInfo = Color3.fromRGB(26, 31, 38),
 	}
@@ -241,7 +251,12 @@ local function deepMerge(base: any, over: any): any
 		local existing = out[key]
 		local mtValue: any = getmetatable(value)
 		local mtExisting: any = getmetatable(existing)
-		if typeof(value) == "table" and typeof(existing) == "table" and mtValue == nil and mtExisting == nil then
+		if
+			typeof(value) == "table"
+			and typeof(existing) == "table"
+			and mtValue == nil
+			and mtExisting == nil
+		then
 			local isArray = #value > 0 or #existing > 0
 			if isArray then
 				out[key] = table.clone(value)
@@ -362,19 +377,80 @@ end
 
 function Theme.use(): Types.Theme
 	local ref = themeContext:now() or rootTheme
-	assert(ref ~= nil, "EstuaryUI.Theme.Provide required — wrap your UI root in Theme.Provide")
+	assert(ref ~= nil, "Pantheon.Theme.Provide required, wrap your UI root in Theme.Provide")
 	return peek(ref) :: Types.Theme
 end
 
 function Theme.useRef(): Types.ThemeRef
 	local ref = themeContext:now() or rootTheme
-	assert(ref ~= nil, "EstuaryUI.Theme.Provide required")
+	assert(ref ~= nil, "Pantheon.Theme.Provide required")
 	return ref :: Types.ThemeRef
 end
 
+-- Views of a theme state, one for each state, so a role is turned into a Computed only once.
+local reactiveViews: { [any]: Types.Theme } = setmetatable({}, { __mode = "k" }) :: any
+local viewScope = Fusion.scoped(Fusion)
+
+local function isState(value: any): boolean
+	return typeof(value) == "table" and (value :: any).type == "State"
+end
+
+--- A theme whose `Colors` are states: `view.Colors.Surface` is a Computed of the colour in the
+--- current theme of `ref`. Everything else reads the current theme when it is asked for. A
+--- property can take a colour state as it is; maths on a colour needs `use`.
+function Theme.reactive(ref: Types.ThemeRef): Types.Theme
+	if not isState(ref) then
+		return peek(ref) :: Types.Theme
+	end
+	local cached = reactiveViews[ref]
+	if cached then
+		return cached
+	end
+	local colors = setmetatable({}, {
+		__index = function(self: any, key: string)
+			local state = viewScope:Computed(function(use)
+				return ((use(ref :: any) :: any).Colors :: any)[key]
+			end)
+			rawset(self, key, state)
+			return state
+		end,
+	})
+	-- Roles (Button's "primary", "secondary", ...) are built from the palette, so each of their
+	-- four colours follows the theme as well.
+	local palette: { [string]: any } = {}
+	local current = (peek(ref :: any) :: any).Palette
+	if current then
+		for roleName in current do
+			local role: { [string]: any } = {}
+			for _, field in { "Base", "OnBase", "Container", "OnContainer" } do
+				role[field] = viewScope:Computed(function(use)
+					local source = (use(ref :: any) :: any).Palette
+					local entry = if source then source[roleName] else nil
+					return if entry then entry[field] else nil
+				end)
+			end
+			palette[roleName] = role
+		end
+	end
+	local view = setmetatable({ Colors = colors, Palette = palette }, {
+		__index = function(_, key: string)
+			return ((peek(ref) :: any) :: { [string]: any })[key]
+		end,
+	}) :: any
+	reactiveViews[ref] = view
+	return view
+end
+
 function Theme.resolve(props: { Theme: Types.ThemeRef? }?): Types.Theme
-	if props and props.Theme ~= nil then
-		return peek(props.Theme) :: Types.Theme
+	local given = if props then props.Theme else nil
+	if Flags.ReactiveTheme then
+		local ref = given or themeContext:now() or rootTheme
+		if ref ~= nil and isState(ref) then
+			return Theme.reactive(ref)
+		end
+	end
+	if given ~= nil then
+		return peek(given) :: Types.Theme
 	end
 	return Theme.use()
 end
