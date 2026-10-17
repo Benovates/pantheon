@@ -141,6 +141,76 @@ function Accessibility.motionSpeed(theme: any, multiplier: number?): number
 	return theme.Motion.SpringSpeed * m
 end
 
+--- Relative luminance of a colour, as WCAG defines it (0 black, 1 white).
+function Accessibility.luminance(color: Color3): number
+	local function linear(value: number): number
+		return if value <= 0.03928 then value / 12.92 else ((value + 0.055) / 1.055) ^ 2.4
+	end
+	return 0.2126 * linear(color.R) + 0.7152 * linear(color.G) + 0.0722 * linear(color.B)
+end
+
+--- Contrast ratio between two colours, from 1 (the same) to 21 (black on white).
+function Accessibility.contrast(a: Color3, b: Color3): number
+	local la, lb = Accessibility.luminance(a), Accessibility.luminance(b)
+	return (math.max(la, lb) + 0.05) / (math.min(la, lb) + 0.05)
+end
+
+export type Finding = {
+	Foreground: string,
+	Background: string,
+	Ratio: number,
+	--- 4.5 for text and 3 for graphics and borders (WCAG 2.1 AA).
+	Required: number,
+	Ok: boolean,
+}
+
+local TEXT_PAIRS = {
+	{ "OnPrimary", "Primary" },
+	{ "OnPrimaryContainer", "PrimaryContainer" },
+	{ "OnError", "Error" },
+	{ "OnSuccess", "Success" },
+	{ "OnWarning", "Warning" },
+	{ "OnInfo", "Info" },
+	{ "InverseOnSurface", "InverseSurface" },
+	{ "OnSurface", "Surface" },
+	{ "OnSurface", "Background" },
+	{ "OnSurface", "SurfaceContainer" },
+	{ "OnSurface", "SurfaceContainerHigh" },
+	{ "OnSurfaceVariant", "Surface" },
+	{ "OnSurfaceVariant", "SurfaceContainer" },
+}
+local GRAPHIC_PAIRS = {
+	{ "Primary", "Surface" },
+	{ "Outline", "Surface" },
+}
+
+--- Check the colours of a theme against WCAG 2.1 AA: text on the colour it is drawn on needs a
+--- ratio of 4.5, and the colours of controls and their borders need 3. Returns every pair, with
+--- `Ok` false for those that fall short. `Outline` is a soft border by design and is expected to
+--- fall short in the default themes; `HighContrast` raises it.
+function Accessibility.audit(theme: any): { Finding }
+	local findings: { Finding } = {}
+	local function check(pairs: { { string } }, required: number)
+		for _, pair in pairs do
+			local foreground = theme.Colors[pair[1]]
+			local background = theme.Colors[pair[2]]
+			if foreground and background then
+				local ratio = Accessibility.contrast(foreground, background)
+				table.insert(findings, {
+					Foreground = pair[1],
+					Background = pair[2],
+					Ratio = ratio,
+					Required = required,
+					Ok = ratio >= required,
+				})
+			end
+		end
+	end
+	check(TEXT_PAIRS, 4.5)
+	check(GRAPHIC_PAIRS, 3)
+	return findings
+end
+
 Accessibility.TEXT_SCALE = TEXT_SCALE
 
 return Accessibility

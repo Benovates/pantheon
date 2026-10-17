@@ -21,10 +21,10 @@ local function whileActive(
 	local conn: RBXScriptConnection? = nil
 	local function sync()
 		local on = isActive(peek(source))
-		if on and conn == nil then
+		if on and not conn then
 			step(0)
 			conn = RunService.RenderStepped:Connect(step)
-		elseif not on and conn ~= nil then
+		elseif not on and conn then
 			conn:Disconnect()
 			conn = nil
 		end

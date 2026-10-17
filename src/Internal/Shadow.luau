@@ -2,7 +2,7 @@
 --[[
 	Material Design elevation shadow (umbra / penumbra / ambient).
 
-	Port of AmaranthineCodices/roact-material Shadow — 9-slice blur image,
+	Port of AmaranthineCodices/roact-material Shadow: 9-slice blur image,
 	Fusion/Iona + springed elevation changes.
 	https://github.com/AmaranthineCodices/roact-material/blob/master/src/Components/Shadow.lua
 ]]
@@ -204,7 +204,7 @@ function Shadow.create(scope: Types.Scope, props: ShadowProps?): Frame
 				return CENTER + use(layer).Offset
 			end),
 			Size = scope:Computed(function(use)
-				local b = use(layer).Blur
+				local b = use(layer).Blur :: number
 				return UDim2.new(1, b, 1, b)
 			end),
 			ScaleType = Enum.ScaleType.Slice,
@@ -232,18 +232,19 @@ function Shadow.create(scope: Types.Scope, props: ShadowProps?): Frame
 	}) :: Frame
 end
 
---- Parent a shadow under `parent` (replaces any previous Estuary shadow roots).
+--- Parent a shadow under `parent` (replaces any previous Pantheon shadow roots).
 function Shadow.apply(scope: Types.Scope, parent: GuiObject, level: number?, color: Color3?): Frame
 	for _, child in parent:GetChildren() do
 		if
 			child.Name == "Shadow"
-			or child.Name == "EstuaryShadow"
+			or child.Name == "PantheonShadow"
 			or child.Name == "ShadowRoot"
 		then
 			-- Only remove our elevation roots, not unrelated UI named Shadow.
-			if child:IsA("Frame") and child:FindFirstChild("Umbra") then
-				child:Destroy()
-			elseif child.Name == "EstuaryShadow" then
+			if
+				(child:IsA("Frame") and child:FindFirstChild("Umbra"))
+				or child.Name == "PantheonShadow"
+			then
 				child:Destroy()
 			end
 		end

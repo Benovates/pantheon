@@ -10,6 +10,7 @@ local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local Flags = require(script.Parent.Flags)
+local GroupFade = require(script.Parent.GroupFade)
 local resolveTheme = require(script.Parent.resolveTheme).resolveTheme
 
 local peek = Fusion.peek
@@ -43,7 +44,7 @@ function CanvasFade.enabled(): boolean
 	return Flags.CanvasFade == true
 end
 
---- Flag on and motion allowed — wrap + opaque surfaces. Otherwise old transparency fades.
+--- With the flag on and motion allowed: wrap in a CanvasGroup with opaque surfaces. Otherwise use transparency fades.
 function CanvasFade.active(opts: FadeOpts | BindOpts | nil): boolean
 	return CanvasFade.enabled() and not reduceMotion(opts)
 end
@@ -56,18 +57,24 @@ local function readProgress(use: (any) -> any, ref: any): number
 	return if v then 1 else 0
 end
 
---- Panel fill when fading: opaque under CanvasGroup, 1−progress otherwise.
-function CanvasFade.surfaceTransparency(scope: Types.Scope, progress: any, opts: BindOpts?): any
-	return scope:Computed(function(use)
-		if CanvasFade.active(opts) then
-			return 0
-		end
-		return 1 - readProgress(use, progress)
-	end)
+--- Panel fill to use with `host`: always opaque. The host does the fade (a CanvasGroup, or
+--- GroupFade driving every descendant's transparency), so fading the fill too would fade the
+--- background twice.
+function CanvasFade.surfaceTransparency(
+	_scope: Types.Scope,
+	_progress: any,
+	_opts: BindOpts?
+): number
+	return 0
 end
 
 --- Visible from open progress (and optional extra). The wrap uses the same threshold.
-function CanvasFade.shown(scope: Types.Scope, progress: any, extra: ((any) -> boolean)?, _opts: BindOpts?): any
+function CanvasFade.shown(
+	scope: Types.Scope,
+	progress: any,
+	extra: ((any) -> boolean)?,
+	_opts: BindOpts?
+): any
 	return scope:Computed(function(use)
 		if extra and not extra(use) then
 			return false
@@ -80,7 +87,7 @@ local ZERO_POS = UDim2.fromScale(0, 0)
 local FILL = UDim2.fromScale(1, 1)
 
 local function existingWrap(target: GuiObject): CanvasGroup?
-	if target:GetAttribute("EstuaryFadeWrap") == true then
+	if target:GetAttribute("PantheonFadeWrap") == true then
 		local parent = target.Parent
 		if parent and parent:IsA("CanvasGroup") and parent.Name == "FadeWrap" then
 			return parent
@@ -114,7 +121,7 @@ local function wrapTarget(scope: Types.Scope, target: GuiObject, progress: any):
 		-- Fusion owns this parent; never assign target.Parent directly.
 		[Children] = { target },
 	}) :: CanvasGroup
-	target:SetAttribute("EstuaryFadeWrap", true)
+	target:SetAttribute("PantheonFadeWrap", true)
 
 	table.insert(
 		scope,
@@ -134,15 +141,34 @@ end
 
 --- Wrap `target` in a CanvasGroup using Fusion Children. Put the returned
 --- instance in the tree (not `target`) so Fusion never fights a reparent.
-function CanvasFade.host(scope: Types.Scope, target: GuiObject, open: any, opts: BindOpts?): GuiObject
+function CanvasFade.host(
+	scope: Types.Scope,
+	target: GuiObject,
+	open: any,
+	opts: BindOpts?
+): GuiObject
 	if not CanvasFade.active(opts) then
+		-- No CanvasGroup (cheaper, no clipping of shadows/strokes): fade the whole subtree
+		-- by driving each element's own transparency together.
+		GroupFade.bind(
+			scope,
+			target,
+			scope:Computed(function(use)
+				return readProgress(use, open)
+			end)
+		)
 		return target
 	end
 	return wrapTarget(scope, target, open)
 end
 
 --- Same as host(). Do not call after Fusion has already parented `target`.
-function CanvasFade.bind(scope: Types.Scope, target: GuiObject, open: any, opts: BindOpts?): GuiObject
+function CanvasFade.bind(
+	scope: Types.Scope,
+	target: GuiObject,
+	open: any,
+	opts: BindOpts?
+): GuiObject
 	return CanvasFade.host(scope, target, open, opts)
 end
 
@@ -151,7 +177,7 @@ local function restore(target: GuiObject, group: CanvasGroup)
 	if target.Parent == group then
 		target.Parent = parent
 	end
-	target:SetAttribute("EstuaryFadeWrap", nil)
+	target:SetAttribute("PantheonFadeWrap", nil)
 	target.LayoutOrder = group.LayoutOrder
 	target.ZIndex = group.ZIndex
 	target.Size = group.Size
@@ -209,7 +235,7 @@ function CanvasFade.play(scope: Types.Scope, target: GuiObject, opts: FadeOpts?)
 		[Children] = {},
 	}) :: CanvasGroup
 	group.Parent = parent
-	target:SetAttribute("EstuaryFadeWrap", true)
+	target:SetAttribute("PantheonFadeWrap", true)
 	target.Parent = group
 	target.Position = ZERO_POS
 	target.AnchorPoint = Vector2.zero

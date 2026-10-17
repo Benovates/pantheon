@@ -62,7 +62,10 @@ function Color.materialSwatch(value: any): Color3?
 	if typeof(value) == "table" and not Color.isRole(value) then
 		local tbl = value :: { [any]: any }
 		for hueName, shade in tbl do
-			if typeof(hueName) == "string" and (typeof(shade) == "number" or typeof(shade) == "string") then
+			if
+				typeof(hueName) == "string"
+				and (typeof(shade) == "number" or typeof(shade) == "string")
+			then
 				-- skip array-like numeric keys handled below
 				if hueName ~= "n" then
 					local found = Material.get(hueName, shade)
@@ -72,7 +75,10 @@ function Color.materialSwatch(value: any): Color3?
 				end
 			end
 		end
-		if typeof(tbl[1]) == "string" and (typeof(tbl[2]) == "number" or typeof(tbl[2]) == "string") then
+		if
+			typeof(tbl[1]) == "string"
+			and (typeof(tbl[2]) == "number" or typeof(tbl[2]) == "string")
+		then
 			return Material.get(tbl[1], tbl[2])
 		end
 	end
@@ -197,7 +203,11 @@ function Color.resolveRole(name: string, theme: Types.Theme): Types.ThemeColorRo
 	return nil
 end
 
-function Color.resolve(input: Types.ColorInput?, theme: Types.Theme, fallbackName: string?): Types.ThemeColorRole
+function Color.resolve(
+	input: Types.ColorInput?,
+	theme: Types.Theme,
+	fallbackName: string?
+): Types.ThemeColorRole
 	if input == nil then
 		return Color.resolveRole(fallbackName or "primary", theme)
 			or Color.rolesFromSeed(theme.Colors.Primary, theme.Mode)

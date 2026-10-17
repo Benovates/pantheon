@@ -4,7 +4,7 @@ local GuiService = game:GetService("GuiService")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
-local ACTION = "EstuaryUI_ScrollWheel"
+local ACTION = "Pantheon_ScrollWheel"
 local WHEEL_LINE = 128
 
 export type Registration = {
@@ -232,6 +232,15 @@ function ScrollInput.mouseLocation(): Vector2
 	return UserInputService:GetMouseLocation()
 end
 
+local captureCount = 0
+
+--- Number of pointer captures started so far. A scroll area reads it before and after a press
+--- has reached every handler. If it changed, a control under the pointer took the drag and the
+--- area should not scroll.
+function ScrollInput.captureCount(): number
+	return captureCount
+end
+
 --- Follow pointer after a press. Overlay lives on the LayerCollector so plugin
 --- widgets receive move/end without PluginGui.InputChanged (RobloxScript).
 --- `onMove` gets a position in the same space as GuiObject.AbsolutePosition.
@@ -242,6 +251,7 @@ function ScrollInput.capture(
 	onMove: (Vector3) -> (),
 	onEnd: (InputObject) -> ()
 ): () -> ()
+	captureCount += 1
 	local connections: { RBXScriptConnection } = {}
 	local cover: TextButton? = nil
 	local finished = false
@@ -292,7 +302,7 @@ function ScrollInput.capture(
 		end
 		table.insert(
 			connections,
-			source.InputEnded:Connect(function(input: InputObject)
+			(source :: any).InputEnded:Connect(function(input: InputObject)
 				if not isEnd(input) then
 					return
 				end
@@ -304,7 +314,7 @@ function ScrollInput.capture(
 	local collector = findLayerCollector(from)
 	if collector then
 		local overlay = Instance.new("TextButton")
-		overlay.Name = "EstuaryPointerCapture"
+		overlay.Name = "PantheonPointerCapture"
 		overlay.Text = ""
 		overlay.AutoButtonColor = false
 		overlay.BackgroundTransparency = 1
@@ -338,9 +348,9 @@ function ScrollInput.register(reg: Registration): () -> ()
 
 	-- One connection per live GuiObject; dropped on DescendantRemoving so churning
 	-- children (virtual lists, snackbars) don't accumulate dead connections.
-	local wheelConns: { [Instance]: RBXScriptConnection } = {}
+	local wheelConns: { [Instance]: RBXScriptConnection? } = {}
 	local function hook(inst: Instance)
-		if inst:IsA("GuiObject") and wheelConns[inst] == nil then
+		if inst:IsA("GuiObject") and not wheelConns[inst] then
 			wheelConns[inst] = inst.InputChanged:Connect(function(input)
 				handleWheel(input, inst :: GuiObject)
 			end)
@@ -375,7 +385,9 @@ function ScrollInput.register(reg: Registration): () -> ()
 		added:Disconnect()
 		removing:Disconnect()
 		for _, conn in wheelConns do
-			conn:Disconnect()
+			if conn then
+				conn:Disconnect()
+			end
 		end
 		table.clear(wheelConns)
 		local i = table.find(registrations, reg)

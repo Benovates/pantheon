@@ -1,6 +1,6 @@
 --!strict
 --[[
-	Estuary's replacement for Fusion's (soon deprecated) `Hydrate`.
+	Pantheon's replacement for Fusion's (soon deprecated) `Hydrate`.
 
 		scope:Apply(instance)({ Text = state, [OnEvent "Activated"] = fn, [Children] = kids })
 
@@ -33,7 +33,7 @@ local function assign(target: Instance, property: string, value: any)
 		(target :: any)[property] = value
 	end)
 	if not ok then
-		warn(`[EstuaryUI] cannot set {target.ClassName}.{property} = {typeof(value)}: {err}`)
+		warn(`[Pantheon] cannot set {target.ClassName}.{property} = {typeof(value)}: {err}`)
 	end
 end
 
@@ -68,7 +68,7 @@ local function applyProps(scope: any, target: Instance, props: { [any]: any }): 
 			end
 			table.insert(list, { key = key, value = value })
 		else
-			error(`[EstuaryUI] unrecognised property key of type {typeof(key)}`, 3)
+			error(`[Pantheon] unrecognised property key of type {typeof(key)}`, 3)
 		end
 	end
 
@@ -96,8 +96,8 @@ end
 --- scope:Apply(instance)(props) → instance
 local function Apply(scope: any, target: Instance): ({ [any]: any }) -> Instance
 	assert(
-		target ~= nil,
-		"scope:Apply(instance) requires an instance — did you call it with `.` instead of `:`?"
+		target,
+		"scope:Apply(instance) requires an instance, did you call it with `.` instead of `:`?"
 	)
 	return function(props)
 		return applyProps(scope, target, props)

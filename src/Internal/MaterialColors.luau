@@ -24,13 +24,9 @@ Material.Red = {
 	[700] = hex("#d32f2f"),
 	[800] = hex("#c62828"),
 	[900] = hex("#b71c1c"),
-	["A100"] = hex("#ff8a80"),
 	A100 = hex("#ff8a80"),
-	["A200"] = hex("#ff5252"),
 	A200 = hex("#ff5252"),
-	["A400"] = hex("#ff1744"),
 	A400 = hex("#ff1744"),
-	["A700"] = hex("#d50000"),
 	A700 = hex("#d50000"),
 }
 
@@ -45,13 +41,9 @@ Material.Pink = {
 	[700] = hex("#c2185b"),
 	[800] = hex("#ad1457"),
 	[900] = hex("#880e4f"),
-	["A100"] = hex("#ff80ab"),
 	A100 = hex("#ff80ab"),
-	["A200"] = hex("#ff4081"),
 	A200 = hex("#ff4081"),
-	["A400"] = hex("#f50057"),
 	A400 = hex("#f50057"),
-	["A700"] = hex("#c51162"),
 	A700 = hex("#c51162"),
 }
 
@@ -66,13 +58,9 @@ Material.Purple = {
 	[700] = hex("#7b1fa2"),
 	[800] = hex("#6a1b9a"),
 	[900] = hex("#4a148c"),
-	["A100"] = hex("#ea80fc"),
 	A100 = hex("#ea80fc"),
-	["A200"] = hex("#e040fb"),
 	A200 = hex("#e040fb"),
-	["A400"] = hex("#d500f9"),
 	A400 = hex("#d500f9"),
-	["A700"] = hex("#aa00ff"),
 	A700 = hex("#aa00ff"),
 }
 
@@ -87,13 +75,9 @@ Material.DeepPurple = {
 	[700] = hex("#512da8"),
 	[800] = hex("#4527a0"),
 	[900] = hex("#311b92"),
-	["A100"] = hex("#b388ff"),
 	A100 = hex("#b388ff"),
-	["A200"] = hex("#7c4dff"),
 	A200 = hex("#7c4dff"),
-	["A400"] = hex("#651fff"),
 	A400 = hex("#651fff"),
-	["A700"] = hex("#6200ea"),
 	A700 = hex("#6200ea"),
 }
 
@@ -108,13 +92,9 @@ Material.Indigo = {
 	[700] = hex("#303f9f"),
 	[800] = hex("#283593"),
 	[900] = hex("#1a237e"),
-	["A100"] = hex("#8c9eff"),
 	A100 = hex("#8c9eff"),
-	["A200"] = hex("#536dfe"),
 	A200 = hex("#536dfe"),
-	["A400"] = hex("#3d5afe"),
 	A400 = hex("#3d5afe"),
-	["A700"] = hex("#304ffe"),
 	A700 = hex("#304ffe"),
 }
 
@@ -129,13 +109,9 @@ Material.Blue = {
 	[700] = hex("#1976d2"),
 	[800] = hex("#1565c0"),
 	[900] = hex("#0d47a1"),
-	["A100"] = hex("#82b1ff"),
 	A100 = hex("#82b1ff"),
-	["A200"] = hex("#448aff"),
 	A200 = hex("#448aff"),
-	["A400"] = hex("#2979ff"),
 	A400 = hex("#2979ff"),
-	["A700"] = hex("#2962ff"),
 	A700 = hex("#2962ff"),
 }
 
@@ -150,13 +126,9 @@ Material.LightBlue = {
 	[700] = hex("#0288d1"),
 	[800] = hex("#0277bd"),
 	[900] = hex("#01579b"),
-	["A100"] = hex("#80d8ff"),
 	A100 = hex("#80d8ff"),
-	["A200"] = hex("#40c4ff"),
 	A200 = hex("#40c4ff"),
-	["A400"] = hex("#00b0ff"),
 	A400 = hex("#00b0ff"),
-	["A700"] = hex("#0091ea"),
 	A700 = hex("#0091ea"),
 }
 
@@ -171,13 +143,9 @@ Material.Cyan = {
 	[700] = hex("#0097a7"),
 	[800] = hex("#00838f"),
 	[900] = hex("#006064"),
-	["A100"] = hex("#84ffff"),
 	A100 = hex("#84ffff"),
-	["A200"] = hex("#18ffff"),
 	A200 = hex("#18ffff"),
-	["A400"] = hex("#00e5ff"),
 	A400 = hex("#00e5ff"),
-	["A700"] = hex("#00b8d4"),
 	A700 = hex("#00b8d4"),
 }
 
@@ -192,13 +160,9 @@ Material.Teal = {
 	[700] = hex("#00796b"),
 	[800] = hex("#00695c"),
 	[900] = hex("#004d40"),
-	["A100"] = hex("#a7ffeb"),
 	A100 = hex("#a7ffeb"),
-	["A200"] = hex("#64ffda"),
 	A200 = hex("#64ffda"),
-	["A400"] = hex("#1de9b6"),
 	A400 = hex("#1de9b6"),
-	["A700"] = hex("#00bfa5"),
 	A700 = hex("#00bfa5"),
 }
 
@@ -213,13 +177,9 @@ Material.Green = {
 	[700] = hex("#388e3c"),
 	[800] = hex("#2e7d32"),
 	[900] = hex("#1b5e20"),
-	["A100"] = hex("#b9f6ca"),
 	A100 = hex("#b9f6ca"),
-	["A200"] = hex("#69f0ae"),
 	A200 = hex("#69f0ae"),
-	["A400"] = hex("#00e676"),
 	A400 = hex("#00e676"),
-	["A700"] = hex("#00c853"),
 	A700 = hex("#00c853"),
 }
 
@@ -234,13 +194,9 @@ Material.LightGreen = {
 	[700] = hex("#689f38"),
 	[800] = hex("#558b2f"),
 	[900] = hex("#33691e"),
-	["A100"] = hex("#ccff90"),
 	A100 = hex("#ccff90"),
-	["A200"] = hex("#b2ff59"),
 	A200 = hex("#b2ff59"),
-	["A400"] = hex("#76ff03"),
 	A400 = hex("#76ff03"),
-	["A700"] = hex("#64dd17"),
 	A700 = hex("#64dd17"),
 }
 
@@ -255,13 +211,9 @@ Material.Lime = {
 	[700] = hex("#afb42b"),
 	[800] = hex("#9e9d24"),
 	[900] = hex("#827717"),
-	["A100"] = hex("#f4ff81"),
 	A100 = hex("#f4ff81"),
-	["A200"] = hex("#eeff41"),
 	A200 = hex("#eeff41"),
-	["A400"] = hex("#c6ff00"),
 	A400 = hex("#c6ff00"),
-	["A700"] = hex("#aeea00"),
 	A700 = hex("#aeea00"),
 }
 
@@ -276,13 +228,9 @@ Material.Yellow = {
 	[700] = hex("#fbc02d"),
 	[800] = hex("#f9a825"),
 	[900] = hex("#f57f17"),
-	["A100"] = hex("#ffff8d"),
 	A100 = hex("#ffff8d"),
-	["A200"] = hex("#ffff00"),
 	A200 = hex("#ffff00"),
-	["A400"] = hex("#ffea00"),
 	A400 = hex("#ffea00"),
-	["A700"] = hex("#ffd600"),
 	A700 = hex("#ffd600"),
 }
 
@@ -297,13 +245,9 @@ Material.Amber = {
 	[700] = hex("#ffa000"),
 	[800] = hex("#ff8f00"),
 	[900] = hex("#ff6f00"),
-	["A100"] = hex("#ffe57f"),
 	A100 = hex("#ffe57f"),
-	["A200"] = hex("#ffd740"),
 	A200 = hex("#ffd740"),
-	["A400"] = hex("#ffc400"),
 	A400 = hex("#ffc400"),
-	["A700"] = hex("#ffab00"),
 	A700 = hex("#ffab00"),
 }
 
@@ -318,13 +262,9 @@ Material.Orange = {
 	[700] = hex("#f57c00"),
 	[800] = hex("#ef6c00"),
 	[900] = hex("#e65100"),
-	["A100"] = hex("#ffd180"),
 	A100 = hex("#ffd180"),
-	["A200"] = hex("#ffab40"),
 	A200 = hex("#ffab40"),
-	["A400"] = hex("#ff9100"),
 	A400 = hex("#ff9100"),
-	["A700"] = hex("#ff6d00"),
 	A700 = hex("#ff6d00"),
 }
 
@@ -339,13 +279,9 @@ Material.DeepOrange = {
 	[700] = hex("#e64a19"),
 	[800] = hex("#d84315"),
 	[900] = hex("#bf360c"),
-	["A100"] = hex("#ff9e80"),
 	A100 = hex("#ff9e80"),
-	["A200"] = hex("#ff6e40"),
 	A200 = hex("#ff6e40"),
-	["A400"] = hex("#ff3d00"),
 	A400 = hex("#ff3d00"),
-	["A700"] = hex("#dd2c00"),
 	A700 = hex("#dd2c00"),
 }
 
@@ -416,11 +352,6 @@ local HUES: { [string]: MaterialHue } = {
 	bluegrey = Material.BlueGrey,
 	gray = Material.Grey,
 	bluegray = Material.BlueGrey,
-	deeppurple = Material.DeepPurple,
-	lightblue = Material.LightBlue,
-	lightgreen = Material.LightGreen,
-	deeporange = Material.DeepOrange,
-	bluegrey = Material.BlueGrey,
 }
 
 HUES["red"] = Material.Red
@@ -468,7 +399,8 @@ function Material.get(hueOrSwatch: string, shade: MaterialShade?): Color3?
 
 	-- Parse "Blue 500", "blue.500", "Blue-A200", "deepPurple500"
 	if shadeKey == nil then
-		local huePart, shadePart = string.match(rawName, "^([%a][%a%s_-]-)%s*[%.%s_-]?([Aa]?%d%d%d?)$")
+		local huePart, shadePart =
+			string.match(rawName, "^([%a][%a%s_-]-)%s*[%.%s_-]?([Aa]?%d%d%d?)$")
 		if huePart and shadePart then
 			rawName = huePart
 			shadeKey = normalizeShade(shadePart)

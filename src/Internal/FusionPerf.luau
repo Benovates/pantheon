@@ -7,7 +7,7 @@
 
 	We wrap it so it only runs when `Flags.LifetimeChecks` is true:
 
-		EstuaryUI.Flags.LifetimeChecks = true  -- re-enable Fusion's lifetime warnings
+		Pantheon.Flags.LifetimeChecks = true  -- re-enable Fusion's lifetime warnings
 
 	Fusion exposes no switch for this, so we patch the table field its own
 	modules call through. Fails soft: if the layout changes, nothing is patched.

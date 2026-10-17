@@ -1,6 +1,6 @@
 --!strict
 --[[
-	Field validators — return (ok, message?).
+	Field validators: return (ok, message?).
 ]]
 export type Validator = (value: any) -> (boolean, string?)
 
@@ -20,7 +20,7 @@ function Validators.required(message: string?): Validator
 end
 
 function Validators.minLength(n: number, message: string?): Validator
-	local msg = message or (`At least {n} characters`)
+	local msg = message or `At least {n} characters`
 	return function(value)
 		local s = tostring(value or "")
 		if #s < n then
@@ -31,7 +31,7 @@ function Validators.minLength(n: number, message: string?): Validator
 end
 
 function Validators.maxLength(n: number, message: string?): Validator
-	local msg = message or (`At most {n} characters`)
+	local msg = message or `At most {n} characters`
 	return function(value)
 		local s = tostring(value or "")
 		if #s > n then

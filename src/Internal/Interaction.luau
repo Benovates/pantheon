@@ -3,15 +3,17 @@
 	Spring-driven hover / press / focus for interactive controls.
 
 	State layers tint the control's own BackgroundColor3 / Transparency
-	(Material state-layer model). No child overlay Frame — padding must not
+	(Material state-layer model). No child overlay Frame: padding must not
 	create a second “hover box”.
 ]]
+local Fusion = require(script.Parent.Parent.Parent.Fusion)
 local Types = require(script.Parent.Parent.Types)
+local Focus = require(script.Parent.Focus)
 
 export type BindOptions = {
 	Disabled: boolean?,
 	-- Color mixed onto the base fill (usually OnSurface or OnPrimary)
-	StateColor: Color3?,
+	StateColor: any?, -- a Color3 or a state of one
 	HoverOpacity: number?, -- default 0.08
 	PressOpacity: number?, -- default 0.12
 }
@@ -29,9 +31,23 @@ export type BindResult = {
 	wire: (gui: GuiButton) -> (),
 }
 
-local function lerpColor(a: Color3, b: Color3, t: number): Color3
+--- A colour, or a state of one. Read inside a Computed, pass its `use` so the Computed follows
+--- the state; without it the state is only read once.
+local function resolveColor(color: any, use: any?): Color3
+	if typeof(color) == "table" and (color :: any).type == "State" then
+		return if use then use(color) else Fusion.peek(color)
+	end
+	return color
+end
+
+local function lerpColor(a: any, b: any, t: number, use: any?): Color3
+	local from, to = resolveColor(a, use), resolveColor(b, use)
 	t = math.clamp(t, 0, 1)
-	return Color3.new(a.R + (b.R - a.R) * t, a.G + (b.G - a.G) * t, a.B + (b.B - a.B) * t)
+	return Color3.new(
+		from.R + (to.R - from.R) * t,
+		from.G + (to.G - from.G) * t,
+		from.B + (to.B - from.B) * t
+	)
 end
 
 local function bind(scope: Types.Scope, theme: Types.Theme, opts: BindOptions?): BindResult
@@ -62,7 +78,7 @@ local function bind(scope: Types.Scope, theme: Types.Theme, opts: BindOptions?):
 
 	local function fill(base: Color3): any
 		return scope:Computed(function(use)
-			return lerpColor(base, stateColor, layerAlpha(use))
+			return lerpColor(base, stateColor, layerAlpha(use), use)
 		end)
 	end
 
@@ -79,6 +95,7 @@ local function bind(scope: Types.Scope, theme: Types.Theme, opts: BindOptions?):
 		if disabled then
 			return
 		end
+		Focus.manage(gui, theme)
 		table.insert(
 			scope,
 			gui.MouseEnter:Connect(function()
@@ -129,7 +146,15 @@ local function bind(scope: Types.Scope, theme: Types.Theme, opts: BindOptions?):
 	} :: BindResult
 end
 
+--- Colour for the unfilled part of a slider / progress track. Panels are often
+--- SurfaceContainerHigh themselves (the elevated Window is, in dark mode), so using that
+--- colour for the track makes it vanish; mix a little OnSurface in so it reads on either.
+local function trackColor(theme: Types.Theme, use: any?): Color3
+	return lerpColor(theme.Colors.SurfaceContainerHigh, theme.Colors.OnSurface, 0.2, use)
+end
+
 return {
 	bind = bind,
 	lerpColor = lerpColor,
+	trackColor = trackColor,
 }
