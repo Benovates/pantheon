@@ -401,14 +401,14 @@ return function(scope: Types.Scope, props: Types.WindowProps): Instance
 
 			table.insert(
 				scope,
-				handle.MouseEnter:Connect(function(x: number, y: number)
+				handle.MouseEnter:Connect(function()
 					hovering[name] = true
 					refreshCursor()
 				end)
 			)
 			table.insert(
 				scope,
-				handle.MouseMoved:Connect(function(x: number, y: number)
+				handle.MouseMoved:Connect(function()
 					if hovering[name] or draggingHandle == name then
 						refreshCursor()
 					end

@@ -10,19 +10,16 @@ local ScrollInput = require(script.Parent.Parent.ScrollInput)
 
 local RunService = game:GetService("RunService")
 local peek = Fusion.peek
-local Children = Fusion.Children
 
-local ROW = 34 -- height of the selected row, in px
-local STEP = 0.46 -- angle between two rows, in radians
+local ROW = 34
+local STEP = 0.46
 local RADIUS = ROW / STEP
-local SLOTS = 4 -- rows drawn each side of the selected one
+local SLOTS = 4
 local TEXT_SIZE = 26
 
 export type Options = {
 	Theme: Types.Theme,
-	--- How many numbers: 0 to Count - 1.
 	Count: number,
-	--- The selected number. A state; the wheel follows it.
 	Value: any,
 	OnChanged: (number) -> (),
 	Format: ((number) -> string)?,
@@ -43,8 +40,8 @@ return function(scope: Types.Scope, options: Options): Frame
 	end
 	local height = options.Height or ROW * 6
 
-	local position = peek(options.Value) :: number -- where the drum is, in rows (not wrapped)
-	local target = position -- where it is heading
+	local position = peek(options.Value) :: number
+	local target = position
 	local column = scope:New("TextButton")({
 		Name = "Wheel",
 		Text = "",
@@ -56,9 +53,6 @@ return function(scope: Types.Scope, options: Options): Frame
 		ZIndex = 2,
 	}) :: TextButton
 
-	-- Each row is a sharp label plus four ghost copies. Roblox cannot blur text, so the ghosts
-	-- are spread a little way apart and kept faint (the same trick a soft UI shadow uses): the
-	-- further a row is from the middle, the further they spread and the fainter the sharp one.
 	type Row = { main: TextLabel, ghosts: { TextLabel } }
 	local rows: { Row } = {}
 	local GHOST_OFFSETS =
@@ -87,8 +81,6 @@ return function(scope: Types.Scope, options: Options): Frame
 		rows[slot + SLOTS + 1] = { main = makeLabel(), ghosts = ghosts }
 	end
 
-	--- Lay the rows out for a drum turned to `at` rows. Rows curve away like a cylinder: they
-	--- crowd together, shrink, blur and fade towards the top and bottom.
 	local function render(at: number)
 		local base = math.floor(at + 0.5)
 		local frac = at - base
@@ -138,7 +130,6 @@ return function(scope: Types.Scope, options: Options): Frame
 		end
 	end
 
-	--- Ease the drum towards `target`.
 	local function glide()
 		stopAnimation()
 		animation = RunService.Heartbeat:Connect(function(dt: number)
@@ -151,7 +142,6 @@ return function(scope: Types.Scope, options: Options): Frame
 		end)
 	end
 
-	--- Glide to `to`, then announce the number it landed on.
 	local function settleOn(to: number)
 		target = math.floor(to + 0.5)
 		options.OnChanged(wrap(target, count))
@@ -160,7 +150,6 @@ return function(scope: Types.Scope, options: Options): Frame
 	table.insert(scope, stopAnimation)
 	render(position)
 
-	-- Follow the value when it is set from outside, by the shortest way round.
 	table.insert(
 		scope,
 		scope:Observer(options.Value):onChange(function()
@@ -174,7 +163,6 @@ return function(scope: Types.Scope, options: Options): Frame
 		end)
 	)
 
-	-- Drag or flick. A press that barely moves is a click: the row under it is selected.
 	table.insert(
 		scope,
 		column.InputBegan:Connect(function(input: InputObject)
@@ -205,19 +193,16 @@ return function(scope: Types.Scope, options: Options): Frame
 				render(position)
 			end, function()
 				if moved < 4 then
-					-- A click: work out which row it hit on the curved drum.
 					local centre = column.AbsolutePosition.Y + column.AbsoluteSize.Y / 2
 					local sine = math.clamp((startY - centre) / RADIUS, -0.99, 0.99)
 					settleOn(position + math.asin(sine) / STEP)
 				else
-					-- Carry on a little with the flick, then settle.
 					settleOn(position + math.clamp(velocity, -30, 30) * 0.12)
 				end
 			end)
 		end)
 	)
 
-	-- Mouse wheel.
 	local carried = 0
 	table.insert(
 		scope,
@@ -226,12 +211,12 @@ return function(scope: Types.Scope, options: Options): Frame
 			horizontal = false,
 			scrollBy = function(delta: number)
 				carried += delta
-				local rows = if carried >= 0
+				local notches = if carried >= 0
 					then math.floor(carried / 40)
 					else math.ceil(carried / 40)
-				if rows ~= 0 then
-					carried -= rows * 40
-					settleOn(target + rows)
+				if notches ~= 0 then
+					carried -= notches * 40
+					settleOn(target + notches)
 				end
 			end,
 		})

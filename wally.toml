@@ -2,14 +2,20 @@
 name = "koterahq/pantheon"
 version = "0.1.0"
 license = "MIT"
-author = ["7kayoh"]
+authors = ["7kayoh"]
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
-description = "Pantheon primitives — Fusion + Iona, Cadence/Tithe MD3 language"
+description = "Accessible, themed Fusion 0.3 interface components for Roblox, with a game HUD set"
+repository = "https://github.com/kotdes/pantheon"
+homepage = "https://github.com/kotdes/pantheon"
+include = ["src", "src/**", "default.project.json", "wally.toml", "README.md", "LICENSE"]
+exclude = ["**"]
 
 [dependencies]
-# Iona is not published yet — path-link ../iona/src in Rojo (see demo.project.json).
 Fusion = "elttob/fusion@0.3.0"
 Lucide = "latte-soft/lucide-icons@0.1.3"
 Iona = "koterahq/iona@0.3.0"
+
+# Only the admin demo uses it.
+[dev-dependencies]
 Snapdragon = "vorlias/snapdragon@2.0.0"

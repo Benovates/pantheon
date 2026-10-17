@@ -1,7 +1,7 @@
 --!strict
 --[[
-	koterahq/pantheon — Cadence/Tithe design system for Fusion + Iona.
-	Vuetify-scale component kit (unpublished; path-link siblings).
+	koterahq/pantheon: Cadence/Tithe design system for Fusion + Iona.
+	Vuetify-scale component kit.
 ]]
 
 local Packages = script.Parent
@@ -51,7 +51,7 @@ local Pantheon = {
 	Material = require(script.Internal.MaterialColors),
 	Fusion = Fusion,
 	Iona = Iona,
-	Version = { major = 0, minor = 3, isRelease = false },
+	Version = { major = 0, minor = 1, isRelease = false },
 }
 
 -- Fusion's Hydrate is slated for deprecation. Pantheon scopes expose its own

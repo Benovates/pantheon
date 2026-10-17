@@ -4,7 +4,15 @@ A modern and slick Fusion 0.3+ components library for Roblox, with a focus on ac
 
 ## Installation
 
-Pantheon is still in development and is not published to Wally yet. To install, clone the repository and run the following commands in your project directory to get started:
+Add Pantheon to your `wally.toml`, then run `wally install`:
+
+```toml
+[dependencies]
+Pantheon = "koterahq/pantheon@0.1.0"
+```
+
+To work on Pantheon itself, clone the repository and run:
+
 ```bash
 rokit install
 wally install
@@ -37,4 +45,4 @@ For contributions, please make sure to follow the coding style and write tests f
 Ensure to add types for all new components and their properties in the `src/Types.luau` file. This will help with type checking and improve the developer experience.
 
 ## Version
-0.0.1 - Initial release.
+0.1.0 - Initial release.
