@@ -19,8 +19,18 @@ return StoryUtil.story(function(scope, C, ctx)
 			open:set(false)
 		end,
 		Items = {
-			{ Text = "Action A", OnClick = function() open:set(false) end },
-			{ Text = "Action B", OnClick = function() open:set(false) end },
+			{
+				Text = "Action A",
+				OnClick = function()
+					open:set(false)
+				end,
+			},
+			{
+				Text = "Action B",
+				OnClick = function()
+					open:set(false)
+				end,
+			},
 			{ Text = "Disabled", Disabled = true },
 		} :: { any },
 	})

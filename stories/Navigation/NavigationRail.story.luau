@@ -11,7 +11,11 @@ return StoryUtil.story(function(scope, C, ctx)
 			{ Id = "set", Icon = "settings", Label = "Settings" },
 		},
 	})
-	return StoryUtil.panel(scope, 320, scope:Hydrate(rail)({
-		Size = UDim2.new(1, 0, 0, 52),
-	}))
+	return StoryUtil.panel(
+		scope,
+		320,
+		scope:Hydrate(rail)({
+			Size = UDim2.new(1, 0, 0, 52),
+		})
+	)
 end)

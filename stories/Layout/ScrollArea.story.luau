@@ -11,11 +11,14 @@ return StoryUtil.story(function(scope, C, _ctx)
 		}),
 	}
 	for i = 1, 40 do
-		table.insert(kids, C.Text(scope, {
-			Text = "Scroll row " .. i,
-			Variant = "Body",
-			LayoutOrder = i,
-		}))
+		table.insert(
+			kids,
+			C.Text(scope, {
+				Text = "Scroll row " .. i,
+				Variant = "Body",
+				LayoutOrder = i,
+			})
+		)
 	end
 	local scroll = C.ScrollArea(scope, {
 		Children = kids,
@@ -40,7 +43,11 @@ return StoryUtil.story(function(scope, C, _ctx)
 			end)
 		end,
 	})
-	return StoryUtil.panel(scope, 280, scope:Hydrate(scroll)({
-		Size = UDim2.fromScale(1, 1),
-	}))
+	return StoryUtil.panel(
+		scope,
+		280,
+		scope:Hydrate(scroll)({
+			Size = UDim2.fromScale(1, 1),
+		})
+	)
 end)

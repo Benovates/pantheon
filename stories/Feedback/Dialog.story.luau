@@ -12,8 +12,19 @@ return StoryUtil.story(function(scope, C, ctx)
 			open:set(false)
 		end,
 		Actions = {
-			{ Text = "Cancel", OnClick = function() open:set(false) end },
-			{ Text = "OK", Variant = "Primary", OnClick = function() open:set(false) end },
+			{
+				Text = "Cancel",
+				OnClick = function()
+					open:set(false)
+				end,
+			},
+			{
+				Text = "OK",
+				Variant = "Primary",
+				OnClick = function()
+					open:set(false)
+				end,
+			},
 		},
 	})
 	return C.Button(scope, {

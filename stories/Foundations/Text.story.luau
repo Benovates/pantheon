@@ -1,7 +1,7 @@
 --!strict
 local StoryUtil = require(script.Parent.Parent.StoryUtil)
 
-return StoryUtil.story(function(scope, C, ctx)
+return StoryUtil.story(function(scope, C)
 	local Children = StoryUtil.Fusion.Children
 	return scope:Frame({
 		BackgroundTransparency = 1,
@@ -12,7 +12,11 @@ return StoryUtil.story(function(scope, C, ctx)
 			C.Text(scope, { Text = "Display", Variant = "Display", LayoutOrder = 1 }),
 			C.Text(scope, { Text = "Headline", Variant = "Headline", LayoutOrder = 2 }),
 			C.Text(scope, { Text = "Title", Variant = "Title", LayoutOrder = 3 }),
-			C.Text(scope, { Text = "Body copy for Cadence/Tithe surfaces.", Variant = "Body", LayoutOrder = 4 }),
+			C.Text(scope, {
+				Text = "Body copy for Cadence/Tithe surfaces.",
+				Variant = "Body",
+				LayoutOrder = 4,
+			}),
 			C.Text(scope, { Text = "Label", Variant = "Label", LayoutOrder = 5 }),
 		},
 	})

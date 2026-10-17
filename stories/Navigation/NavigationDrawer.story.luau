@@ -11,7 +11,7 @@ return StoryUtil.story(function(scope, C, ctx)
 		Layer = ctx.overlayLayer,
 		Open = open,
 		Title = "Cadence",
-		Subtitle = "estuary-ui catalog",
+		Subtitle = "pantheon catalog",
 		AvatarInitials = "EU",
 		Inset = 4,
 		CornerRadius = ctx.theme.Metrics.RadiusPanel + 4,

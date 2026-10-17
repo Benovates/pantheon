@@ -3,7 +3,7 @@ local StoryUtil = require(script.Parent.Parent.StoryUtil)
 
 return StoryUtil.story(function(scope, C, ctx)
 	local Children = StoryUtil.Fusion.Children
-	local V = ctx.EstuaryUI.Validators
+	local V = ctx.Pantheon.Validators
 	return scope:Frame({
 		BackgroundTransparency = 1,
 		AutomaticSize = Enum.AutomaticSize.Y,

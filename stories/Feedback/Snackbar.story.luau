@@ -1,7 +1,7 @@
 --!strict
 local StoryUtil = require(script.Parent.Parent.StoryUtil)
 
-return StoryUtil.story(function(scope, C, ctx)
+return StoryUtil.story(function(scope, C)
 	return C.Snackbar(scope, {
 		Message = "Saved successfully",
 		ActionText = "Undo",

@@ -1,30 +1,30 @@
 --!strict
 --[[
-	Shared UI Labs Fusion story helper for estuary-ui.
+	Shared UI Labs Fusion story helper for pantheon.
 	Rebuilds on control changes (components bake theme colors at mount).
 	Emulates theme mode + accessibility prefs via UI Labs controls.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local EstuaryUI = require(ReplicatedStorage.Packages.EstuaryUI)
-local Fusion = EstuaryUI.Fusion
+local Pantheon = require(ReplicatedStorage.Packages.Pantheon)
+local Fusion = Pantheon.Fusion
 local Children = Fusion.Children
 local peek = Fusion.peek
 
 export type StoryContext = {
 	theme: any,
 	overlayLayer: Instance,
-	EstuaryUI: typeof(EstuaryUI),
+	Pantheon: typeof(Pantheon),
 	controls: any,
 }
 
-export type BuildFn = (scope: any, C: typeof(EstuaryUI.Components), ctx: StoryContext) -> Instance?
+export type BuildFn = (scope: any, C: typeof(Pantheon.Components), ctx: StoryContext) -> Instance?
 
 local TEXT_SIZES = { "Medium", "Large", "Larger", "Largest" }
 
 local StoryUtil = {}
 
-StoryUtil.EstuaryUI = EstuaryUI
+StoryUtil.Pantheon = Pantheon
 StoryUtil.Fusion = Fusion
 StoryUtil.peek = peek
 
@@ -41,7 +41,11 @@ end
 local function prefsFromControls(controls: any): any
 	return {
 		ReduceMotion = peek(controls.ReduceMotion) == true,
-		PreferredTransparency = math.clamp(tonumber(peek(controls.PreferredTransparency)) or 0, 0, 1),
+		PreferredTransparency = math.clamp(
+			tonumber(peek(controls.PreferredTransparency)) or 0,
+			0,
+			1
+		),
 		HighContrast = peek(controls.HighContrast) == true,
 		PreferredTextSize = resolveTextSize(controls.PreferredTextSize),
 	}
@@ -67,7 +71,7 @@ function StoryUtil.story(build: BuildFn, extraControls: { [string]: any }?): any
 		fusion = Fusion,
 		controls = controls,
 		story = function(props)
-			local rootScope = EstuaryUI.scoped()
+			local rootScope = Pantheon.scoped()
 			local uiScope: any = nil
 
 			local function rebuild()
@@ -81,12 +85,12 @@ function StoryUtil.story(build: BuildFn, extraControls: { [string]: any }?): any
 				local mode: "Light" | "Dark" = if peek(props.controls.Dark) then "Dark" else "Light"
 				local prefs = prefsFromControls(props.controls)
 				-- Components bake colors at mount; rebuild applies mode + a11y prefs explicitly.
-				local theme = EstuaryUI.Theme.create(mode, {
+				local theme = Pantheon.Theme.create(mode, {
 					RespectAccessibility = false,
 				})
-				theme = EstuaryUI.Accessibility.apply(theme, prefs)
+				theme = Pantheon.Accessibility.apply(theme, prefs)
 
-				EstuaryUI.Theme.Provide(theme, function()
+				Pantheon.Theme.Provide(theme, function()
 					local overlayLayer = scope:Frame({
 						Name = "OverlayLayer",
 						BackgroundTransparency = 1,
@@ -94,10 +98,10 @@ function StoryUtil.story(build: BuildFn, extraControls: { [string]: any }?): any
 						ZIndex = 50,
 					})
 
-					local content = build(scope, EstuaryUI.Components, {
+					local content = build(scope, Pantheon.Components, {
 						theme = theme,
 						overlayLayer = overlayLayer,
-						EstuaryUI = EstuaryUI,
+						Pantheon = Pantheon,
 						controls = props.controls,
 					})
 
@@ -119,7 +123,7 @@ function StoryUtil.story(build: BuildFn, extraControls: { [string]: any }?): any
 									Padding = 12,
 									SortOrder = Enum.SortOrder.LayoutOrder,
 								},
-					[Children] = if content then { content :: Instance } else nil,
+								[Children] = if content then { content :: Instance } else nil,
 							}),
 							overlayLayer,
 						},
@@ -129,7 +133,7 @@ function StoryUtil.story(build: BuildFn, extraControls: { [string]: any }?): any
 
 			rebuild()
 
-			-- Components resolve theme colors once at mount — rebuild like the demo storyboard.
+			-- Components resolve theme colors once at mount, so rebuild like the demo storyboard.
 			for _, control in props.controls do
 				if typeof(control) == "table" then
 					table.insert(

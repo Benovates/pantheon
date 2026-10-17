@@ -15,7 +15,7 @@ return StoryUtil.story(function(scope, C, ctx)
 		Open = open,
 		Target = trigger,
 		Initials = "EU",
-		Name = "Estuary User",
+		Name = "Pantheon User",
 		Subtitle = "you@game.com",
 		OnClose = function()
 			open:set(false)
@@ -25,14 +25,29 @@ return StoryUtil.story(function(scope, C, ctx)
 			{
 				Title = "Account",
 				Items = {
-					{ Text = "Profile", OnClick = function() open:set(false) end },
-					{ Text = "Settings", OnClick = function() open:set(false) end },
+					{
+						Text = "Profile",
+						OnClick = function()
+							open:set(false)
+						end,
+					},
+					{
+						Text = "Settings",
+						OnClick = function()
+							open:set(false)
+						end,
+					},
 				},
 			},
 			{
 				Title = "Session",
 				Items = {
-					{ Text = "Sign out", OnClick = function() open:set(false) end },
+					{
+						Text = "Sign out",
+						OnClick = function()
+							open:set(false)
+						end,
+					},
 				},
 			},
 		},
