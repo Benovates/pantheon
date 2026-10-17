@@ -51,14 +51,33 @@ return function(scope: Types.Scope, props: Types.SliderProps): Instance
 	local ticks = {}
 	if showSteps then
 		for i = 0, stepCount do
+			-- A tick appears as the thumb is picked up, and the ones the thumb has passed fill with
+			-- the accent colour and grow a little.
+			local passed = scope:Spring(
+				scope:Computed(function(use)
+					return if i / stepCount <= fraction(use) + 1e-6 then 1 else 0
+				end),
+				theme.Motion.SpringSpeed * 1.4,
+				theme.Motion.SpringDamping
+			)
 			table.insert(
 				ticks,
 				scope:Frame({
 					Name = "Tick",
-					Size = UDim2.fromOffset(2, 6),
-					BackgroundColor3 = theme.Colors.OnSurfaceVariant,
+					Size = scope:Computed(function(use)
+						local lift = use(passed) :: number
+						return UDim2.fromOffset(2 + lift * 0.6, 6 + lift * 3)
+					end),
+					BackgroundColor3 = scope:Computed(function(use)
+						return Interaction.lerpColor(
+							use(theme.Colors.OnSurfaceVariant),
+							use(theme.Colors.Primary),
+							math.clamp(use(passed) :: number, 0, 1),
+							use
+						)
+					end),
 					BackgroundTransparency = scope:Computed(function(use)
-						return if use(draggingS) > 0.2 then 0.2 else 1
+						return 1 - math.clamp(use(draggingS) :: number, 0, 1) * 0.8
 					end),
 					BorderSizePixel = 0,
 					LayoutOrder = i + 1,

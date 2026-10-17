@@ -14,8 +14,9 @@ local Children = Fusion.Children
 local peek = Fusion.peek
 
 local TRACK_HEIGHT = 28
-local THUMB_SIZE = TRACK_HEIGHT -- the thumb's size while held: it grows to meet the track
-local THUMB_REST = 18
+local THUMB_SIZE = TRACK_HEIGHT -- height of a slider row
+local THUMB_HELD = 18 -- the thumb's size while held
+local THUMB_REST = 12 -- and at rest: it grows when pressed
 
 export type ChannelSpec = {
 	label: string,
@@ -74,9 +75,9 @@ function Widgets.new(theme: Types.Theme, color: any)
 		}) :: Frame
 	end
 
-	--- Round thumb with a white ring, filled with the current colour. Smaller than the track at
-	--- rest, grows to the track height while `held`.
-	local function thumb(sc: any, position: any, held: any): Frame
+	--- Round thumb with a white ring, filled with the current colour. Small at rest, grows while
+	--- `held`. With `label`, a bubble above it shows the value while it is held.
+	local function thumb(sc: any, position: any, held: any, label: any?): Frame
 		local grow = sc:Spring(
 			sc:Computed(function(use)
 				return if use(held) then 1 else 0
@@ -84,12 +85,55 @@ function Widgets.new(theme: Types.Theme, color: any)
 			32,
 			0.7
 		)
+		local bubble = if label
+			then sc:New("Frame")({
+				Name = "Value",
+				AnchorPoint = Vector2.new(0.5, 1),
+				Position = sc:Computed(function(use)
+					-- Rises into place as it fades in.
+					return UDim2.new(0.5, 0, 0, -(8 + 6 * (1 - math.clamp(use(grow), 0, 1))))
+				end),
+				Size = UDim2.fromOffset(0, 0),
+				AutomaticSize = Enum.AutomaticSize.XY,
+				BackgroundColor3 = theme.Colors.InverseSurface,
+				BackgroundTransparency = sc:Computed(function(use)
+					return 1 - math.clamp(use(grow), 0, 1)
+				end),
+				BorderSizePixel = 0,
+				Visible = sc:Computed(function(use)
+					return use(grow) > 0.02
+				end),
+				ZIndex = 10,
+				[Children] = {
+					sc:New("UICorner")({ CornerRadius = UDim.new(0, 6) }),
+					sc:New("UIPadding")({
+						PaddingLeft = UDim.new(0, 8),
+						PaddingRight = UDim.new(0, 8),
+						PaddingTop = UDim.new(0, 3),
+						PaddingBottom = UDim.new(0, 3),
+					}),
+					sc:New("TextLabel")({
+						BackgroundTransparency = 1,
+						AutomaticSize = Enum.AutomaticSize.XY,
+						Size = UDim2.fromOffset(0, 0),
+						FontFace = theme.Typography.Label.Font,
+						TextSize = 12,
+						TextColor3 = theme.Colors.InverseOnSurface,
+						TextTransparency = sc:Computed(function(use)
+							return 1 - math.clamp(use(grow), 0, 1)
+						end),
+						Text = label,
+						ZIndex = 11,
+					}),
+				},
+			})
+			else nil
 		return sc:New("Frame")({
 			Name = "Thumb",
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = position,
 			Size = sc:Computed(function(use)
-				local px = THUMB_REST + (THUMB_SIZE - THUMB_REST) * use(grow)
+				local px = THUMB_REST + (THUMB_HELD - THUMB_REST) * use(grow)
 				return UDim2.fromOffset(px, px)
 			end),
 			BackgroundColor3 = color,
@@ -102,6 +146,7 @@ function Widgets.new(theme: Types.Theme, color: any)
 					Thickness = 2.5,
 					ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				}),
+				bubble,
 			},
 		}) :: Frame
 	end
@@ -140,7 +185,7 @@ function Widgets.new(theme: Types.Theme, color: any)
 		end)
 
 		-- The thumb moves along the track inset by its radius, so it stays inside the ends.
-		local PAD = THUMB_SIZE / 2
+		local PAD = THUMB_HELD / 2 + 5 -- room for the ring and a gap to the track end
 		local trackPosition = UDim2.new(0, 0, 0.5, -TRACK_HEIGHT / 2)
 		local trackSize = UDim2.new(1, 0, 0, TRACK_HEIGHT)
 
@@ -162,6 +207,7 @@ function Widgets.new(theme: Types.Theme, color: any)
 		}) :: Frame
 
 		local held = sc:Value(false)
+		local decimals = spec.decimals or 0
 		local trackHolder = sc:New("Frame")({
 			Name = "TrackHolder",
 			BackgroundTransparency = 1,
@@ -177,6 +223,10 @@ function Widgets.new(theme: Types.Theme, color: any)
 					sc:Computed(function(use)
 						local along = use(fraction) :: number
 						return UDim2.new(along, PAD - 2 * PAD * along, 0.5, 0)
+					end),
+					held,
+					sc:Computed(function(use)
+						return string.format(`%.{decimals}f`, spec.get(use))
 					end)
 				),
 			},
