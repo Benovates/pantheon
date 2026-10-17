@@ -5,7 +5,7 @@ local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
 local Persist = require(script.Parent.Parent.Internal.Persist)
 local Bind = require(script.Parent.Parent.Internal.Bind)
-local Slider = require(script.Parent.Slider)
+local Wheel = require(script.Parent.Parent.Internal.Picker.Wheel)
 
 local Children = Fusion.Children
 local peek = Fusion.peek
@@ -28,6 +28,20 @@ return function(scope: Types.Scope, props: Types.TimePickerProps): Instance
 		end
 	end
 
+	local ROW = 34
+	local function wheel(count: number, value: any, set: (number) -> (), order: number): Instance
+		return Wheel(scope, {
+			Theme = theme,
+			Count = count,
+			Value = value,
+			OnChanged = function(n: number)
+				set(n)
+				emit()
+			end,
+			LayoutOrder = order,
+		})
+	end
+
 	return scope:Frame({
 		Name = "TimePicker",
 		BackgroundColor3 = theme.Colors.Surface,
@@ -36,42 +50,70 @@ return function(scope: Types.Scope, props: Types.TimePickerProps): Instance
 		LayoutOrder = props.LayoutOrder or 0,
 		CornerRadius = theme.Metrics.RadiusPanel,
 		Padding = { theme.Metrics.SpaceMd },
-		Layout = { Kind = "List", Padding = theme.Metrics.SpaceSm },
 		[Children] = {
-			scope:TextLabel({
+			scope:Frame({
+				Name = "Wheels",
 				BackgroundTransparency = 1,
-				FontFace = theme.Fonts.Heading,
-				TextSize = 28,
-				TextColor3 = theme.Colors.OnSurface,
-				Text = scope:Computed(function(use)
-					return string.format("%02d:%02d", use(hours), use(minutes))
-				end),
-				Size = UDim2.new(1, 0, 0, 36),
-				LayoutOrder = 1,
-			}),
-			Slider(scope, {
-				Label = "Hours",
-				Min = 0,
-				Max = 23,
-				Step = 1,
-				Value = hours,
-				LayoutOrder = 2,
-				OnChanged = function(v)
-					hours:set(math.floor(v))
-					emit()
-				end,
-			}),
-			Slider(scope, {
-				Label = "Minutes",
-				Min = 0,
-				Max = 59,
-				Step = 1,
-				Value = minutes,
-				LayoutOrder = 3,
-				OnChanged = function(v)
-					minutes:set(math.floor(v))
-					emit()
-				end,
+				Size = UDim2.new(1, 0, 0, ROW * 6),
+				[Children] = {
+					scope:Frame({
+						Name = "Band",
+						AnchorPoint = Vector2.new(0.5, 0.5),
+						Position = UDim2.fromScale(0.5, 0.5),
+						Size = UDim2.new(1, 0, 0, ROW),
+						BackgroundColor3 = theme.Colors.SurfaceContainerHigh,
+						CornerRadius = theme.Metrics.RadiusSm,
+						ZIndex = 1,
+					}),
+					scope:Frame({
+						Name = "Row",
+						BackgroundTransparency = 1,
+						AnchorPoint = Vector2.new(0.5, 0),
+						Position = UDim2.fromScale(0.5, 0),
+						Size = UDim2.fromScale(0, 1),
+						AutomaticSize = Enum.AutomaticSize.X,
+						ZIndex = 2,
+						Layout = {
+							Kind = "List",
+							SortOrder = Enum.SortOrder.LayoutOrder,
+							FillDirection = Enum.FillDirection.Horizontal,
+							VerticalAlignment = Enum.VerticalAlignment.Center,
+							HorizontalAlignment = Enum.HorizontalAlignment.Center,
+							Padding = 0,
+						},
+						[Children] = {
+							wheel(24, hours, function(n)
+								hours:set(n)
+							end, 1),
+							scope:Frame({
+								Name = "Colon",
+								BackgroundTransparency = 1,
+								Size = UDim2.fromOffset(16, ROW),
+								LayoutOrder = 2,
+								ZIndex = 3,
+								[Children] = {
+									scope:Frame({
+										AnchorPoint = Vector2.new(0.5, 0.5),
+										Position = UDim2.new(0.5, 0, 0.5, -5),
+										Size = UDim2.fromOffset(4, 4),
+										BackgroundColor3 = theme.Colors.OnSurface,
+										CornerRadius = theme.Metrics.RadiusPill,
+									}),
+									scope:Frame({
+										AnchorPoint = Vector2.new(0.5, 0.5),
+										Position = UDim2.new(0.5, 0, 0.5, 5),
+										Size = UDim2.fromOffset(4, 4),
+										BackgroundColor3 = theme.Colors.OnSurface,
+										CornerRadius = theme.Metrics.RadiusPill,
+									}),
+								},
+							}),
+							wheel(60, minutes, function(n)
+								minutes:set(n)
+							end, 3),
+						},
+					}),
+				},
 			}),
 		},
 	}) :: Frame

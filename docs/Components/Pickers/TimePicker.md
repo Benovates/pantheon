@@ -6,7 +6,7 @@ tags:
 
 # TimePicker
 
-TimePicker chooses a time of day with a number box for the hours and one for the minutes.
+TimePicker chooses a time of day with two rollers, one for the hours and one for the minutes, like the time wheels of a phone. Drag or flick a roller, scroll over it, or click a number. The rollers wrap round: scrolling past 23 goes to 00.
 
 ## Usage
 
