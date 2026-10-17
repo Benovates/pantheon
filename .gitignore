@@ -9,4 +9,5 @@ sourcemap.json
 .DS_Store
 .env
 
-.cursor/
+notes.md
+.cursor
