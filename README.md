@@ -1,4 +1,4 @@
-# Estuary UI / Pantheon
+# Pantheon
 
 A modern and slick Fusion 0.3+ components library for Roblox, with a focus on accessibility, theming, and performance.
 
@@ -14,17 +14,17 @@ rojo serve demo.project.json
 ## Example Usage
 
 ```luau
-local EstuaryUI = require(Packages.EstuaryUI)
-local scope = EstuaryUI.scoped()
-local theme = EstuaryUI.Theme.create("Light") -- Montserrat typography
+local Pantheon = require(Packages.Pantheon)
+local scope = Pantheon.scoped()
+local theme = Pantheon.Theme.create("Light") -- Montserrat typography
 
-EstuaryUI.Theme.Provide(theme, function()
-  EstuaryUI.Components.Button(scope, { Text = "Run", Variant = "Outlined" })
-  EstuaryUI.Components.Icon(scope, { Name = "search", IconSize = 24 })
+Pantheon.Theme.Provide(theme, function()
+  Pantheon.Components.Button(scope, { Text = "Run", Variant = "Outlined" })
+  Pantheon.Components.Icon(scope, { Name = "search", IconSize = 24 })
 end)
 ```
 
-Brief API docs available in the [docs folder](./docs). Soon will be more comprehensive and covers all components and their properties.
+The documentation is in the [docs folder](./docs), written for MkDocs Material. Run `mkdocs serve` to read it in a browser. It covers every component and its properties, the theme, and the in-game components.
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.

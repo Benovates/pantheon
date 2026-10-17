@@ -8,7 +8,7 @@ version = "0.3.0"
 dependencies = []
 
 [[package]]
-name = "koterahq/estuary-ui"
+name = "koterahq/pantheon"
 version = "0.1.0"
 dependencies = [["Fusion", "elttob/fusion@0.3.0"], ["Iona", "koterahq/iona@0.3.0"], ["Lucide", "latte-soft/lucide-icons@0.1.3"], ["Snapdragon", "vorlias/snapdragon@2.0.0"]]
 

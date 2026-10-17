@@ -1,11 +1,11 @@
 [package]
-name = "koterahq/estuary-ui"
+name = "koterahq/pantheon"
 version = "0.1.0"
 license = "MIT"
 author = ["7kayoh"]
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
-description = "Estuary UI primitives — Fusion + Iona, Cadence/Tithe MD3 language"
+description = "Pantheon primitives — Fusion + Iona, Cadence/Tithe MD3 language"
 
 [dependencies]
 # Iona is not published yet — path-link ../iona/src in Rojo (see demo.project.json).
