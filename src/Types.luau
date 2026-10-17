@@ -643,8 +643,11 @@ export type RangeSliderProps = {
 	Value: UsedAs<NumberRange>?,
 	Min: number?,
 	Max: number?,
+	--- Values snap to multiples of this (default 0.01).
+	Step: number?,
 	OnChanged: ((NumberRange) -> ())?,
 	Disabled: UsedAs<boolean>?,
+	Label: UsedAs<string>?,
 	[string]: any,
 }
 

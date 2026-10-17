@@ -6,7 +6,7 @@ tags:
 
 # RangeSlider
 
-RangeSlider has two handles. The user chooses a range of values, not a single value.
+RangeSlider is one track with two handles. The user chooses a range of values, not a single value. The part of the track between the handles is filled. Press the track to move the nearer handle there, or drag a handle. The handles never cross. A focused slider moves the handle used last with the arrow keys.
 
 ## Usage
 
@@ -33,6 +33,8 @@ C.RangeSlider(scope, {
 | `Value` | `UsedAs<NumberRange>` | :x: | `NumberRange.new(Min, Max)` | The range. A plain value is only the starting range. A `Value` stays in step with the control: the user's changes set it, and setting it changes the control. |
 | `Min` | `number` | :x: | `0` | Lowest value. |
 | `Max` | `number` | :x: | `1` | Highest value. |
+| `Step` | `number` | :x: | `0.01` | Values snap to multiples of this. |
+| `Label` | `UsedAs<string>` | :x: | - | Text above the track, followed by the range. |
 | `Disabled` | `UsedAs<boolean>` | :x: | - | Stops the handles reacting to input. |
 | `Id` | `string` | :x: | - | Key that identifies this component when state is kept across rebuilds. See [Persist](../../Guides/PersistingState.md). |
 
