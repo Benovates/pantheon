@@ -50,7 +50,8 @@ end
 
 return function(scope: Types.Scope, props: Types.ButtonProps): Instance
 	local theme = resolveTheme(props)
-	local style, colorInput = normalizeVariant(props.Variant, peek(props.Color) :: Types.ColorInput?)
+	local style, colorInput =
+		normalizeVariant(props.Variant, peek(props.Color) :: Types.ColorInput?)
 	local role = Color.resolve(colorInput, theme, "primary")
 	local bg, fg, transparency, outlined, stateColor = styleFromRole(style, role, theme)
 	local disabled = peek(props.Disabled) == true
@@ -65,7 +66,14 @@ return function(scope: Types.Scope, props: Types.ButtonProps): Instance
 	})
 
 	-- MD3 disabled: on-surface @ 12% container, label @ 38%
-	local disabledBg = Interaction.lerpColor(theme.Colors.Surface, theme.Colors.OnSurface, 0.12)
+	local disabledBg = scope:Computed(function(use)
+		return Interaction.lerpColor(
+			use(theme.Colors.Surface),
+			use(theme.Colors.OnSurface),
+			0.12,
+			use
+		)
+	end)
 	local disabledFg = theme.Colors.OnSurface
 
 	local kids = {}
@@ -136,7 +144,9 @@ return function(scope: Types.Scope, props: Types.ButtonProps): Instance
 			Kind = "List",
 			FillDirection = Enum.FillDirection.Horizontal,
 			VerticalAlignment = Enum.VerticalAlignment.Center,
-			HorizontalAlignment = if props.HorizontalAlignment then props.HorizontalAlignment else Enum.HorizontalAlignment.Center,
+			HorizontalAlignment = if props.HorizontalAlignment
+				then props.HorizontalAlignment
+				else Enum.HorizontalAlignment.Center,
 			Padding = 6,
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		},

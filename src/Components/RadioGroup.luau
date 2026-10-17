@@ -3,6 +3,7 @@ local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Persist = require(script.Parent.Parent.Internal.Persist)
 local Radio = require(script.Parent.Radio)
 
 local Children = Fusion.Children
@@ -10,8 +11,14 @@ local peek = Fusion.peek
 
 return function(scope: Types.Scope, props: Types.RadioGroupProps): Instance
 	local theme = resolveTheme(props)
-	local selected = if props.Value then props.Value else
-		scope:Value((props.Options[1] and props.Options[1].Value) or "")
+	local selected = if props.Value
+		then props.Value
+		else Persist.value(
+			scope,
+			Persist.key("RadioGroup", props.Id),
+			"value",
+			(props.Options[1] and props.Options[1].Value) or ""
+		)
 	local disabled = peek(props.Disabled) == true
 	local rows = {}
 

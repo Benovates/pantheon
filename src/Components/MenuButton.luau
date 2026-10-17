@@ -68,7 +68,7 @@ return function(scope: Types.Scope, props: Types.MenuButtonProps): Instance
 		Active = clickable,
 		ClipsDescendants = true,
 		CornerRadius = theme.Metrics.RadiusPanel - 4,
-		Padding = if trailingName then { vPad, hPad } else { vPad, hPad/2, vPad, hPad },
+		Padding = if trailingName then { vPad, hPad } else { vPad, hPad / 2, vPad, hPad },
 		Layout = {
 			Kind = "List",
 			FillDirection = Enum.FillDirection.Horizontal,
@@ -112,8 +112,7 @@ return function(scope: Types.Scope, props: Types.MenuButtonProps): Instance
 				[Children] = {
 					if leadingInst
 						then scope:Apply(leadingInst)({ LayoutOrder = 1 })
-						elseif leadingName
-						then scope:Apply(Icon(scope, {
+						elseif leadingName then scope:Apply(Icon(scope, {
 							Theme = theme,
 							Name = leadingName,
 							IconSize = iconSize,
@@ -164,9 +163,7 @@ return function(scope: Types.Scope, props: Types.MenuButtonProps): Instance
 							ImageTransparency = if disabled then 0.38 else 0,
 						})
 						else nil,
-					if trailingInst
-						then scope:Apply(trailingInst)({ LayoutOrder = 2 })
-						else nil,
+					if trailingInst then scope:Apply(trailingInst)({ LayoutOrder = 2 }) else nil,
 				},
 			}),
 			props.Children,
@@ -174,7 +171,7 @@ return function(scope: Types.Scope, props: Types.MenuButtonProps): Instance
 	})) :: TextButton
 
 	if props.Page then
-		btn:SetAttribute("EstuaryMenuPushPage", props.Page)
+		btn:SetAttribute("PantheonMenuPushPage", props.Page)
 	end
 	ix.wire(btn)
 	return btn

@@ -3,6 +3,8 @@ local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Persist = require(script.Parent.Parent.Internal.Persist)
+local Bind = require(script.Parent.Parent.Internal.Bind)
 local Interaction = require(script.Parent.Parent.Internal.Interaction)
 local Icon = require(script.Parent.Icon)
 local P = require(script.Parent.Parent.Internal.props)
@@ -16,7 +18,13 @@ return function(scope: Types.Scope, props: Types.StarRatingProps): Instance
 	local maxStars = props.Max or 5
 	local readOnly = props.ReadOnly == true
 	local iconSize = props.IconSize or 24
-	local value = scope:Value(peek(props.Value) or 0)
+	local value = Persist.value(
+		scope,
+		Persist.key("StarRating", props.Id, typeof(props.Value) == "table"),
+		"value",
+		peek(props.Value) or 0
+	)
+	Bind.link(scope, props.Value, value)
 	local stars = {}
 
 	for i = 1, maxStars do
@@ -32,7 +40,7 @@ return function(scope: Types.Scope, props: Types.StarRatingProps): Instance
 			Name = "star",
 			IconSize = iconSize,
 			Color = scope:Computed(function(use)
-				return if use(filled) then theme.Colors.Primary else theme.Colors.Outline
+				return if use(filled) then use(theme.Colors.Primary) else use(theme.Colors.Outline)
 			end),
 		})
 		local btn = scope:TextButton(P({

@@ -7,6 +7,8 @@ local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Persist = require(script.Parent.Parent.Internal.Persist)
+local Bind = require(script.Parent.Parent.Internal.Bind)
 local Interaction = require(script.Parent.Parent.Internal.Interaction)
 local Icon = require(script.Parent.Icon)
 local P = require(script.Parent.Parent.Internal.props)
@@ -27,8 +29,28 @@ end
 
 return function(scope: Types.Scope, props: Types.TreeViewProps): Instance
 	local theme = resolveTheme(props)
-	local expanded = scope:Value(copyExpanded(peek(props.Expanded)))
-	local selected = scope:Value(peek(props.Selected) or "")
+	local persistKey = Persist.key("TreeView", props.Id, typeof(props.Expanded) == "table")
+	local expanded =
+		Persist.value(scope, persistKey, "expanded", copyExpanded(peek(props.Expanded)))
+	local selected = Persist.value(scope, persistKey, "selected", peek(props.Selected) or "")
+	Bind.link(scope, props.Selected, selected)
+	Bind.link(scope, props.Expanded, expanded, {
+		toInternal = copyExpanded,
+		toProp = copyExpanded,
+		equals = function(a: { [string]: boolean }, b: { [string]: boolean }): boolean
+			for key, value in a do
+				if b[key] ~= value then
+					return false
+				end
+			end
+			for key, value in b do
+				if a[key] ~= value then
+					return false
+				end
+			end
+			return true
+		end,
+	})
 	local order = 0
 
 	local function renderNode(node: Types.TreeNode, depth: number): { Instance }
@@ -63,7 +85,7 @@ return function(scope: Types.Scope, props: Types.TreeViewProps): Instance
 				Size = UDim2.fromOffset(16, 16),
 				LayoutOrder = 1,
 				[Children] = {
-					-- Rotation must be on a child of the host — UIListLayout ignores Rotation on its direct children.
+					-- Rotate a child of the host: UIListLayout ignores Rotation on its direct children.
 					scope:New("Frame")({
 						Name = "ChevronRot",
 						BackgroundTransparency = 1,
@@ -98,8 +120,10 @@ return function(scope: Types.Scope, props: Types.TreeViewProps): Instance
 			Text = "",
 			AutoButtonColor = false,
 			BackgroundColor3 = scope:Computed(function(use)
-				local base = if use(isSelected) then theme.Colors.PrimaryContainer else theme.Colors.Surface
-				return Interaction.lerpColor(base, theme.Colors.OnSurface, ix.alpha(use))
+				local base = if use(isSelected)
+					then use(theme.Colors.PrimaryContainer)
+					else use(theme.Colors.Surface)
+				return Interaction.lerpColor(base, use(theme.Colors.OnSurface), ix.alpha(use), use)
 			end),
 			Size = UDim2.new(1, 0, 0, 32),
 			LayoutOrder = layoutOrder,
@@ -191,7 +215,10 @@ return function(scope: Types.Scope, props: Types.TreeViewProps): Instance
 					branchHeight:set(h)
 				end
 			end
-			table.insert(scope, branchInner:GetPropertyChangedSignal("AbsoluteSize"):Connect(syncBranch))
+			table.insert(
+				scope,
+				branchInner:GetPropertyChangedSignal("AbsoluteSize"):Connect(syncBranch)
+			)
 			task.defer(syncBranch)
 
 			table.insert(
@@ -200,7 +227,12 @@ return function(scope: Types.Scope, props: Types.TreeViewProps): Instance
 					Name = "Children_" .. node.Id,
 					BackgroundTransparency = 1,
 					Size = scope:Computed(function(use)
-						return UDim2.new(1, 0, 0, (use(expandS) :: number) * (use(branchHeight) :: number))
+						return UDim2.new(
+							1,
+							0,
+							0,
+							(use(expandS) :: number) * (use(branchHeight) :: number)
+						)
 					end),
 					Visible = scope:Computed(function(use)
 						return use(expandS) > 0.01

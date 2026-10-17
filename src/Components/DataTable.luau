@@ -18,7 +18,8 @@ return function(scope: Types.Scope, props: Types.DataTableProps): Instance
 	local theme = resolveTheme(props)
 	local rowHeight = props.RowHeight or 48
 	local sortCol = scope:Value(peek(props.SortColumn) or "")
-	local sortAsc = scope:Value(if props.SortAscending == nil then true else peek(props.SortAscending))
+	local sortAsc =
+		scope:Value(if props.SortAscending == nil then true else peek(props.SortAscending))
 
 	local processed = scope:Computed(function(use)
 		local rows = table.clone(use(props.Rows) :: { { [string]: any } })

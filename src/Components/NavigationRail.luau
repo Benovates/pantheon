@@ -8,6 +8,8 @@ local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Persist = require(script.Parent.Parent.Internal.Persist)
+local Bind = require(script.Parent.Parent.Internal.Bind)
 local Interaction = require(script.Parent.Parent.Internal.Interaction)
 local Icon = require(script.Parent.Icon)
 local Badge = require(script.Parent.Badge)
@@ -20,7 +22,13 @@ local peek = Fusion.peek
 
 return function(scope: Types.Scope, props: Types.NavigationRailProps): Instance
 	local theme = resolveTheme(props)
-	local selected = scope:Value(peek(props.Selected) or (props.Items[1] and props.Items[1].Id) or "")
+	local selected = Persist.value(
+		scope,
+		Persist.key("NavigationRail", props.Id, typeof(props.Selected) == "table"),
+		"selected",
+		peek(props.Selected) or (props.Items[1] and props.Items[1].Id) or ""
+	)
+	Bind.link(scope, props.Selected, selected)
 	local horizontal = props.Orientation == "Horizontal"
 	local count = math.max(#props.Items, 1)
 
@@ -29,7 +37,8 @@ return function(scope: Types.Scope, props: Types.NavigationRailProps): Instance
 	local indicatorW = scope:Value(0)
 	local indicatorH = scope:Value(0)
 	local stretch = scope:Value(0)
-	local stretchS = scope:Spring(stretch, theme.Motion.SpringSpeed * .8, theme.Motion.SpringDamping)
+	local stretchS =
+		scope:Spring(stretch, theme.Motion.SpringSpeed * 0.8, theme.Motion.SpringDamping)
 	local xS = scope:Spring(indicatorX, theme.Motion.SpringSpeed * 0.8, theme.Motion.SpringDamping)
 	local yS = scope:Spring(indicatorY, theme.Motion.SpringSpeed * 0.8, theme.Motion.SpringDamping)
 	local wS = scope:Spring(indicatorW, theme.Motion.SpringSpeed * 0.8, theme.Motion.SpringDamping)
@@ -93,7 +102,9 @@ return function(scope: Types.Scope, props: Types.NavigationRailProps): Instance
 			Name = item.Icon or "circle",
 			IconSize = if horizontal then 22 else 24,
 			Color = scope:Computed(function(use)
-				return if use(isSelected) then theme.Colors.Primary else theme.Colors.OnSurfaceVariant
+				return if use(isSelected)
+					then use(theme.Colors.Primary)
+					else use(theme.Colors.OnSurfaceVariant)
 			end),
 		}))({
 			LayoutOrder = 1,
@@ -117,7 +128,9 @@ return function(scope: Types.Scope, props: Types.NavigationRailProps): Instance
 					FontFace = theme.Typography.Button.Font,
 					TextSize = theme.Typography.Button.Size,
 					TextColor3 = scope:Computed(function(use)
-						return if use(isSelected) then theme.Colors.Primary else theme.Colors.OnSurfaceVariant
+						return if use(isSelected)
+							then use(theme.Colors.Primary)
+							else use(theme.Colors.OnSurfaceVariant)
 					end),
 					Text = item.Label or item.Id,
 					TextTruncate = Enum.TextTruncate.AtEnd,
@@ -188,6 +201,30 @@ return function(scope: Types.Scope, props: Types.NavigationRailProps): Instance
 		table.insert(tabs, tab)
 	end
 
+	-- Vertical rails can carry a leading control (e.g. the menu button) above the items.
+	local tabKids: { any } = {}
+	if props.Leading and not horizontal then
+		table.insert(
+			tabKids,
+			scope:Frame({
+				Name = "Leading",
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1, 0, 0, 52),
+				LayoutOrder = 0,
+				[Children] = {
+					scope:Apply(props.Leading)({
+						AnchorPoint = Vector2.new(0.5, 0.5),
+						Position = UDim2.fromScale(0.5, 0.5),
+						Size = UDim2.fromOffset(40, 40),
+					}),
+				},
+			})
+		)
+	end
+	for _, tab in tabs do
+		table.insert(tabKids, tab)
+	end
+
 	host = scope:Frame({
 		Name = "TabsHost",
 		BackgroundTransparency = 1,
@@ -224,41 +261,63 @@ return function(scope: Types.Scope, props: Types.NavigationRailProps): Instance
 				ZIndex = 2,
 				Layout = {
 					Kind = "List",
-					FillDirection = if horizontal then Enum.FillDirection.Horizontal else Enum.FillDirection.Vertical,
+					FillDirection = if horizontal
+						then Enum.FillDirection.Horizontal
+						else Enum.FillDirection.Vertical,
 					HorizontalAlignment = Enum.HorizontalAlignment.Center,
-					VerticalAlignment = if horizontal then Enum.VerticalAlignment.Center else Enum.VerticalAlignment.Top,
+					VerticalAlignment = if horizontal
+						then Enum.VerticalAlignment.Center
+						else Enum.VerticalAlignment.Top,
 					HorizontalFlex = if horizontal then Enum.UIFlexAlignment.Fill else nil,
 					Padding = if horizontal then 4 else theme.Metrics.SpaceXs,
 					SortOrder = Enum.SortOrder.LayoutOrder,
 				},
-				[Children] = tabs,
+				[Children] = tabKids,
 			}),
 		},
 	}) :: Frame
 
+	local dividerInset = if horizontal then 4 else theme.Metrics.SpaceSm
+
 	local root = scope:Frame({
 		Name = "NavigationRail",
 		BackgroundColor3 = theme.Colors.Surface,
-		Size = props.Size
-			or (
-				if horizontal
-					then UDim2.new(1, 0, 0, 72)
-					else UDim2.new(0, theme.Metrics.RailWidth, 1, 0)
-			),
+		Size = props.Size or (if horizontal
+			then UDim2.new(1, 0, 0, 72)
+			else UDim2.new(0, theme.Metrics.RailWidth, 1, 0)),
 		LayoutOrder = props.LayoutOrder or 0,
 		ClipsDescendants = true,
-		Outline = if horizontal
-			then {
-				Color = theme.Colors.OutlineVariant,
-				Thickness = 1,
-				Mode = Enum.ApplyStrokeMode.Border,
-			}
-			else nil,
+		-- Casts toward the content: up from a bottom bar, sideways from a side rail.
+		Shadow = if props.Shadow == false
+			then nil
+			else {
+				BlurRadius = 14,
+				Offset = if horizontal then UDim2.fromOffset(0, -2) else UDim2.fromOffset(2, 0),
+				Transparency = 0.82,
+			},
 		Padding = {
 			if horizontal then 4 else theme.Metrics.SpaceSm,
 			if horizontal then 4 else theme.Metrics.SpaceSm,
 		},
-		[Children] = { host },
+		[Children] = {
+			host,
+			-- Divider on the edge facing the content (not a full outline, so it doesn't
+			-- double up with a Window's own border). Padding insets children, so offset
+			-- outwards by it to reach the true edge.
+			scope:Frame({
+				Name = "Divider",
+				BackgroundColor3 = theme.Colors.OutlineVariant,
+				BorderSizePixel = 0,
+				AnchorPoint = if horizontal then Vector2.new(0, 0) else Vector2.new(1, 0),
+				Position = if horizontal
+					then UDim2.new(0, -dividerInset, 0, -dividerInset)
+					else UDim2.new(1, dividerInset, 0, -dividerInset),
+				Size = if horizontal
+					then UDim2.new(1, dividerInset * 2, 0, 1)
+					else UDim2.new(0, 1, 1, dividerInset * 2),
+				ZIndex = 2,
+			}),
+		},
 	}) :: Frame
 
 	table.insert(

@@ -3,6 +3,8 @@ local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Persist = require(script.Parent.Parent.Internal.Persist)
+local Bind = require(script.Parent.Parent.Internal.Bind)
 local Chip = require(script.Parent.Chip)
 local ScrollArea = require(script.Parent.ScrollArea)
 
@@ -10,24 +12,33 @@ local peek = Fusion.peek
 
 return function(scope: Types.Scope, props: Types.TabsProps): Instance
 	local theme = resolveTheme(props)
-	local selected = scope:Value(peek(props.Selected) or (props.Items[1] and props.Items[1].Id) or "")
+	local selected = Persist.value(
+		scope,
+		Persist.key("Tabs", props.Id, typeof(props.Selected) == "table"),
+		"selected",
+		peek(props.Selected) or (props.Items[1] and props.Items[1].Id) or ""
+	)
+	Bind.link(scope, props.Selected, selected)
 
 	local chips = scope:Computed(function(use)
 		local current = use(selected)
 		local nodes = {}
 		for i, item in props.Items do
-			table.insert(nodes, Chip(scope, {
-				Theme = theme,
-				Text = item.Label,
-				Selected = item.Id == current,
-				LayoutOrder = i,
-				OnClick = function()
-					selected:set(item.Id)
-					if props.OnChanged then
-						props.OnChanged(item.Id)
-					end
-				end,
-			}))
+			table.insert(
+				nodes,
+				Chip(scope, {
+					Theme = theme,
+					Text = item.Label,
+					Selected = item.Id == current,
+					LayoutOrder = i,
+					OnClick = function()
+						selected:set(item.Id)
+						if props.OnChanged then
+							props.OnChanged(item.Id)
+						end
+					end,
+				})
+			)
 		end
 		return nodes
 	end)

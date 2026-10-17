@@ -3,6 +3,8 @@ local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Persist = require(script.Parent.Parent.Internal.Persist)
+local Bind = require(script.Parent.Parent.Internal.Bind)
 local Button = require(script.Parent.Button)
 
 local Children = Fusion.Children
@@ -10,7 +12,13 @@ local peek = Fusion.peek
 
 return function(scope: Types.Scope, props: Types.PaginationProps): Instance
 	local theme = resolveTheme(props)
-	local page = scope:Value(peek(props.Page) or 1)
+	local page = Persist.value(
+		scope,
+		Persist.key("Pagination", props.Id, typeof(props.Page) == "table"),
+		"page",
+		peek(props.Page) or 1
+	)
+	Bind.link(scope, props.Page, page)
 	local count = math.max(props.PageCount, 1)
 
 	local function setPage(n: number)

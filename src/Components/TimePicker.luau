@@ -3,6 +3,8 @@ local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Persist = require(script.Parent.Parent.Internal.Persist)
+local Bind = require(script.Parent.Parent.Internal.Bind)
 local Slider = require(script.Parent.Slider)
 
 local Children = Fusion.Children
@@ -11,8 +13,14 @@ local peek = Fusion.peek
 return function(scope: Types.Scope, props: Types.TimePickerProps): Instance
 	local theme = resolveTheme(props)
 	local total = peek(props.Value) or 0
-	local hours = scope:Value(math.floor(total / 3600) % 24)
-	local minutes = scope:Value(math.floor(total / 60) % 60)
+	local persistKey = Persist.key("TimePicker", props.Id, typeof(props.Value) == "table")
+	local hours = Persist.value(scope, persistKey, "hours", math.floor(total / 3600) % 24)
+	local minutes = Persist.value(scope, persistKey, "minutes", math.floor(total / 60) % 60)
+	Bind.linkParts(scope, props.Value, { hours, minutes }, function(h: number, m: number)
+		return h * 3600 + m * 60
+	end, function(seconds: number)
+		return { math.floor(seconds / 3600) % 24, math.floor(seconds / 60) % 60 }
+	end)
 
 	local function emit()
 		if props.OnChanged then

@@ -1,12 +1,13 @@
 --!strict
 --[[
-	Navigation drawer — AvatarMenu-style: rounded profile sheet on top, action
+	Navigation drawer: AvatarMenu-style: rounded profile sheet on top, action
 	buttons below (with optional categories + scroll).
 ]]
 local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Focus = require(script.Parent.Parent.Internal.Focus)
 local Layer = require(script.Parent.Parent.Internal.Layer)
 local Overlay = require(script.Parent.Overlay)
 local Menu = require(script.Parent.Menu)
@@ -75,6 +76,8 @@ return function(scope: Types.Scope, props: Types.NavigationDrawerProps): Instanc
 		Fill = props.MaxHeight == nil,
 		Size = UDim2.new(0, width, 1, -inset * 2),
 		CornerRadius = cornerRadius,
+		-- Flush against the screen edge: only the inner corners are rounded.
+		Corners = if inset > 0 then nil else { 0, cornerRadius, 0, cornerRadius },
 		ZIndex = 61,
 	})
 
@@ -114,5 +117,7 @@ return function(scope: Types.Scope, props: Types.NavigationDrawerProps): Instanc
 	}) :: Frame
 
 	Layer.mount(scope, props, root)
+	Focus.trap(scope, root, open)
+	Focus.escape(scope, open, Focus.closer(props))
 	return root
 end

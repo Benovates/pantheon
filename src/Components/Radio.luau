@@ -37,7 +37,8 @@ return function(scope: Types.Scope, props: Types.RadioProps): Instance
 	})
 
 	local dotBurstV = scope:Value(0)
-	local dotBurstS = scope:Spring(dotBurstV, theme.Motion.SpringSpeed * 1.3, theme.Motion.SpringDamping)
+	local dotBurstS =
+		scope:Spring(dotBurstV, theme.Motion.SpringSpeed * 1.3, theme.Motion.SpringDamping)
 
 	table.insert(
 		scope,
@@ -59,17 +60,18 @@ return function(scope: Types.Scope, props: Types.RadioProps): Instance
 	local outer = scope:Frame({
 		Size = UDim2.fromOffset(20, 20),
 		BackgroundColor3 = scope:Computed(function(use)
-			local base = theme.Colors.Surface
-			return Interaction.lerpColor(base, theme.Colors.OnSurface, ix.alpha(use))
+			local base = use(theme.Colors.Surface)
+			return Interaction.lerpColor(base, use(theme.Colors.OnSurface), ix.alpha(use), use)
 		end),
 		CornerRadius = theme.Metrics.RadiusPill,
 		LayoutOrder = 1,
 		Outline = {
 			Color = scope:Computed(function(use)
 				return Interaction.lerpColor(
-					theme.Colors.Outline,
-					theme.Colors.Primary,
-					use(selectedRingS)
+					use(theme.Colors.Outline),
+					use(theme.Colors.Primary),
+					use(selectedRingS),
+					use
 				)
 			end),
 			Thickness = 2,

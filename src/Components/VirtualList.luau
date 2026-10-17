@@ -106,9 +106,13 @@ return function(scope: Types.Scope, props: Types.VirtualListProps): Instance
 		CanvasSize = scope:Computed(function(use)
 			return UDim2.fromOffset(0, use(canvasHeight))
 		end),
+		ScrollOffset = props.ScrollOffset,
 		OnScroll = function(y)
 			scrollY:set(y)
 			updateWindow()
+			if props.OnScroll then
+				props.OnScroll(y)
+			end
 		end,
 		Children = { host },
 	}) :: GuiObject

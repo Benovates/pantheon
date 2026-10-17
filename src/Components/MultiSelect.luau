@@ -1,12 +1,15 @@
 --!strict
 --[[
-	Multi-select dropdown — chips (default) or "N selected" summary.
+	Multi-select dropdown: chips (default) or "N selected" summary.
 	Menu items built once to avoid Interaction leaks.
 ]]
 local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Focus = require(script.Parent.Parent.Internal.Focus)
+local Persist = require(script.Parent.Parent.Internal.Persist)
+local Bind = require(script.Parent.Parent.Internal.Bind)
 local CanvasFade = require(script.Parent.Parent.Internal.CanvasFade)
 local Interaction = require(script.Parent.Parent.Internal.Interaction)
 local Layer = require(script.Parent.Parent.Internal.Layer)
@@ -72,7 +75,17 @@ return function(scope: Types.Scope, props: Types.MultiSelectProps): Instance
 		theme.Motion.SpringSpeed,
 		theme.Motion.SpringDamping
 	)
-	local selected = scope:Value(copyList(peek(props.Value) or {}))
+	local selected = Persist.value(
+		scope,
+		Persist.key("MultiSelect", props.Id, typeof(props.Value) == "table"),
+		"value",
+		copyList(peek(props.Value) or {})
+	)
+	Bind.link(scope, props.Value, selected, {
+		toInternal = copyList,
+		toProp = copyList,
+		equals = Bind.listEquals,
+	})
 	local errorText = scope:Value(nil :: string?)
 	local disabled = peek(props.Disabled) == true
 	local hasLabel = props.Label ~= nil
@@ -105,9 +118,9 @@ return function(scope: Types.Scope, props: Types.MultiSelectProps): Instance
 			Active = not disabled,
 			BackgroundColor3 = scope:Computed(function(use)
 				local base = if use(isOn)
-					then theme.Colors.PrimaryContainer
-					else theme.Colors.Surface
-				return Interaction.lerpColor(base, theme.Colors.OnSurface, ix.alpha(use))
+					then use(theme.Colors.PrimaryContainer)
+					else use(theme.Colors.Surface)
+				return Interaction.lerpColor(base, use(theme.Colors.OnSurface), ix.alpha(use), use)
 			end),
 			Size = UDim2.new(1, 0, 0, 40),
 			LayoutOrder = i,
@@ -449,5 +462,8 @@ return function(scope: Types.Scope, props: Types.MultiSelectProps): Instance
 		end)
 	end
 
+	Focus.escape(scope, open, function()
+		open:set(false)
+	end)
 	return field
 end

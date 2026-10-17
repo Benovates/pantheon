@@ -4,6 +4,9 @@ local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
 local Interaction = require(script.Parent.Parent.Internal.Interaction)
+local Persist = require(script.Parent.Parent.Internal.Persist)
+local Bind = require(script.Parent.Parent.Internal.Bind)
+local Focus = require(script.Parent.Parent.Internal.Focus)
 
 local Children = Fusion.Children
 local peek = Fusion.peek
@@ -16,7 +19,9 @@ return function(scope: Types.Scope, props: Types.TextFieldProps): Instance
 	local validationError = scope:Value(nil :: string?)
 	local errText = scope:Computed(function(use)
 		local live = props.Error
-		local fromProp = if live == nil then nil else (if typeof(live) == "table" then use(live) else live)
+		local fromProp = if live == nil
+			then nil
+			else (if typeof(live) == "table" then use(live) else live)
 		if fromProp ~= nil and fromProp ~= "" then
 			return fromProp
 		end
@@ -26,6 +31,12 @@ return function(scope: Types.Scope, props: Types.TextFieldProps): Instance
 		local e = use(errText)
 		return e ~= nil and e ~= ""
 	end)
+	-- Typed text survives a rebuild when the app provides a Persist store (unless the text is
+	-- controlled from outside).
+	local persistKey = Persist.key("TextField", props.Id, typeof(props.Text) == "table")
+	local persistedText = if persistKey
+		then Persist.value(scope, persistKey, "text", props.Text or "")
+		else nil
 	local disabled = peek(props.Disabled) == true
 	local multiline = props.Multiline == true
 	local minLines = props.MinLines or (if multiline then 3 else 1)
@@ -37,28 +48,33 @@ return function(scope: Types.Scope, props: Types.TextFieldProps): Instance
 
 	local minH = minLines * lineH + theme.Metrics.SpaceSm * 2
 	local maxH = maxLines * lineH + theme.Metrics.SpaceSm * 2
-	local height = scope:Value(if multiline then minH else 40)
+	-- `Compact` is the small in-widget variant (number boxes, hex fields).
+	local compact = props.Compact == true
+	local height =
+		scope:Value(if multiline then minH else (props.Height or (if compact then 28 else 40)))
 
 	local strokeColor = scope:Computed(function(use)
 		local t = use(focusS)
 		if use(hasError) then
-			return theme.Colors.Error
+			return use(theme.Colors.Error)
 		end
-		return Interaction.lerpColor(theme.Colors.Outline, theme.Colors.Primary, t)
+		return Interaction.lerpColor(use(theme.Colors.Outline), use(theme.Colors.Primary), t, use)
 	end)
 	local strokeThickness = scope:Computed(function(use)
 		return 1 + use(focusS)
 	end)
 
-	local padL = if props.LeadingIcon then 36 else theme.Metrics.SpaceMd
-	local padR = if props.TrailingIcon then 36 else theme.Metrics.SpaceMd
+	local padH = if compact then 8 else theme.Metrics.SpaceMd
+	local padV = if compact then 2 else theme.Metrics.SpaceSm
+	local padL = if props.LeadingIcon then 36 elseif props.Prefix then padH + 14 else padH
+	local padR = if props.TrailingIcon then 36 else padH
 
 	local box = scope:TextBox({
 		Name = "Input",
 		ClearTextOnFocus = false,
 		FontFace = theme.Typography.Body.Font,
-		TextSize = theme.Typography.Body.Size,
-		Text = props.Text or "",
+		TextSize = if compact then 13 else theme.Typography.Body.Size,
+		Text = if persistedText then peek(persistedText) else (props.Text or ""),
 		PlaceholderText = props.Placeholder or "",
 		TextColor3 = theme.Colors.OnSurface,
 		PlaceholderColor3 = theme.Colors.OnSurfaceVariant,
@@ -75,13 +91,14 @@ return function(scope: Types.Scope, props: Types.TextFieldProps): Instance
 		-- ClipsDescendants would cut the outline stroke.
 		ClipsDescendants = false,
 		CornerRadius = theme.Metrics.RadiusSm,
-		Padding = { theme.Metrics.SpaceSm, padR, theme.Metrics.SpaceSm, padL },
+		Padding = { padV, padR, padV, padL },
 		Outline = {
 			Color = strokeColor,
 			Thickness = strokeThickness,
 			Mode = Enum.ApplyStrokeMode.Border,
 		},
 	}) :: TextBox
+	Focus.manage(box, theme, true)
 
 	local function runValidation()
 		if props.Validators == nil then
@@ -91,15 +108,45 @@ return function(scope: Types.Scope, props: Types.TextFieldProps): Instance
 		validationError:set(if ok then nil else msg)
 	end
 
-	table.insert(scope, box.Focused:Connect(function()
-		focused:set(1)
-	end))
-	table.insert(scope, box.FocusLost:Connect(function()
-		focused:set(0)
-		if props.ValidateOnBlur ~= false then
-			runValidation()
-		end
-	end))
+	table.insert(
+		scope,
+		box.Focused:Connect(function()
+			focused:set(1)
+		end)
+	)
+	table.insert(
+		scope,
+		box.FocusLost:Connect(function()
+			focused:set(0)
+			if props.ValidateOnBlur ~= false then
+				runValidation()
+			end
+			if props.OnSubmit then
+				props.OnSubmit(box.Text, box)
+			end
+		end)
+	)
+
+	if persistedText then
+		table.insert(
+			scope,
+			box:GetPropertyChangedSignal("Text"):Connect(function()
+				persistedText:set(box.Text)
+			end)
+		)
+	end
+
+	-- A Value passed as `Text` follows what the user types.
+	if Bind.isWritable(props.Text) then
+		table.insert(
+			scope,
+			box:GetPropertyChangedSignal("Text"):Connect(function()
+				if peek(props.Text) ~= box.Text then
+					(props.Text :: any):set(box.Text)
+				end
+			end)
+		)
+	end
 
 	if props.OnChanged then
 		table.insert(
@@ -137,6 +184,25 @@ return function(scope: Types.Scope, props: Types.TextFieldProps): Instance
 			}))({
 				AnchorPoint = Vector2.new(1, 0.5),
 				Position = UDim2.new(1, -10, 0.5, 0),
+				ZIndex = 2,
+			})
+		)
+	end
+
+	if props.Prefix then
+		table.insert(
+			adornments,
+			scope:TextLabel({
+				Name = "Prefix",
+				BackgroundTransparency = 1,
+				AnchorPoint = Vector2.new(0, 0.5),
+				Position = UDim2.new(0, padH, 0.5, 0),
+				Size = UDim2.fromOffset(14, 20),
+				TextXAlignment = Enum.TextXAlignment.Left,
+				FontFace = theme.Fonts.Body,
+				TextSize = if compact then 13 else theme.Typography.Body.Size,
+				TextColor3 = theme.Colors.OnSurfaceVariant,
+				Text = props.Prefix,
 				ZIndex = 2,
 			})
 		)
@@ -240,18 +306,23 @@ return function(scope: Types.Scope, props: Types.TextFieldProps): Instance
 
 	local children = {}
 	if props.Label then
-		table.insert(children, scope:TextLabel({
-			BackgroundTransparency = 1,
-			FontFace = theme.Typography.Label.Font,
-			TextSize = theme.Typography.Label.Size,
-			TextColor3 = scope:Computed(function(use)
-				return if use(hasError) then theme.Colors.Error else theme.Colors.OnSurfaceVariant
-			end),
-			TextXAlignment = Enum.TextXAlignment.Left,
-			Text = props.Label,
-			Size = UDim2.new(1, 0, 0, 16),
-			LayoutOrder = 1,
-		}))
+		table.insert(
+			children,
+			scope:TextLabel({
+				BackgroundTransparency = 1,
+				FontFace = theme.Typography.Label.Font,
+				TextSize = theme.Typography.Label.Size,
+				TextColor3 = scope:Computed(function(use)
+					return if use(hasError)
+						then use(theme.Colors.Error)
+						else use(theme.Colors.OnSurfaceVariant)
+				end),
+				TextXAlignment = Enum.TextXAlignment.Left,
+				Text = props.Label,
+				Size = UDim2.new(1, 0, 0, 16),
+				LayoutOrder = 1,
+			})
+		)
 	end
 	table.insert(children, field)
 	table.insert(
@@ -261,7 +332,9 @@ return function(scope: Types.Scope, props: Types.TextFieldProps): Instance
 			FontFace = theme.Typography.Label.Font,
 			TextSize = 11,
 			TextColor3 = scope:Computed(function(use)
-				return if use(hasError) then theme.Colors.Error else theme.Colors.OnSurfaceVariant
+				return if use(hasError)
+					then use(theme.Colors.Error)
+					else use(theme.Colors.OnSurfaceVariant)
 			end),
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Text = scope:Computed(function(use)

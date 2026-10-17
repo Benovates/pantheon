@@ -7,6 +7,8 @@ local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Persist = require(script.Parent.Parent.Internal.Persist)
+local Bind = require(script.Parent.Parent.Internal.Bind)
 local Calendar = require(script.Parent.Parent.Internal.Picker.Calendar)
 local Interaction = require(script.Parent.Parent.Internal.Interaction)
 local Icon = require(script.Parent.Icon)
@@ -34,9 +36,25 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 	local theme = resolveTheme(props)
 	local now = os.date("*t")
 	local y0, m0, d0 = Calendar.parseISO(peek(props.Value) or "")
-	local year = scope:Value(y0 or now.year)
-	local month = scope:Value(m0 or now.month)
-	local day = scope:Value(d0 or now.day)
+	local persistKey = Persist.key("DatePicker", props.Id, typeof(props.Value) == "table")
+	local year = Persist.value(scope, persistKey, "year", y0 or now.year)
+	local month = Persist.value(scope, persistKey, "month", m0 or now.month)
+	local day = Persist.value(scope, persistKey, "day", d0 or now.day)
+	Bind.linkParts(
+		scope,
+		props.Value,
+		{ year, month, day },
+		function(y: number, m: number, d: number)
+			return Calendar.formatISO(y, m, d)
+		end,
+		function(iso: string)
+			local y, m, d = Calendar.parseISO(iso)
+			if y == nil or m == nil or d == nil then
+				return nil
+			end
+			return { y, m, d }
+		end
+	)
 	local view = scope:Value("Days" :: ViewMode)
 	local generation = scope:Value(0)
 
@@ -107,16 +125,19 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 			end),
 			TextSize = 16,
 			TextColor3 = scope:Computed(function(use)
-				return if use(activeS) then theme.Colors.OnPrimary else theme.Colors.OnSurface
+				return if use(activeS)
+					then use(theme.Colors.OnPrimary)
+					else use(theme.Colors.OnSurface)
 			end),
 			BackgroundColor3 = scope:Computed(function(use)
 				if use(activeS) then
-					return theme.Colors.Primary
+					return use(theme.Colors.Primary)
 				end
 				return Interaction.lerpColor(
-					theme.Colors.SurfaceContainer,
-					theme.Colors.OnSurface,
-					ix.alpha(use)
+					use(theme.Colors.SurfaceContainer),
+					use(theme.Colors.OnSurface),
+					ix.alpha(use),
+					use
 				)
 			end),
 			BackgroundTransparency = scope:Computed(function(use)
@@ -203,9 +224,10 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 			BackgroundColor3 = scope:Computed(function(use)
 				local alpha = ix.alpha(use)
 				return Interaction.lerpColor(
-					theme.Colors.SurfaceContainer,
-					theme.Colors.OnSurface,
-					alpha
+					use(theme.Colors.SurfaceContainer),
+					use(theme.Colors.OnSurface),
+					alpha,
+					use
 				)
 			end),
 			BackgroundTransparency = 0,
@@ -315,7 +337,8 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 			end)
 
 			local appear = cellScope:Value(0)
-			local appearS = cellScope:Spring(appear, theme.Motion.SpringSpeed, theme.Motion.SpringDamping)
+			local appearS =
+				cellScope:Spring(appear, theme.Motion.SpringSpeed, theme.Motion.SpringDamping)
 			task.delay(delay, function()
 				if alive then
 					appear:set(1)
@@ -340,7 +363,9 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 				end),
 				TextSize = 13,
 				TextColor3 = cellScope:Computed(function(use)
-					return if use(selectedS) then theme.Colors.OnPrimary else theme.Colors.OnSurface
+					return if use(selectedS)
+						then use(theme.Colors.OnPrimary)
+						else use(theme.Colors.OnSurface)
 				end),
 				TextTransparency = cellScope:Computed(function(use)
 					local t = (use(appearS) :: number) * ((use(daysModeS) :: number) ^ fadePower)
@@ -348,12 +373,13 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 				end),
 				BackgroundColor3 = cellScope:Computed(function(use)
 					if use(selectedS) then
-						return theme.Colors.Primary
+						return use(theme.Colors.Primary)
 					end
 					return Interaction.lerpColor(
-						theme.Colors.SurfaceContainer,
-						theme.Colors.OnSurface,
-						ix.alpha(use)
+						use(theme.Colors.SurfaceContainer),
+						use(theme.Colors.OnSurface),
+						ix.alpha(use),
+						use
 					)
 				end),
 				BackgroundTransparency = cellScope:Computed(function(use)
@@ -412,7 +438,9 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 				Text = monthLabel(monthNum),
 				FontFace = if selected then theme.Fonts.Heading else theme.Fonts.Body,
 				TextSize = 13,
-				TextColor3 = if selected then theme.Colors.OnPrimary else theme.Colors.OnSurface,
+				TextColor3 = if selected
+					then use(theme.Colors.OnPrimary)
+					else use(theme.Colors.OnSurface),
 				AutoButtonColor = false,
 				CornerRadius = theme.Metrics.RadiusSm,
 				Size = UDim2.new(1 / 3, -4, 0, 40),
@@ -422,12 +450,13 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 				end),
 				BackgroundColor3 = cellScope:Computed(function(useColor)
 					if selected then
-						return theme.Colors.Primary
+						return useColor(theme.Colors.Primary)
 					end
 					return Interaction.lerpColor(
-						theme.Colors.SurfaceContainer,
-						theme.Colors.OnSurface,
-						ix.alpha(useColor)
+						useColor(theme.Colors.SurfaceContainer),
+						useColor(theme.Colors.OnSurface),
+						ix.alpha(useColor),
+						useColor
 					)
 				end),
 				[OnEvent("Activated")] = function()
@@ -462,7 +491,9 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 				Text = tostring(y),
 				FontFace = if selected then theme.Fonts.Heading else theme.Fonts.Body,
 				TextSize = 13,
-				TextColor3 = if selected then theme.Colors.OnPrimary else theme.Colors.OnSurface,
+				TextColor3 = if selected
+					then use(theme.Colors.OnPrimary)
+					else use(theme.Colors.OnSurface),
 				AutoButtonColor = false,
 				CornerRadius = theme.Metrics.RadiusSm,
 				Size = UDim2.new(1 / 4, -4, 0, 40),
@@ -472,12 +503,13 @@ return function(scope: Types.Scope, props: Types.DatePickerProps): Instance
 				end),
 				BackgroundColor3 = cellScope:Computed(function(useColor)
 					if selected then
-						return theme.Colors.Primary
+						return useColor(theme.Colors.Primary)
 					end
 					return Interaction.lerpColor(
-						theme.Colors.SurfaceContainer,
-						theme.Colors.OnSurface,
-						ix.alpha(useColor)
+						useColor(theme.Colors.SurfaceContainer),
+						useColor(theme.Colors.OnSurface),
+						ix.alpha(useColor),
+						useColor
 					)
 				end),
 				[OnEvent("Activated")] = function()

@@ -1,11 +1,12 @@
 --!strict
 --[[
-	Tithe-style avatar account sheet / popover — profile header + Menu actions.
+	Tithe-style avatar account sheet / popover: profile header + Menu actions.
 ]]
 local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Focus = require(script.Parent.Parent.Internal.Focus)
 local Layer = require(script.Parent.Parent.Internal.Layer)
 local Follow = require(script.Parent.Parent.Internal.Follow)
 local Overlay = require(script.Parent.Overlay)
@@ -177,5 +178,7 @@ return function(scope: Types.Scope, props: Types.AvatarMenuProps): Instance
 	}) :: Frame
 
 	Layer.mount(scope, props, root)
+	Focus.trap(scope, root, open)
+	Focus.escape(scope, open, Focus.closer(props))
 	return root
 end

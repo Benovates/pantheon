@@ -3,6 +3,9 @@ local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Focus = require(script.Parent.Parent.Internal.Focus)
+local Persist = require(script.Parent.Parent.Internal.Persist)
+local Bind = require(script.Parent.Parent.Internal.Bind)
 local CanvasFade = require(script.Parent.Parent.Internal.CanvasFade)
 local Interaction = require(script.Parent.Parent.Internal.Interaction)
 local Layer = require(script.Parent.Parent.Internal.Layer)
@@ -22,7 +25,13 @@ return function(scope: Types.Scope, props: Types.SelectProps): Instance
 		theme.Motion.SpringSpeed,
 		theme.Motion.SpringDamping
 	)
-	local selected = scope:Value((peek(props.Value) or "") :: string)
+	local selected = Persist.value(
+		scope,
+		Persist.key("Select", props.Id, typeof(props.Value) == "table"),
+		"value",
+		(peek(props.Value) or "") :: string
+	)
+	Bind.link(scope, props.Value, selected)
 	local filter = scope:Value("" :: string)
 	local disabled = peek(props.Disabled) == true
 	local hasLabel = props.Label ~= nil
@@ -56,13 +65,13 @@ return function(scope: Types.Scope, props: Types.SelectProps): Instance
 				local pressS =
 					scope:Spring(press, theme.Motion.SpringSpeed, theme.Motion.SpringDamping)
 				local base = if isSelected
-					then theme.Colors.PrimaryContainer
-					else theme.Colors.Surface
+					then use(theme.Colors.PrimaryContainer)
+					else use(theme.Colors.Surface)
 				local item = scope:TextButton({
 					Text = opt.Label,
 					FontFace = theme.Typography.Body.Font,
 					TextSize = theme.Typography.Body.Size,
-					TextColor3 = theme.Colors.OnSurface,
+					TextColor3 = use(theme.Colors.OnSurface),
 					TextXAlignment = Enum.TextXAlignment.Left,
 					BackgroundColor3 = scope:Computed(function(u)
 						local alpha = math.clamp(
@@ -70,7 +79,7 @@ return function(scope: Types.Scope, props: Types.SelectProps): Instance
 							0,
 							0.2
 						)
-						return Interaction.lerpColor(base, theme.Colors.OnSurface, alpha)
+						return Interaction.lerpColor(base, u(theme.Colors.OnSurface), alpha)
 					end),
 					Size = UDim2.new(1, 0, 0, 40),
 					LayoutOrder = order,
@@ -248,5 +257,8 @@ return function(scope: Types.Scope, props: Types.SelectProps): Instance
 		end)
 	end
 
+	Focus.escape(scope, open, function()
+		open:set(false)
+	end)
 	return field
 end

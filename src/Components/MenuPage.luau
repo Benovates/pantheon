@@ -25,13 +25,13 @@ return function(scope: Types.Scope, props: Types.MenuPageProps): Instance
 		},
 		[Children] = props.Children,
 	}) :: Frame
-	page:SetAttribute("EstuaryMenuPageId", props.Id)
+	page:SetAttribute("PantheonMenuPageId", props.Id)
 	local function writeTitle()
 		local title = if props.Title == nil then nil else peek(props.Title)
 		if typeof(title) == "string" then
-			page:SetAttribute("EstuaryMenuPageTitle", title)
+			page:SetAttribute("PantheonMenuPageTitle", title)
 		else
-			page:SetAttribute("EstuaryMenuPageTitle", nil)
+			page:SetAttribute("PantheonMenuPageTitle", nil)
 		end
 	end
 	writeTitle()

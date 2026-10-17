@@ -1,6 +1,6 @@
 --!strict
 --[[
-	Menu panel — chrome, scroll, overlay. Compose with MenuSection / MenuButton /
+	Menu panel: chrome, scroll, overlay. Compose with MenuSection / MenuButton /
 	MenuPage, or pass Items / Sections for a data-driven list.
 ]]
 local Packages = script.Parent.Parent.Parent
@@ -18,8 +18,8 @@ local Divider = require(script.Parent.Divider)
 local Children = Fusion.Children
 local peek = Fusion.peek
 
-local PAGE_ID = "EstuaryMenuPageId"
-local PAGE_TITLE = "EstuaryMenuPageTitle"
+local PAGE_ID = "PantheonMenuPageId"
+local PAGE_TITLE = "PantheonMenuPageTitle"
 
 local function resolveSections(props: Types.MenuProps): { Types.MenuSectionProps }
 	if props.Sections ~= nil and #props.Sections > 0 then
@@ -419,7 +419,7 @@ return function(scope: Types.Scope, props: Types.MenuProps): Instance
 		end
 
 		-- Bind after instance exists; menu is created below so we bind on listBody's parent later.
-		(scope :: any)._estuaryMenuNav = { push = push, pop = pop, page = currentId }
+		(scope :: any)._pantheonMenuNav = { push = push, pop = pop, page = currentId }
 	else
 		listBody = makeScroll(listKids, 10, false)
 	end
@@ -452,7 +452,8 @@ return function(scope: Types.Scope, props: Types.MenuProps): Instance
 		ClipsDescendants = fill or #pageInsts > 0,
 		ZIndex = props.ZIndex or 80,
 		LayoutOrder = props.LayoutOrder or 0,
-		CornerRadius = radius,
+		-- `Corners` lets docked panels round only some corners ({tl, tr, bl, br}).
+		CornerRadius = props.Corners or radius,
 		Outline = {
 			Color = if hasHeader then theme.Colors.OutlineVariant else theme.Colors.Outline,
 			Thickness = 1,
@@ -468,10 +469,10 @@ return function(scope: Types.Scope, props: Types.MenuProps): Instance
 		[Children] = kids,
 	}) :: TextButton
 
-	local nav = (scope :: any)._estuaryMenuNav
+	local nav = (scope :: any)._pantheonMenuNav
 	if nav then
 		MenuNav.bind(menu, nav);
-		(scope :: any)._estuaryMenuNav = nil
+		(scope :: any)._pantheonMenuNav = nil
 	end
 
 	local host = CanvasFade.host(scope, menu, openS, { Theme = theme })

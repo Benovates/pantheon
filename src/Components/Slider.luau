@@ -3,6 +3,9 @@ local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Persist = require(script.Parent.Parent.Internal.Persist)
+local Bind = require(script.Parent.Parent.Internal.Bind)
+local Focus = require(script.Parent.Parent.Internal.Focus)
 local Interaction = require(script.Parent.Parent.Internal.Interaction)
 local ScrollInput = require(script.Parent.Parent.Internal.ScrollInput)
 
@@ -19,11 +22,18 @@ return function(scope: Types.Scope, props: Types.SliderProps): Instance
 	local minV = props.Min or 0
 	local maxV = props.Max or 1
 	local step = props.Step or 0.01
-	local value = scope:Value(peek(props.Value) or minV)
+	local value = Persist.value(
+		scope,
+		Persist.key("Slider", props.Id, typeof(props.Value) == "table"),
+		"value",
+		peek(props.Value) or minV
+	)
+	Bind.link(scope, props.Value, value)
 	local dragging = scope:Value(0)
 	local draggingS = scope:Spring(dragging, theme.Motion.SpringSpeed, theme.Motion.SpringDamping)
 	local stretch = scope:Value(0)
-	local stretchS = scope:Spring(stretch, theme.Motion.SpringSpeed * 1.6, theme.Motion.SpringDamping)
+	local stretchS =
+		scope:Spring(stretch, theme.Motion.SpringSpeed * 1.6, theme.Motion.SpringDamping)
 	local disabled = peek(props.Disabled) == true
 	local ix = Interaction.bind(scope, theme, {
 		Disabled = disabled,
@@ -46,7 +56,7 @@ return function(scope: Types.Scope, props: Types.SliderProps): Instance
 				scope:Frame({
 					Name = "Tick",
 					Size = UDim2.fromOffset(2, 6),
-					BackgroundColor3 = theme.Colors.Outline,
+					BackgroundColor3 = theme.Colors.OnSurfaceVariant,
 					BackgroundTransparency = scope:Computed(function(use)
 						return if use(draggingS) > 0.2 then 0.2 else 1
 					end),
@@ -87,7 +97,7 @@ return function(scope: Types.Scope, props: Types.SliderProps): Instance
 						Size = UDim2.new(1, 0, 0, 4),
 						AnchorPoint = Vector2.new(0, 0.5),
 						Position = UDim2.new(0, 0, 0.5, 0),
-						BackgroundColor3 = theme.Colors.SurfaceContainerHigh,
+						BackgroundColor3 = Interaction.trackColor(theme),
 						BorderSizePixel = 0,
 						CornerRadius = theme.Metrics.RadiusPill,
 					}),
@@ -128,7 +138,12 @@ return function(scope: Types.Scope, props: Types.SliderProps): Instance
 							return UDim2.new(fraction(use), 0, 0.5, 0)
 						end),
 						BackgroundColor3 = scope:Computed(function(use)
-							return Interaction.lerpColor(theme.Colors.Primary, theme.Colors.OnPrimary, ix.alpha(use))
+							return Interaction.lerpColor(
+								use(theme.Colors.Primary),
+								use(theme.Colors.OnPrimary),
+								ix.alpha(use),
+								use
+							)
 						end),
 						CornerRadius = theme.Metrics.RadiusPill,
 						ZIndex = 2,
@@ -138,6 +153,28 @@ return function(scope: Types.Scope, props: Types.SliderProps): Instance
 		},
 	}) :: TextButton
 	ix.wire(bar)
+	-- Arrow keys move the focused slider by one step; Home and End jump to the ends.
+	Focus.onKey(bar, function(input: InputObject): boolean
+		local current = peek(value) :: number
+		local target: number
+		if input.KeyCode == Enum.KeyCode.Left or input.KeyCode == Enum.KeyCode.Down then
+			target = current - step
+		elseif input.KeyCode == Enum.KeyCode.Right or input.KeyCode == Enum.KeyCode.Up then
+			target = current + step
+		elseif input.KeyCode == Enum.KeyCode.Home then
+			target = minV
+		elseif input.KeyCode == Enum.KeyCode.End then
+			target = maxV
+		else
+			return false
+		end
+		target = math.clamp(math.floor(target / step + 0.5) * step, minV, maxV)
+		value:set(target)
+		if props.OnChanged then
+			props.OnChanged(target)
+		end
+		return true
+	end)
 
 	local trackInner = bar:FindFirstChild("TrackInner") :: Frame
 
@@ -166,7 +203,11 @@ return function(scope: Types.Scope, props: Types.SliderProps): Instance
 				stretch:set(math.clamp(math.abs(vel) * 0.01, 0, STRETCH_MAX))
 
 				local target = trackInner
-				local rel = math.clamp((pos.X - target.AbsolutePosition.X) / math.max(target.AbsoluteSize.X, 1), 0, 1)
+				local rel = math.clamp(
+					(pos.X - target.AbsolutePosition.X) / math.max(target.AbsoluteSize.X, 1),
+					0,
+					1
+				)
 				local raw = minV + rel * range
 				local stepped = math.floor(raw / step + 0.5) * step
 				stepped = math.clamp(stepped, minV, maxV)
@@ -202,7 +243,11 @@ return function(scope: Types.Scope, props: Types.SliderProps): Instance
 		Size = props.Size or UDim2.new(1, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		LayoutOrder = props.LayoutOrder or 0,
-		Layout = { Kind = "List", Padding = theme.Metrics.Space2xs, SortOrder = Enum.SortOrder.LayoutOrder },
+		Layout = {
+			Kind = "List",
+			Padding = theme.Metrics.Space2xs,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		},
 		[Children] = {
 			if props.Label
 				then scope:TextLabel({

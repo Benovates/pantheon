@@ -3,21 +3,67 @@ local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Interaction = require(script.Parent.Parent.Internal.Interaction)
 
 local Children = Fusion.Children
 
 return function(scope: Types.Scope, props: Types.AppBarProps): Instance
 	local theme = resolveTheme(props)
 	local actions: { Instance } = props.Actions or {}
+
+	-- Raise level, 0..1. With FadeAtTop it follows the scroll offset: at the top the fill is
+	-- FadeTo and the divider and shadow are hidden. Without FadeAtTop it is always 1.
+	local fadeTo: Color3 = props.FadeTo or theme.Colors.SurfaceContainerHigh
+	-- Fill once raised. Defaults to Surface.
+	local raisedColor: Color3 = props.RaisedColor or theme.Colors.Surface
+	local ramp: number = props.FadeRamp or 24
+	local raised: any = 1
+	if props.FadeAtTop and props.ScrollOffset ~= nil then
+		local target = scope:Computed(function(use)
+			local offset = if typeof(props.ScrollOffset) == "table"
+				then use(props.ScrollOffset)
+				else props.ScrollOffset
+			return math.clamp((offset :: number) / ramp, 0, 1)
+		end)
+		raised = scope:Spring(target, theme.Motion.SpringSpeed, theme.Motion.SpringDamping)
+	end
+	local function level(use: any): number
+		local v = if typeof(raised) == "table" then use(raised) else raised
+		return math.clamp(v :: number, 0, 1)
+	end
+
 	return scope:Frame({
 		Name = "AppBar",
-		BackgroundColor3 = theme.Colors.Surface,
+		BackgroundColor3 = scope:Computed(function(use)
+			return Interaction.lerpColor(fadeTo, raisedColor, level(use), use)
+		end),
 		CornerRadius = props.Radius or { theme.Metrics.RadiusPanel, 0 },
 		Size = props.Size or UDim2.new(1, 0, 0, theme.Metrics.AppBarHeight),
 		LayoutOrder = props.LayoutOrder or 0,
 		ZIndex = props.ZIndex or 10,
-		Outline = { Color = theme.Colors.OutlineVariant, Thickness = 1 },
+		Shadow = if props.Shadow == false
+			then nil
+			else {
+				BlurRadius = 14,
+				Offset = UDim2.fromOffset(0, 2),
+				Transparency = scope:Computed(function(use)
+					return 1 - 0.18 * level(use)
+				end),
+			},
 		[Children] = {
+			-- Bottom divider rather than an outline, so it doesn't double up with the Window's border.
+			scope:Frame({
+				Name = "Divider",
+				BackgroundColor3 = theme.Colors.OutlineVariant,
+				BackgroundTransparency = scope:Computed(function(use)
+					return 1 - level(use)
+				end),
+				BorderSizePixel = 0,
+				AnchorPoint = Vector2.new(0, 1),
+				Position = UDim2.fromScale(0, 1),
+				Size = UDim2.new(1, 0, 0, 1),
+				ZIndex = 2,
+			}),
 			if props.Leading
 				then scope:Apply(props.Leading)({
 					AnchorPoint = Vector2.new(0, 0.5),

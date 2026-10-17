@@ -30,7 +30,11 @@ return function(scope: Types.Scope, props: Types.AlertProps): Instance
 		Visible = props.Visible,
 		CornerRadius = theme.Metrics.RadiusSm,
 		Padding = { theme.Metrics.SpaceSm },
-		Layout = { Kind = "List", Padding = theme.Metrics.Space2xs, SortOrder = Enum.SortOrder.LayoutOrder },
+		Layout = {
+			Kind = "List",
+			Padding = theme.Metrics.Space2xs,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		},
 		[Children] = {
 			if props.Title
 				then scope:TextLabel({

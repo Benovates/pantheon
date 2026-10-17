@@ -1,6 +1,6 @@
 --!strict
 --[[
-	iOS-style inset grouped settings list — Surface cards with icon rows.
+	iOS-style inset grouped settings list: Surface cards with icon rows.
 ]]
 local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
@@ -64,16 +64,19 @@ return function(scope: Types.Scope, props: Types.SettingsListProps): Instance
 			}),
 		}
 		if item.Subtitle ~= nil then
-			table.insert(textCol, scope:TextLabel({
-				BackgroundTransparency = 1,
-				FontFace = theme.Typography.Body.Font,
-				TextSize = 12,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextColor3 = theme.Colors.OnSurfaceVariant,
-				Text = item.Subtitle,
-				AutomaticSize = Enum.AutomaticSize.XY,
-				LayoutOrder = 2,
-			}))
+			table.insert(
+				textCol,
+				scope:TextLabel({
+					BackgroundTransparency = 1,
+					FontFace = theme.Typography.Body.Font,
+					TextSize = 12,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					TextColor3 = theme.Colors.OnSurfaceVariant,
+					Text = item.Subtitle,
+					AutomaticSize = Enum.AutomaticSize.XY,
+					LayoutOrder = 2,
+				})
+			)
 		end
 		table.insert(
 			kids,
@@ -144,16 +147,19 @@ return function(scope: Types.Scope, props: Types.SettingsListProps): Instance
 
 	local kids: { any } = {}
 	if props.Header ~= nil then
-		table.insert(kids, scope:TextLabel({
-			BackgroundTransparency = 1,
-			FontFace = theme.Typography.Label.Font,
-			TextSize = theme.Typography.Label.Size,
-			TextColor3 = theme.Colors.OnSurfaceVariant,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			Text = props.Header,
-			Size = UDim2.new(1, 0, 0, 18),
-			LayoutOrder = 0,
-		}))
+		table.insert(
+			kids,
+			scope:TextLabel({
+				BackgroundTransparency = 1,
+				FontFace = theme.Typography.Label.Font,
+				TextSize = theme.Typography.Label.Size,
+				TextColor3 = theme.Colors.OnSurfaceVariant,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				Text = props.Header,
+				Size = UDim2.new(1, 0, 0, 18),
+				LayoutOrder = 0,
+			})
+		)
 	end
 	for i, row in rows do
 		table.insert(kids, scope:Apply(row)({ LayoutOrder = i }))
@@ -162,18 +168,21 @@ return function(scope: Types.Scope, props: Types.SettingsListProps): Instance
 		table.insert(kids, props.Children)
 	end
 	if props.Footer ~= nil then
-		table.insert(kids, scope:TextLabel({
-			BackgroundTransparency = 1,
-			FontFace = theme.Typography.Label.Font,
-			TextSize = theme.Typography.Label.Size,
-			TextColor3 = theme.Colors.OnSurfaceVariant,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			TextWrapped = true,
-			Text = props.Footer,
-			Size = UDim2.new(1, 0, 0, 0),
-			AutomaticSize = Enum.AutomaticSize.Y,
-			LayoutOrder = 1000,
-		}))
+		table.insert(
+			kids,
+			scope:TextLabel({
+				BackgroundTransparency = 1,
+				FontFace = theme.Typography.Label.Font,
+				TextSize = theme.Typography.Label.Size,
+				TextColor3 = theme.Colors.OnSurfaceVariant,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextWrapped = true,
+				Text = props.Footer,
+				Size = UDim2.new(1, 0, 0, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				LayoutOrder = 1000,
+			})
+		)
 	end
 
 	return scope:Frame({

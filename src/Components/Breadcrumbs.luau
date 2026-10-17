@@ -12,27 +12,35 @@ return function(scope: Types.Scope, props: Types.BreadcrumbsProps): Instance
 	local nodes = {}
 	for i, item in props.Items do
 		if i > 1 then
-			table.insert(nodes, scope:TextLabel({
+			table.insert(
+				nodes,
+				scope:TextLabel({
+					BackgroundTransparency = 1,
+					Text = "/",
+					FontFace = theme.Fonts.Body,
+					TextSize = 14,
+					TextColor3 = theme.Colors.OnSurfaceVariant,
+					AutomaticSize = Enum.AutomaticSize.XY,
+					LayoutOrder = i * 2 - 1,
+				})
+			)
+		end
+		table.insert(
+			nodes,
+			scope:TextButton({
 				BackgroundTransparency = 1,
-				Text = "/",
+				Text = item.Label,
 				FontFace = theme.Fonts.Body,
 				TextSize = 14,
-				TextColor3 = theme.Colors.OnSurfaceVariant,
+				TextColor3 = if i == #props.Items
+					then theme.Colors.OnSurface
+					else theme.Colors.Primary,
 				AutomaticSize = Enum.AutomaticSize.XY,
-				LayoutOrder = i * 2 - 1,
-			}))
-		end
-		table.insert(nodes, scope:TextButton({
-			BackgroundTransparency = 1,
-			Text = item.Label,
-			FontFace = theme.Fonts.Body,
-			TextSize = 14,
-			TextColor3 = if i == #props.Items then theme.Colors.OnSurface else theme.Colors.Primary,
-			AutomaticSize = Enum.AutomaticSize.XY,
-			AutoButtonColor = item.OnClick ~= nil,
-			LayoutOrder = i * 2,
-			[OnEvent("Activated")] = item.OnClick,
-		}))
+				AutoButtonColor = item.OnClick ~= nil,
+				LayoutOrder = i * 2,
+				[OnEvent("Activated")] = item.OnClick,
+			})
+		)
 	end
 	return scope:Frame({
 		Name = "Breadcrumbs",

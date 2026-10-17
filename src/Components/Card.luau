@@ -17,7 +17,11 @@ return function(scope: Types.Scope, props: Types.CardProps): Instance
 		Visible = props.Visible,
 		CornerRadius = theme.Metrics.RadiusPanel,
 		Padding = { theme.Metrics.SpaceMd },
-		Layout = { Kind = "List", Padding = theme.Metrics.SpaceSm, SortOrder = Enum.SortOrder.LayoutOrder },
+		Layout = {
+			Kind = "List",
+			Padding = theme.Metrics.SpaceSm,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		},
 		[Children] = {
 			if props.Title
 				then scope:TextLabel({

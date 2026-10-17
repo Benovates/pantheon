@@ -8,7 +8,9 @@ return function(scope: Types.Scope, props: Types.SurfaceProps?): Instance
 	local elevated = p.Elevated == true
 	return scope:Frame({
 		Name = p.Name or "Surface",
-		BackgroundColor3 = if elevated then theme.Colors.SurfaceContainerHigh else theme.Colors.Surface,
+		BackgroundColor3 = if elevated
+			then theme.Colors.SurfaceContainerHigh
+			else theme.Colors.Surface,
 		BorderSizePixel = 0,
 		Size = p.Size,
 		LayoutOrder = p.LayoutOrder or 0,

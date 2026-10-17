@@ -1,6 +1,6 @@
 --!strict
 --[[
-	Cadence/Tithe component barrel — Fusion + Iona.
+	Cadence/Tithe component barrel: Fusion + Iona.
 	Call sites: Components.X(scope, props) inside Theme.Provide.
 ]]
 
@@ -50,6 +50,7 @@ return {
 	DatePicker = require(script.DatePicker),
 	TimePicker = require(script.TimePicker),
 	ColorPicker = require(script.ColorPicker),
+	GradientPicker = require(script.GradientPicker),
 	VirtualList = require(script.VirtualList),
 	DataTable = require(script.DataTable),
 	Avatar = require(script.Avatar),
@@ -67,4 +68,16 @@ return {
 	Collapsible = require(script.Collapsible),
 	ChoiceGroup = require(script.ChoiceGroup),
 	Spinner = require(script.Spinner),
+	LoadingIndicator = require(script.LoadingIndicator),
+	Loader = require(script.Loader),
+	NumberSpinner = require(script.NumberSpinner),
+	NumberField = require(script.NumberField),
+	SplitPane = require(script.SplitPane),
+	DockPanel = require(script.DockPanel),
+	Toolbar = require(script.Toolbar),
+	StatusBar = require(script.StatusBar),
+	CurveEditor = require(script.CurveEditor),
+	Explorer = require(script.Explorer),
+	RadialMenu = require(script.RadialMenu),
+	Coachmark = require(script.Coachmark),
 }

@@ -3,6 +3,7 @@ local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Corners = require(script.Parent.Parent.Internal.Corners)
 
 local OnEvent = Fusion.OnEvent
 
@@ -11,7 +12,7 @@ return function(scope: Types.Scope, props: Types.OverlayProps?): Instance
 	local theme = resolveTheme(p)
 	-- Full-screen TextButton scrim. Panels above must also be GuiButtons
 	-- (or otherwise sink input); Frame.Active alone does not block Activated.
-	return scope:TextButton({
+	local scrim = scope:TextButton({
 		Name = "Overlay",
 		Text = "",
 		AutoButtonColor = false,
@@ -27,4 +28,17 @@ return function(scope: Types.Scope, props: Types.OverlayProps?): Instance
 		CornerRadius = p.CornerRadius or 0,
 		[OnEvent("Activated")] = p.OnClick,
 	}) :: TextButton
+
+	-- Inside a Window the scrim covers the window, so it takes on the window's rounding
+	-- (unless a radius was given explicitly).
+	if p.CornerRadius == nil then
+		table.insert(
+			scope,
+			Corners.followWindow(scrim, function(radius: number)
+				Corners.apply(scrim, radius, radius, radius, radius)
+			end)
+		)
+	end
+
+	return scrim
 end

@@ -23,7 +23,8 @@ local function resolveExpanded(
 	if props.Expanded ~= nil then
 		local expandedRef = props.Expanded
 		local computed = scope:Computed(function(use)
-			return (if typeof(expandedRef) == "table" then use(expandedRef) else expandedRef) == true
+			return (if typeof(expandedRef) == "table" then use(expandedRef) else expandedRef)
+				== true
 		end)
 		local function setExpanded(nextValue: boolean)
 			if typeof(expandedRef) == "table" and (expandedRef :: any).set then
@@ -112,34 +113,34 @@ return function(scope: Types.Scope, props: Types.MenuSectionProps): Instance
 			)
 			table.insert(
 				titleKids,
-					scope:Frame({
-						BackgroundTransparency = 1,
-						BorderSizePixel = 0,
-						Size = UDim2.fromOffset(20, 20),
-						LayoutOrder = 4,
-						[Children] = {
-							scope:Frame({
-								BackgroundTransparency = 1,
-								BorderSizePixel = 0,
-								Size = UDim2.fromScale(1, 1),
-								Rotation = scope:Computed(function(use)
-									return (use(expandedS) :: number) * 90
-								end),
-								[Children] = {
-									scope:Apply(Icon(scope, {
-										Theme = theme,
-										Name = "chevron-right",
-										IconSize = 16,
-										Color = theme.Colors.OnSurfaceVariant,
-									}))({
-										AnchorPoint = Vector2.new(0.5, 0.5),
-										Position = UDim2.fromScale(0.5, 0.5),
-										ImageTransparency = 0.2,
-									}),
-								},
-							}),
-						},
-					})
+				scope:Frame({
+					BackgroundTransparency = 1,
+					BorderSizePixel = 0,
+					Size = UDim2.fromOffset(20, 20),
+					LayoutOrder = 4,
+					[Children] = {
+						scope:Frame({
+							BackgroundTransparency = 1,
+							BorderSizePixel = 0,
+							Size = UDim2.fromScale(1, 1),
+							Rotation = scope:Computed(function(use)
+								return (use(expandedS) :: number) * 90
+							end),
+							[Children] = {
+								scope:Apply(Icon(scope, {
+									Theme = theme,
+									Name = "chevron-right",
+									IconSize = 16,
+									Color = theme.Colors.OnSurfaceVariant,
+								}))({
+									AnchorPoint = Vector2.new(0.5, 0.5),
+									Position = UDim2.fromScale(0.5, 0.5),
+									ImageTransparency = 0.2,
+								}),
+							},
+						}),
+					},
+				})
 			)
 		end
 
@@ -238,7 +239,12 @@ return function(scope: Types.Scope, props: Types.MenuSectionProps): Instance
 		BackgroundTransparency = 1,
 		Size = if collapsible
 			then scope:Computed(function(use)
-				return UDim2.new(1, 0, 0, (use(expandedS) :: number) * (use(contentHeight) :: number))
+				return UDim2.new(
+					1,
+					0,
+					0,
+					(use(expandedS) :: number) * (use(contentHeight) :: number)
+				)
 			end)
 			else UDim2.new(1, 0, 0, 0),
 		AutomaticSize = if collapsible then Enum.AutomaticSize.None else Enum.AutomaticSize.Y,
@@ -266,7 +272,10 @@ return function(scope: Types.Scope, props: Types.MenuSectionProps): Instance
 		end
 		local layout = inner:FindFirstChildWhichIsA("UIListLayout")
 		if layout then
-			table.insert(scope, layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(syncHeight))
+			table.insert(
+				scope,
+				layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(syncHeight)
+			)
 		end
 		table.insert(scope, inner:GetPropertyChangedSignal("AbsoluteSize"):Connect(syncHeight))
 		task.defer(syncHeight)

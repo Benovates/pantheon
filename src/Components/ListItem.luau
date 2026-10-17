@@ -31,16 +31,19 @@ return function(scope: Types.Scope, props: Types.ListItemProps): Instance
 		}),
 	}
 	if props.Subtitle ~= nil then
-		table.insert(textCol, scope:TextLabel({
-			BackgroundTransparency = 1,
-			FontFace = theme.Typography.Body.Font,
-			TextSize = 12,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			TextColor3 = theme.Colors.OnSurfaceVariant,
-			Text = props.Subtitle,
-			Size = UDim2.new(1, 0, 0, 18),
-			LayoutOrder = 2,
-		}))
+		table.insert(
+			textCol,
+			scope:TextLabel({
+				BackgroundTransparency = 1,
+				FontFace = theme.Typography.Body.Font,
+				TextSize = 12,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextColor3 = theme.Colors.OnSurfaceVariant,
+				Text = props.Subtitle,
+				Size = UDim2.new(1, 0, 0, 18),
+				LayoutOrder = 2,
+			})
+		)
 	end
 
 	local kids: { any } = {}

@@ -6,72 +6,10 @@ local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolve
 local CanvasFade = require(script.Parent.Parent.Internal.CanvasFade)
 local Layer = require(script.Parent.Parent.Internal.Layer)
 local Follow = require(script.Parent.Parent.Internal.Follow)
+local place = require(script.Parent.Parent.Internal.Placement)
 
 local Children = Fusion.Children
 local GuiService = game:GetService("GuiService")
-
-local function place(
-	placement: Types.TooltipPlacement,
-	targetPos: Vector2,
-	targetSize: Vector2,
-	tipSize: Vector2,
-	gap: number,
-	viewport: Vector2
-): (UDim2, Types.TooltipPlacement)
-	local function forSide(side: Types.TooltipPlacement): (number, number, number)
-		local x, y
-		if side == "Bottom" then
-			x = targetPos.X + targetSize.X * 0.5 - tipSize.X * 0.5
-			y = targetPos.Y + targetSize.Y + gap
-		elseif side == "Top" then
-			x = targetPos.X + targetSize.X * 0.5 - tipSize.X * 0.5
-			y = targetPos.Y - tipSize.Y - gap
-		elseif side == "Left" then
-			x = targetPos.X - tipSize.X - gap
-			y = targetPos.Y + targetSize.Y * 0.5 - tipSize.Y * 0.5
-		else -- Right
-			x = targetPos.X + targetSize.X + gap
-			y = targetPos.Y + targetSize.Y * 0.5 - tipSize.Y * 0.5
-		end
-		local overflow = 0
-		if x < 8 then
-			overflow += 8 - x
-		end
-		if y < 8 then
-			overflow += 8 - y
-		end
-		if x + tipSize.X > viewport.X - 8 then
-			overflow += (x + tipSize.X) - (viewport.X - 8)
-		end
-		if y + tipSize.Y > viewport.Y - 8 then
-			overflow += (y + tipSize.Y) - (viewport.Y - 8)
-		end
-		return x, y, overflow
-	end
-
-	local chosen: Types.TooltipPlacement = if placement == "Auto" then "Bottom" else placement
-	local bestX, bestY, bestOverflow = forSide(chosen)
-
-	if placement == "Auto" then
-		bestOverflow = math.huge
-		local function trySide(side: Types.TooltipPlacement)
-			local x, y, overflow = forSide(side)
-			if overflow < bestOverflow then
-				bestOverflow = overflow
-				bestX, bestY = x, y
-				chosen = side
-			end
-		end
-		trySide("Bottom")
-		trySide("Top")
-		trySide("Right")
-		trySide("Left")
-	end
-
-	bestX = math.clamp(bestX, 8, math.max(8, viewport.X - tipSize.X - 8))
-	bestY = math.clamp(bestY, 8, math.max(8, viewport.Y - tipSize.Y - 8))
-	return UDim2.fromOffset(bestX, bestY), chosen
-end
 
 return function(scope: Types.Scope, props: Types.TooltipProps): Instance
 	local theme = resolveTheme(props)
@@ -119,25 +57,34 @@ return function(scope: Types.Scope, props: Types.TooltipProps): Instance
 		if target == nil then
 			return
 		end
-		local inset = GuiService:GetGuiInset()
-		local camera = workspace.CurrentCamera
-		local viewport = if camera then camera.ViewportSize else Vector2.new(1920, 1080)
 		local layer = Layer.resolve(props)
 		local abs = target.AbsolutePosition
 		local size = target.AbsoluteSize
-		-- AbsolutePosition is inset-aware for ScreenGui; tip parent may be layer
-		local origin = if layer then layer.AbsolutePosition else Vector2.new(0, 0)
-		local pos, _ = place(
-			placement,
-			Vector2.new(abs.X, abs.Y),
-			size,
-			host.AbsoluteSize,
-			gap,
-			viewport - inset
-		)
 		if layer then
-			host.Position = UDim2.fromOffset(pos.X.Offset - origin.X, pos.Y.Offset - origin.Y)
+			-- Place and clamp in the layer's own space, so inside a Window the tip stays
+			-- within the window rather than only within the screen.
+			local origin = layer.AbsolutePosition
+			local pos, _ = place(
+				placement,
+				Vector2.new(abs.X - origin.X, abs.Y - origin.Y),
+				size,
+				host.AbsoluteSize,
+				gap,
+				layer.AbsoluteSize
+			)
+			host.Position = pos
 		else
+			local inset = GuiService:GetGuiInset()
+			local camera = workspace.CurrentCamera
+			local viewport = if camera then camera.ViewportSize else Vector2.new(1920, 1080)
+			local pos, _ = place(
+				placement,
+				Vector2.new(abs.X, abs.Y),
+				size,
+				host.AbsoluteSize,
+				gap,
+				viewport - inset
+			)
 			host.Position = pos
 		end
 	end

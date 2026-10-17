@@ -20,6 +20,7 @@ local Interaction = require(script.Parent.Parent.Internal.Interaction)
 local whileActive = require(script.Parent.Parent.Internal.Follow)
 local ScrollInput = require(script.Parent.Parent.Internal.ScrollInput)
 local Icon = require(script.Parent.Icon)
+local Spinner = require(script.Parent.Spinner)
 local P = require(script.Parent.Parent.Internal.props)
 
 local Children = Fusion.Children
@@ -63,6 +64,10 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 
 	local contentSize = scope:Value(Vector2.new(0, 0))
 	local viewSize = scope:Value(Vector2.new(0, 200))
+	-- False until the content has been measured once. Before that maxScroll() is 0, so an
+	-- initial ScrollOffset (e.g. restored after a rebuild) would look like an overscroll and
+	-- the edge-settling loop would snap it back to 0.
+	local measured = scope:Value(false)
 	local offset = scope:Value(peek(props.ScrollOffset) or 0)
 	local velocity = scope:Value(0)
 	local target = scope:Value(peek(props.ScrollOffset) or 0)
@@ -138,32 +143,53 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 	local showPullIndicator = if props.PullIndicator ~= nil
 		then props.PullIndicator
 		else props.OnRefresh ~= nil
-	local pullHint = props.PullHint or "Pull to continue"
+	local pullHint = props.PullHint or "Keep scrolling to continue"
 	local releaseHint = props.ReleaseHint or "Release to continue"
-	local cancelHint = props.CancelHint or "Pull back to cancel"
+	local refreshingHint = props.RefreshingHint or "Refreshing…"
 	local contentDragging = scope:Value(false)
 	local pullDepth = scope:Value(0) -- positive px pulled past top while interacting
+	-- While `Refreshing` is true the content rests at the threshold with a spinner (iOS / Android
+	-- style) instead of springing straight back.
+	local holding = false
+	local settlingBack = false -- easing home after a hold; must not re-arm the refresh
+	local holdingState = scope:Value(false)
+	local function refreshingNow(): boolean
+		return props.Refreshing ~= nil and peek(props.Refreshing) == true
+	end
 	local didPull = false
+
+	-- Wheel / trackpad pull-to-refresh: scrolling up from the very top pulls the content down
+	-- (rubber-band); releasing past the threshold refreshes, like a touch drag.
+	local wheelGestureAtTop = false -- the current wheel burst began at the very top
+	local lastWheelAt = 0
+	local wheelPullTravel = 0 -- scroll-up px accumulated at the top this gesture
+	local wheelPeak = 0 -- largest delta this gesture, to spot momentum tails
+	local wheelRefreshTravel = 32 -- scroll-up travel that reaches the refresh threshold
+	local wheelPulling = false
+	local wheelReleaseToken = 0
+	-- Assigned once settleIfNeeded exists (it is defined after scrollBy).
+	local releaseWheelPull: (() -> ())? = nil
 
 	local function emitScroll(y: number)
 		if not props.OnScroll then
 			return
 		end
-		local last = (scope :: any)._estuaryLastScroll
+		local last = (scope :: any)._pantheonLastScroll
 		if typeof(last) == "number" and math.abs(y - last) < 0.5 then
 			return
 		end
-		(scope :: any)._estuaryLastScroll = y
+		(scope :: any)._pantheonLastScroll = y
 		props.OnScroll(y)
 	end
 
 	local function resist(y: number): number
 		local max = maxScroll()
-		-- Stronger rubber-band + hard visual cap so pull never feels unbound.
-		local shownLimit = math.max(refreshThreshold * 1.15, 88)
+		-- Top: exponential rubber-band that eases toward a limit (never a hard stop).
 		if y < 0 then
-			return math.max(y * 0.28, -shownLimit)
+			local limit = refreshThreshold * 3
+			return -limit * (1 - math.exp(y / limit))
 		end
+		local shownLimit = math.max(refreshThreshold * 1.15, 88)
 		if y > max then
 			return math.min(max + (y - max) * 0.28, max + shownLimit)
 		end
@@ -174,7 +200,7 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 		return math.clamp(y, 0, maxScroll())
 	end
 
-	local overscrollLimit = math.max(refreshThreshold * 1.35, 100)
+	local overscrollLimit = math.max(refreshThreshold * 2.5, 180)
 	local function clampOverscrollTarget(y: number): number
 		local max = maxScroll()
 		return math.clamp(y, -overscrollLimit, max + overscrollLimit)
@@ -196,6 +222,9 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 		end
 		bumpActivity()
 		local current = peek(target)
+		if current >= 0 then
+			settlingBack = false
+		end
 		local max = maxScroll()
 		local nextY = current + delta
 		if raw or peek(contentDragging) then
@@ -212,35 +241,67 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 			end
 		else
 			-- Wheel / trackpad: hard-clamp mid-list + bottom; allow top pull when OnRefresh.
-			local topPull = overscrollEnabled
+			local now = os.clock()
+			if now - lastWheelAt > 0.15 then
+				-- A new burst of wheel events: only a burst that *starts* at the top may pull.
+				-- (Momentum from a fast scroll up the page must not trigger a refresh.)
+				wheelGestureAtTop = current <= 0.5
+				wheelPullTravel = 0
+				wheelPeak = 0
+			end
+			lastWheelAt = now
+
+			local canPull = overscrollEnabled
 				and not horizontal
 				and props.OnRefresh ~= nil
-				and (current <= 0.5 or current < 0)
-				and (delta < 0 or current < 0)
+				and not holding
+				and not settlingBack
+			local topPull = canPull and (wheelGestureAtTop and current <= 0.5 and delta < 0)
 
 			if topPull then
-				nextY = clampTopPullTarget(nextY)
-				target:set(nextY)
-				if nextY < -10 then
-					didPull = true
-				end
-				if not smooth then
-					offset:set(if nextY < 0 then resist(nextY) else nextY)
-					emitScroll(peek(offset))
-				end
-				if inertia then
-					-- Soft momentum into the pull; don't fling unbound past the cap.
-					local v = peek(velocity)
-					local boost = delta * 7 * (1 / (1 + math.abs(v) / 160))
-					v = v + boost
-					if nextY <= -overscrollLimit + 1 then
-						velocity:set(math.max(0, v))
-					elseif nextY >= max then
-						velocity:set(math.min(0, v))
-					else
-						velocity:set(math.clamp(v, -90, 90))
+				wheelPulling = true
+				contentDragging:set(true)
+				velocity:set(0)
+
+				-- Deltas fading well below their peak are the OS momentum tail (fingers already
+				-- lifted): stop deepening the pull and let it release.
+				local magnitude = math.abs(delta)
+				wheelPeak = math.max(wheelPeak, magnitude)
+				local tail = magnitude < wheelPeak * 0.45
+				if not tail then
+					-- Pull follows the scroll-up travel; wheelRefreshTravel of it reaches the
+					-- refresh threshold.
+					wheelPullTravel = math.max(wheelPullTravel - delta, 0)
+					nextY = clampTopPullTarget(
+						-wheelPullTravel * (refreshThreshold / wheelRefreshTravel)
+					)
+					target:set(nextY)
+					if nextY < -10 then
+						didPull = true
+					end
+					if not smooth then
+						offset:set(if nextY < 0 then resist(nextY) else nextY)
+						emitScroll(peek(offset))
+					end
+					-- Scrolled back down to the top: the pull is over.
+					if nextY >= 0 then
+						wheelPulling = false
+						contentDragging:set(false)
+						didPull = false
+						return
 					end
 				end
+
+				-- Like lifting a finger: release (refresh if past the threshold) once the wheel
+				-- goes quiet, sooner when it is only momentum.
+				wheelReleaseToken += 1
+				local mine = wheelReleaseToken
+				task.delay(if tail then 0.06 else 0.14, function()
+					if mine == wheelReleaseToken and wheelPulling and releaseWheelPull then
+						releaseWheelPull()
+					end
+				end)
+				return
 			else
 				nextY = clampScroll(nextY)
 				target:set(nextY)
@@ -249,7 +310,7 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 					emitScroll(nextY)
 				end
 				if inertia then
-					-- Gentle acceleration for precise wheel/trackpad; soft cap so it doesn't runaway.
+					-- Mild acceleration for precise wheel / trackpad input, with a soft cap.
 					local v = peek(velocity)
 					local boost = delta * 9 * (1 / (1 + math.abs(v) / 180))
 					v = v + boost
@@ -281,15 +342,58 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 		end
 	end
 
+	local function endHold()
+		if not holding then
+			return
+		end
+		holding = false
+		holdingState:set(false)
+		settlingBack = true
+	end
+
+	if props.Refreshing ~= nil and typeof(props.Refreshing) == "table" then
+		table.insert(
+			scope,
+			scope:Observer(props.Refreshing :: any):onChange(function()
+				if not refreshingNow() then
+					endHold()
+				end
+			end)
+		)
+	end
+
 	local function settleIfNeeded()
 		local max = maxScroll()
 		local y = peek(target)
+		if y < 0 and holding then
+			-- Released while refreshing: stay parked at the threshold.
+			target:set(-refreshThreshold)
+			velocity:set(0)
+			return
+		end
 		if y < 0 then
 			local armed = not horizontal and props.OnRefresh ~= nil and y <= -refreshThreshold
-			if armed then
+			if armed and not settlingBack then
 				local onRefresh = props.OnRefresh
+				local holdsRefresh = props.Refreshing ~= nil
+				if holdsRefresh then
+					holding = true
+					holdingState:set(true)
+				end
 				if onRefresh then
-					task.defer(onRefresh)
+					task.defer(function()
+						onRefresh()
+						-- Never started refreshing: don't leave the content parked.
+						if holding and not refreshingNow() then
+							endHold()
+						end
+					end)
+				end
+				if holdsRefresh then
+					didPull = false
+					target:set(-refreshThreshold)
+					velocity:set(0)
+					return
 				end
 			elseif didPull then
 				local onPullCancel = props.OnPullCancel
@@ -310,6 +414,14 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 			didPull = false
 			pullDepth:set(0)
 		end
+	end
+
+	-- End of a wheel / trackpad pull: same as lifting a finger after a drag.
+	releaseWheelPull = function()
+		wheelPulling = false
+		wheelPeak = 0
+		contentDragging:set(false)
+		settleIfNeeded()
 	end
 
 	local function activeAmount(use: any): number
@@ -367,7 +479,7 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 
 	-- Step only while something is moving, overscrolled, or the bar is waiting to hide.
 	local function scrollStep(dt: number)
-		if peek(contentDragging) then
+		if peek(contentDragging) or holding then
 			return
 		end
 		local v = peek(velocity)
@@ -376,7 +488,10 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 		-- Rubber-band settle when past edges (after coasting stops).
 		if overscrollEnabled and (y < 0 or y > max) and math.abs(v) < 0.35 then
 			if y < 0 then
-				local armed = not horizontal and props.OnRefresh ~= nil and y <= -refreshThreshold
+				local armed = not horizontal
+					and props.OnRefresh ~= nil
+					and y <= -refreshThreshold
+					and not settlingBack
 				if armed then
 					settleIfNeeded()
 				else
@@ -390,6 +505,7 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 						nextY = 0
 						velocity:set(0)
 						pullDepth:set(0)
+						settlingBack = false
 					end
 					target:set(nextY)
 				end
@@ -434,6 +550,9 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 
 	if inertia or autoHide then
 		local needsStep = scope:Computed(function(use)
+			if not use(measured) then
+				return false
+			end
 			if inertia then
 				local y = use(target)
 				if use(velocity) ~= 0 or y < 0 or y > maxScroll() then
@@ -462,7 +581,7 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 		BackgroundTransparency = 1,
 		ClipsDescendants = false,
 		-- Hug content on the scroll axis. Scroll distance comes from
-		-- UIListLayout.AbsoluteContentSize — never from Content.AbsoluteSize
+		-- UIListLayout.AbsoluteContentSize, never from Content.AbsoluteSize
 		-- (that collapses to the clipped viewport and kills maxScroll).
 		Size = scope:Computed(function(use)
 			local gutter = use(chromeGutter)
@@ -545,6 +664,9 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 			local nextSize = if horizontal
 				then Vector2.new(along, math.max(vs.Y, 1))
 				else Vector2.new(math.max(vs.X, 1), along)
+			if not peek(measured) and axisOf(vs) > 1 and along > 1 then
+				measured:set(true)
+			end
 			local prev = peek(contentSize)
 			local overflow = axisOf(nextSize) - axisOf(vs)
 			if overflow > 0.5 then
@@ -557,7 +679,7 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 			end
 			contentSize:set(nextSize)
 		end
-		-- Never write contentSize from inside AbsoluteSize / AbsoluteContentSize —
+		-- Never write contentSize from inside an AbsoluteSize / AbsoluteContentSize handler:
 		-- gutter + AutomaticSize reflow those same signals and hit Roblox's
 		-- re-entrancy cap.
 		local function scheduleCanvasSync()
@@ -631,7 +753,7 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 		)
 	end
 
-	-- Thin rail line (no accent tint — stays neutral)
+	-- Thin rail line, no accent tint (stays neutral)
 	local railLine = scope:New("Frame")({
 		Name = "Rail",
 		BackgroundColor3 = railIdleColor,
@@ -678,7 +800,7 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 	local thumb = scope:New("Frame")({
 		Name = "Thumb",
 		BackgroundColor3 = scope:Computed(function(use)
-			return Interaction.lerpColor(idleColor, activeColor, activeAmount(use))
+			return Interaction.lerpColor(idleColor, activeColor, activeAmount(use), use)
 		end),
 		BackgroundTransparency = scope:Computed(function(use)
 			local hide = (1 - use(barVisibleS)) * 0.85
@@ -768,13 +890,14 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 					IconSize = 14,
 					Color = scope:Computed(function(use)
 						return Interaction.lerpColor(
-							theme.Colors.OnSurfaceVariant,
+							use(theme.Colors.OnSurfaceVariant),
 							activeColor,
 							math.clamp(
 								(use(pressedS) :: number) + (use(hoveringBarS) :: number) * 0.5,
 								0,
 								1
-							)
+							),
+							use
 						)
 					end),
 				}))({
@@ -844,85 +967,95 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 		track.Position = UDim2.fromOffset(0, 0)
 	end
 
+	-- Shown depth at which releasing refreshes (the resting depth while refreshing).
+	local armedDepth = -resist(-refreshThreshold)
 	local pullArmed = scope:Computed(function(use)
-		return use(pullDepth) >= refreshThreshold
+		return use(pullDepth) >= armedDepth - 0.5
 	end)
 
 	local pullIndicator = if showPullIndicator and not horizontal
 		then scope:Frame({
 			Name = "PullIndicator",
 			BackgroundTransparency = 1,
-			AnchorPoint = Vector2.new(0.5, 0),
-			Position = UDim2.new(0.5, 0, 0, 0),
+			Position = UDim2.fromOffset(0, 0),
 			Size = scope:Computed(function(use)
-				local d = use(pullDepth)
-				return UDim2.fromOffset(0, math.clamp(d, 0, math.max(refreshThreshold * 1.15, 88)))
+				return UDim2.new(1, 0, 0, math.max(use(pullDepth), 0))
 			end),
-			AutomaticSize = Enum.AutomaticSize.X,
 			Visible = scope:Computed(function(use)
-				return use(pullDepth) > 12
+				return use(pullDepth) > 1
 			end),
 			ZIndex = 20,
 			ClipsDescendants = true,
-			Layout = {
-				Kind = "List",
-				FillDirection = Enum.FillDirection.Vertical,
-				HorizontalAlignment = Enum.HorizontalAlignment.Center,
-				VerticalAlignment = Enum.VerticalAlignment.Bottom,
-				Padding = 2,
-			},
-			Padding = { 8, 12 },
 			[Children] = {
-				scope:Frame({
+				-- Centred in the revealed gap; fades in as the pull grows.
+				scope:New("CanvasGroup")({
+					Name = "IndicatorRow",
 					BackgroundTransparency = 1,
-					Size = UDim2.fromOffset(18, 18),
-					LayoutOrder = 1,
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = UDim2.fromScale(0.5, 0.5),
+					Size = UDim2.fromOffset(0, 0),
+					AutomaticSize = Enum.AutomaticSize.XY,
+					GroupTransparency = scope:Computed(function(use)
+						return 1
+							- math.clamp((use(pullDepth) - 8) / math.max(armedDepth - 8, 1), 0, 1)
+					end),
 					[Children] = {
-						scope:Apply(Icon(scope, {
-							Theme = theme,
-							Name = "arrow-down",
-							IconSize = 18,
-							Color = theme.Colors.OnSurfaceVariant,
-						}))({
-							Visible = scope:Computed(function(use)
-								return not use(pullArmed)
-							end),
+						scope:New("UIListLayout")({
+							FillDirection = Enum.FillDirection.Horizontal,
+							HorizontalAlignment = Enum.HorizontalAlignment.Center,
+							VerticalAlignment = Enum.VerticalAlignment.Center,
+							Padding = UDim.new(0, 8),
+							SortOrder = Enum.SortOrder.LayoutOrder,
 						}),
-						scope:Apply(Icon(scope, {
-							Theme = theme,
-							Name = "arrow-up",
-							IconSize = 18,
-							Color = theme.Colors.Primary,
-						}))({
-							Visible = pullArmed,
+						scope:Frame({
+							BackgroundTransparency = 1,
+							Size = UDim2.fromOffset(20, 20),
+							LayoutOrder = 1,
+							[Children] = {
+								scope:Apply(Icon(scope, {
+									Theme = theme,
+									Name = "arrow-down",
+									IconSize = 18,
+									Color = theme.Colors.OnSurfaceVariant,
+								}))({
+									Visible = scope:Computed(function(use)
+										return not use(pullArmed) and not use(holdingState)
+									end),
+								}),
+								scope:Apply(Icon(scope, {
+									Theme = theme,
+									Name = "arrow-up",
+									IconSize = 18,
+									Color = theme.Colors.Primary,
+								}))({
+									Visible = scope:Computed(function(use)
+										return use(pullArmed) and not use(holdingState)
+									end),
+								}),
+								scope:Apply(Spinner(scope, { Theme = theme, SizePx = 20 }))({
+									Visible = holdingState,
+								}),
+							},
+						}),
+						scope:TextLabel({
+							BackgroundTransparency = 1,
+							FontFace = theme.Typography.Label.Font,
+							TextSize = theme.Typography.Label.Size,
+							TextColor3 = scope:Computed(function(use)
+								return if use(pullArmed)
+									then use(theme.Colors.Primary)
+									else use(theme.Colors.OnSurfaceVariant)
+							end),
+							Text = scope:Computed(function(use)
+								if use(holdingState) then
+									return refreshingHint
+								end
+								return if use(pullArmed) then releaseHint else pullHint
+							end),
+							AutomaticSize = Enum.AutomaticSize.XY,
+							LayoutOrder = 2,
 						}),
 					},
-				}),
-				scope:TextLabel({
-					BackgroundTransparency = 1,
-					FontFace = theme.Typography.Label.Font,
-					TextSize = theme.Typography.Label.Size,
-					TextColor3 = scope:Computed(function(use)
-						return if use(pullArmed)
-							then theme.Colors.Primary
-							else theme.Colors.OnSurfaceVariant
-					end),
-					Text = scope:Computed(function(use)
-						return if use(pullArmed) then releaseHint else pullHint
-					end),
-					AutomaticSize = Enum.AutomaticSize.XY,
-					LayoutOrder = 2,
-				}),
-				scope:TextLabel({
-					BackgroundTransparency = 1,
-					FontFace = theme.Typography.Label.Font,
-					TextSize = math.max(11, theme.Typography.Label.Size - 2),
-					TextColor3 = theme.Colors.OnSurfaceVariant,
-					TextTransparency = 0.15,
-					Text = cancelHint,
-					Visible = pullArmed,
-					AutomaticSize = Enum.AutomaticSize.XY,
-					LayoutOrder = 3,
 				}),
 			},
 		})
@@ -1026,35 +1159,44 @@ return function(scope: Types.Scope, props: Types.ScrollAreaProps): Instance
 				elseif input.Position.X >= chrome.AbsolutePosition.X then
 					return
 				end
-				contentDragging:set(true)
-				didPull = false
-				velocity:set(0)
-				local lastPos = if horizontal then input.Position.X else input.Position.Y
-				local lastT = os.clock()
-				local pointerType = input.UserInputType
-				local stopCapture = ScrollInput.capture(root, function(changed)
-					return changed.UserInputType == pointerType
-						or (pointerType == Enum.UserInputType.MouseButton1 and changed.UserInputType == Enum.UserInputType.MouseMovement)
-						or (
-							pointerType == Enum.UserInputType.Touch
-							and changed.UserInputType == Enum.UserInputType.Touch
-						)
-				end, function(endedInput)
-					return endedInput.UserInputType == pointerType
-				end, function(pos)
-					local now = os.clock()
-					local dt = math.max(now - lastT, 1 / 240)
-					local cur = if horizontal then pos.X else pos.Y
-					local d = cur - lastPos
-					lastPos = cur
-					lastT = now
-					scrollBy(-d, true)
-					velocity:set(-d / dt)
-				end, function()
-					contentDragging:set(false)
-					settleIfNeeded()
+				-- Wait until every handler has seen the press. If a control inside the area captured it
+				-- (slider, colour picker), don't scroll.
+				local capturesBefore = ScrollInput.captureCount()
+				local startPosition = input.Position
+				task.defer(function()
+					if ScrollInput.captureCount() ~= capturesBefore then
+						return
+					end
+					contentDragging:set(true)
+					didPull = false
+					velocity:set(0)
+					local lastPos = if horizontal then startPosition.X else startPosition.Y
+					local lastT = os.clock()
+					local pointerType = input.UserInputType
+					local stopCapture = ScrollInput.capture(root, function(changed)
+						return changed.UserInputType == pointerType
+							or (pointerType == Enum.UserInputType.MouseButton1 and changed.UserInputType == Enum.UserInputType.MouseMovement)
+							or (
+								pointerType == Enum.UserInputType.Touch
+								and changed.UserInputType == Enum.UserInputType.Touch
+							)
+					end, function(endedInput)
+						return endedInput.UserInputType == pointerType
+					end, function(pos)
+						local now = os.clock()
+						local dt = math.max(now - lastT, 1 / 240)
+						local cur = if horizontal then pos.X else pos.Y
+						local d = cur - lastPos
+						lastPos = cur
+						lastT = now
+						scrollBy(-d, true)
+						velocity:set(-d / dt)
+					end, function()
+						contentDragging:set(false)
+						settleIfNeeded()
+					end)
+					table.insert(scope, stopCapture)
 				end)
-				table.insert(scope, stopCapture)
 			end)
 		)
 	end

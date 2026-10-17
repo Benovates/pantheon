@@ -1,13 +1,15 @@
 --!strict
 --[[
-	iOS-style bottom sheet — scrim + sliding panel mounted via Layer.
+	iOS-style bottom sheet: scrim + sliding panel mounted via Layer.
 ]]
 local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Focus = require(script.Parent.Parent.Internal.Focus)
 local CanvasFade = require(script.Parent.Parent.Internal.CanvasFade)
 local Layer = require(script.Parent.Parent.Internal.Layer)
+local Corners = require(script.Parent.Parent.Internal.Corners)
 local Overlay = require(script.Parent.Overlay)
 local IconButton = require(script.Parent.IconButton)
 
@@ -110,6 +112,7 @@ return function(scope: Types.Scope, props: Types.AppSheetProps): Instance
 			BackgroundTransparency = 1,
 			Size = UDim2.new(1, 0, 1, 0),
 			LayoutOrder = 3,
+			Padding = { 0, theme.Metrics.SpaceMd },
 			[Children] = { props.Children },
 		})
 	)
@@ -133,6 +136,16 @@ return function(scope: Types.Scope, props: Types.AppSheetProps): Instance
 		},
 		[Children] = panelKids,
 	})
+
+	-- Flush to the bottom edge: top corners round, bottom corners follow the enclosing Window
+	-- (square when there is none).
+	local sheetRadius: number = theme.Metrics.RadiusPanel
+	table.insert(
+		scope,
+		Corners.followWindow(panel, function(windowRadius: number)
+			Corners.apply(panel, sheetRadius, sheetRadius, windowRadius, windowRadius)
+		end)
+	)
 
 	local host = CanvasFade.host(scope, panel, openS, { Theme = theme })
 	scope:Apply(host)({
@@ -169,5 +182,7 @@ return function(scope: Types.Scope, props: Types.AppSheetProps): Instance
 	}) :: Frame
 
 	Layer.mount(scope, props, root)
+	Focus.trap(scope, root, open)
+	Focus.escape(scope, open, Focus.closer(props))
 	return root
 end

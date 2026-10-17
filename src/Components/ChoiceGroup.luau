@@ -1,11 +1,13 @@
 --!strict
 --[[
-	ChoiceGroup — SegmentedControl or RadioGroup rows, with Validators + error label.
+	ChoiceGroup: SegmentedControl or RadioGroup rows, with Validators + error label.
 ]]
 local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Persist = require(script.Parent.Parent.Internal.Persist)
+local Bind = require(script.Parent.Parent.Internal.Bind)
 local Interaction = require(script.Parent.Parent.Internal.Interaction)
 local Validators = require(script.Parent.Parent.Internal.Validators)
 local SegmentedControl = require(script.Parent.SegmentedControl)
@@ -19,9 +21,13 @@ return function(scope: Types.Scope, props: Types.ChoiceGroupProps): Instance
 	local theme = resolveTheme(props)
 	local variant = props.Variant or "Radio"
 	local disabled = peek(props.Disabled) == true
-	local selected = scope:Value(
+	local selected = Persist.value(
+		scope,
+		Persist.key("ChoiceGroup", props.Id, typeof(props.Value) == "table"),
+		"value",
 		peek(props.Value) or (props.Options[1] and props.Options[1].Value) or ""
 	)
+	Bind.link(scope, props.Value, selected)
 	local errorText = scope:Value(nil :: string?)
 
 	local function commit(value: string)
@@ -73,14 +79,24 @@ return function(scope: Types.Scope, props: Types.ChoiceGroupProps): Instance
 			local outer = scope:Frame({
 				Size = UDim2.fromOffset(20, 20),
 				BackgroundColor3 = scope:Computed(function(use)
-					local base = theme.Colors.Surface
-					return Interaction.lerpColor(base, theme.Colors.OnSurface, ix.alpha(use))
+					local base = use(theme.Colors.Surface)
+					return Interaction.lerpColor(
+						base,
+						use(theme.Colors.OnSurface),
+						ix.alpha(use),
+						use
+					)
 				end),
 				LayoutOrder = 1,
 				CornerRadius = theme.Metrics.RadiusPill,
 				Outline = {
 					Color = scope:Computed(function(use)
-						return Interaction.lerpColor(theme.Colors.Outline, theme.Colors.Primary, use(selectedS))
+						return Interaction.lerpColor(
+							use(theme.Colors.Outline),
+							use(theme.Colors.Primary),
+							use(selectedS),
+							use
+						)
 					end),
 					Thickness = 2,
 					Mode = Enum.ApplyStrokeMode.Border,
@@ -162,35 +178,41 @@ return function(scope: Types.Scope, props: Types.ChoiceGroupProps): Instance
 
 	local kids: { any } = {}
 	if props.Label ~= nil then
-		table.insert(kids, scope:TextLabel({
-			BackgroundTransparency = 1,
-			FontFace = theme.Typography.Label.Font,
-			TextSize = theme.Typography.Label.Size,
-			TextColor3 = theme.Colors.OnSurfaceVariant,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			Text = props.Label,
-			Size = UDim2.new(1, 0, 0, 16),
-			LayoutOrder = 1,
-		}))
+		table.insert(
+			kids,
+			scope:TextLabel({
+				BackgroundTransparency = 1,
+				FontFace = theme.Typography.Label.Font,
+				TextSize = theme.Typography.Label.Size,
+				TextColor3 = theme.Colors.OnSurfaceVariant,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				Text = props.Label,
+				Size = UDim2.new(1, 0, 0, 16),
+				LayoutOrder = 1,
+			})
+		)
 	end
 	for _, c in controlKids do
 		table.insert(kids, c)
 	end
-	table.insert(kids, scope:TextLabel({
-		BackgroundTransparency = 1,
-		FontFace = theme.Typography.Label.Font,
-		TextSize = theme.Typography.Label.Size,
-		TextColor3 = theme.Colors.Error,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Text = scope:Computed(function(use)
-			return use(errorText) or ""
-		end),
-		Size = UDim2.new(1, 0, 0, 16),
-		Visible = scope:Computed(function(use)
-			return use(errorText) ~= nil
-		end),
-		LayoutOrder = 10,
-	}))
+	table.insert(
+		kids,
+		scope:TextLabel({
+			BackgroundTransparency = 1,
+			FontFace = theme.Typography.Label.Font,
+			TextSize = theme.Typography.Label.Size,
+			TextColor3 = theme.Colors.Error,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Text = scope:Computed(function(use)
+				return use(errorText) or ""
+			end),
+			Size = UDim2.new(1, 0, 0, 16),
+			Visible = scope:Computed(function(use)
+				return use(errorText) ~= nil
+			end),
+			LayoutOrder = 10,
+		})
+	)
 
 	return scope:Frame({
 		Name = "ChoiceGroup",

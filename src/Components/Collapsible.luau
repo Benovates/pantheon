@@ -3,6 +3,8 @@ local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Persist = require(script.Parent.Parent.Internal.Persist)
+local Bind = require(script.Parent.Parent.Internal.Bind)
 local Interaction = require(script.Parent.Parent.Internal.Interaction)
 local Icon = require(script.Parent.Icon)
 local P = require(script.Parent.Parent.Internal.props)
@@ -13,7 +15,13 @@ local peek = Fusion.peek
 
 return function(scope: Types.Scope, props: Types.CollapsibleProps): Instance
 	local theme = resolveTheme(props)
-	local open = scope:Value(peek(props.Open) == true)
+	local open = Persist.value(
+		scope,
+		Persist.key("Collapsible", props.Id, typeof(props.Open) == "table"),
+		"open",
+		peek(props.Open) == true
+	)
+	Bind.link(scope, props.Open, open)
 	local openS = scope:Spring(
 		scope:Computed(function(use)
 			return if use(open) then 1 else 0

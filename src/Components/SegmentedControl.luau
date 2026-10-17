@@ -1,12 +1,15 @@
 --!strict
 --[[
-	iOS-style UISegmentedControl — traveling selection pill with stretch.
+	iOS-style UISegmentedControl: traveling selection pill with stretch.
 	Indicator is measured against the segments host (no padding double-count).
 ]]
 local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Persist = require(script.Parent.Parent.Internal.Persist)
+local Bind = require(script.Parent.Parent.Internal.Bind)
+local Focus = require(script.Parent.Parent.Internal.Focus)
 local Interaction = require(script.Parent.Parent.Internal.Interaction)
 local ScrollInput = require(script.Parent.Parent.Internal.ScrollInput)
 local Icon = require(script.Parent.Icon)
@@ -23,16 +26,24 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Instanc
 	local theme = resolveTheme(props)
 	local disabled = peek(props.Disabled) == true
 	local initialId = peek(props.Selected) or (props.Items[1] and props.Items[1].Id) or ""
-	local selected = scope:Value(initialId)
+	local selected = Persist.value(
+		scope,
+		Persist.key("SegmentedControl", props.Id, typeof(props.Selected) == "table"),
+		"selected",
+		initialId
+	)
+	Bind.link(scope, props.Selected, selected)
 
 	local indicatorX = scope:Value(0)
 	local indicatorW = scope:Value(0)
 	local stretch = scope:Value(0)
-	local stretchS = scope:Spring(stretch, theme.Motion.SpringSpeed * 1.55, theme.Motion.SpringDamping)
+	local stretchS =
+		scope:Spring(stretch, theme.Motion.SpringSpeed * 1.55, theme.Motion.SpringDamping)
 	local xS = scope:Spring(indicatorX, theme.Motion.SpringSpeed * 0.8, theme.Motion.SpringDamping)
 	local wS = scope:Spring(indicatorW, theme.Motion.SpringSpeed * 0.8, theme.Motion.SpringDamping)
 	local dragging = scope:Value(0)
-	local draggingS = scope:Spring(dragging, theme.Motion.SpringSpeed, theme.Motion.SpringDamping * 0.8)
+	local draggingS =
+		scope:Spring(dragging, theme.Motion.SpringSpeed, theme.Motion.SpringDamping * 0.8)
 
 	local segments: { TextButton } = {}
 	local host: Frame
@@ -50,7 +61,7 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Instanc
 		if not seg or not host or host.Parent == nil then
 			return
 		end
-		-- Measure in host space (indicator is a child of host — no UIPadding here)
+		-- Measure in host space (the indicator is a child of host, no UIPadding here)
 		local relX = seg.AbsolutePosition.X - host.AbsolutePosition.X
 		local w = seg.AbsoluteSize.X
 		if w < 1 then
@@ -140,31 +151,25 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Instanc
 				end
 			end
 		end
-		cancelCapture = ScrollInput.capture(
-			host,
-			function(changed)
-				return changed.UserInputType == Enum.UserInputType.MouseMovement
-					or changed.UserInputType == Enum.UserInputType.Touch
-			end,
-			function(endedInput)
-				return endedInput.UserInputType == Enum.UserInputType.MouseButton1
-					or endedInput.UserInputType == Enum.UserInputType.Touch
-			end,
-			function(pos)
-				lastX = pos.X
-				if not dragged and math.abs(pos.X - startX) < 8 then
-					return
-				end
-				dragged = true
-				dragging:set(1)
-				local rel = pos.X - host.AbsolutePosition.X - grab
-				local maxX = math.max(host.AbsoluteSize.X - peek(indicatorW), 0)
-				indicatorX:set(math.clamp(rel, 0, maxX))
-			end,
-			function()
-				clearDrag(true)
+		cancelCapture = ScrollInput.capture(host, function(changed)
+			return changed.UserInputType == Enum.UserInputType.MouseMovement
+				or changed.UserInputType == Enum.UserInputType.Touch
+		end, function(endedInput)
+			return endedInput.UserInputType == Enum.UserInputType.MouseButton1
+				or endedInput.UserInputType == Enum.UserInputType.Touch
+		end, function(pos)
+			lastX = pos.X
+			if not dragged and math.abs(pos.X - startX) < 8 then
+				return
 			end
-		)
+			dragged = true
+			dragging:set(1)
+			local rel = pos.X - host.AbsolutePosition.X - grab
+			local maxX = math.max(host.AbsoluteSize.X - peek(indicatorW), 0)
+			indicatorX:set(math.clamp(rel, 0, maxX))
+		end, function()
+			clearDrag(true)
+		end)
 		endedConn = UserInputService.InputEnded:Connect(function(endedInput)
 			if
 				endedInput.UserInputType == Enum.UserInputType.MouseButton1
@@ -185,9 +190,13 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Instanc
 		local isOn = scope:Computed(function(use)
 			return use(selected) == item.Id
 		end)
-		local selectedS = scope:Spring(scope:Computed(function(use)
-			return if use(isOn) then 1 else 0
-		end), theme.Motion.SpringSpeed, theme.Motion.SpringDamping)
+		local selectedS = scope:Spring(
+			scope:Computed(function(use)
+				return if use(isOn) then 1 else 0
+			end),
+			theme.Motion.SpringSpeed,
+			theme.Motion.SpringDamping
+		)
 
 		local ix = Interaction.bind(scope, theme, {
 			Disabled = disabled,
@@ -204,9 +213,10 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Instanc
 					IconSize = 16,
 					Color = scope:Computed(function(use)
 						return Interaction.lerpColor(
-							theme.Colors.OnSurfaceVariant,
-							theme.Colors.Primary,
-							use(selectedS)
+							use(theme.Colors.OnSurfaceVariant),
+							use(theme.Colors.Primary),
+							use(selectedS),
+							use
 						)
 					end),
 				}))({
@@ -223,9 +233,10 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Instanc
 				Text = item.Label,
 				TextColor3 = scope:Computed(function(use)
 					return Interaction.lerpColor(
-						theme.Colors.OnSurfaceVariant,
-						theme.Colors.Primary,
-						use(selectedS)
+						use(theme.Colors.OnSurfaceVariant),
+						use(theme.Colors.Primary),
+						use(selectedS),
+						use
 					)
 				end),
 				AutomaticSize = Enum.AutomaticSize.XY,
@@ -274,6 +285,22 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Instanc
 		flex.FlexMode = Enum.UIFlexMode.Fill
 		flex.Parent = seg
 		ix.wire(seg)
+		-- Left and right arrows move to the neighbouring segment.
+		Focus.onKey(seg, function(input: InputObject): boolean
+			local step = if input.KeyCode == Enum.KeyCode.Left
+				then -1
+				elseif input.KeyCode == Enum.KeyCode.Right then 1
+				else 0
+			local neighbour = props.Items[i + step]
+			if step == 0 or neighbour == nil or disabled then
+				return step ~= 0
+			end
+			selectId(neighbour.Id, true)
+			if segments[i + step] then
+				Focus.select(segments[i + step])
+			end
+			return true
+		end)
 		table.insert(segments, seg)
 		table.insert(
 			scope,
@@ -297,7 +324,9 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Instanc
 				AnchorPoint = Vector2.new(0, 0.5),
 				Position = scope:Computed(function(use)
 					local extra = (use(stretchS) :: number) + (use(draggingS) :: number) * 10
-					local x = ((if (use(draggingS) :: number) > 0.45 then use(indicatorX) else use(xS)) :: number)
+					local x = (
+						if (use(draggingS) :: number) > 0.45 then use(indicatorX) else use(xS)
+					) :: number
 					return UDim2.new(0, x - extra * 0.5, 0.5, 0)
 				end),
 				Size = scope:Computed(function(use)
@@ -332,7 +361,7 @@ return function(scope: Types.Scope, props: Types.SegmentedControlProps): Instanc
 								return (use(draggingS) :: number) * 0.1
 							end),
 							Mode = Enum.ApplyStrokeMode.Border,
-						}
+						},
 					}),
 				},
 			}),

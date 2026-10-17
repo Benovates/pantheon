@@ -1,6 +1,6 @@
 --!strict
 --[[
-	Lucide icon wrapper — <Icon name="search" size={24} color={...} />
+	Lucide icon wrapper: <Icon name="search" size={24} color={...} />
 ]]
 local Packages = script.Parent.Parent.Parent
 local Lucide = require(Packages.Lucide)
@@ -26,7 +26,7 @@ return function(scope: Types.Scope, props: Types.IconProps): Instance
 			rectOffset = asset.ImageRectOffset
 			rectSize = asset.ImageRectSize
 		else
-			warn(`[EstuaryUI.Icon] unknown Lucide icon '{props.Name}'`)
+			warn(`[Pantheon.Icon] unknown Lucide icon '{props.Name}'`)
 			image = ""
 		end
 	end
@@ -45,6 +45,6 @@ return function(scope: Types.Scope, props: Types.IconProps): Instance
 		ScaleType = Enum.ScaleType.Fit,
 		AspectRatio = {
 			Ratio = 1,
-		}
+		},
 	}) :: ImageLabel
 end

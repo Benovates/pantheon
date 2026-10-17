@@ -56,7 +56,7 @@ return function(scope: Types.Scope, props: Types.EmptyStateProps): Instance
 							LayoutOrder = 2,
 						})
 						else nil,
-					},
+				},
 			}),
 			if props.Action then Button(scope, props.Action) else nil,
 		},

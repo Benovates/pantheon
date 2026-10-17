@@ -6,6 +6,8 @@ local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Persist = require(script.Parent.Parent.Internal.Persist)
+local Bind = require(script.Parent.Parent.Internal.Bind)
 local Interaction = require(script.Parent.Parent.Internal.Interaction)
 local P = require(script.Parent.Parent.Internal.props)
 
@@ -15,7 +17,9 @@ local peek = Fusion.peek
 
 return function(scope: Types.Scope, props: Types.CheckboxProps): Instance
 	local theme = resolveTheme(props)
-	local checked = scope:Value(peek(props.Checked) == true)
+	local persistKey = Persist.key("Checkbox", props.Id, typeof(props.Checked) == "table")
+	local checked = Persist.value(scope, persistKey, "checked", peek(props.Checked) == true)
+	Bind.link(scope, props.Checked, checked)
 	local checkedS = scope:Spring(
 		scope:Computed(function(use)
 			return if use(checked) then 1 else 0
@@ -45,12 +49,13 @@ return function(scope: Types.Scope, props: Types.CheckboxProps): Instance
 
 	local fillColor = scope:Computed(function(use)
 		local t = use(checkedS)
-		local base = Interaction.lerpColor(theme.Colors.Surface, theme.Colors.Primary, t)
+		local base =
+			Interaction.lerpColor(use(theme.Colors.Surface), use(theme.Colors.Primary), t, use)
 		if disabled then
-			return Interaction.lerpColor(base, theme.Colors.SurfaceDim, 0.5)
+			return Interaction.lerpColor(base, use(theme.Colors.SurfaceDim), 0.5, use)
 		end
-		local state = if t > 0.5 then theme.Colors.OnPrimary else theme.Colors.OnSurface
-		return Interaction.lerpColor(base, state, ix.alpha(use))
+		local state = if t > 0.5 then use(theme.Colors.OnPrimary) else use(theme.Colors.OnSurface)
+		return Interaction.lerpColor(base, state, ix.alpha(use), use)
 	end)
 
 	local shortProgress = scope:Computed(function(use)
@@ -73,8 +78,13 @@ return function(scope: Types.Scope, props: Types.CheckboxProps): Instance
 		CornerRadius = 4,
 		Outline = {
 			Color = scope:Computed(function(use)
-				local c = Interaction.lerpColor(theme.Colors.Outline, theme.Colors.Primary, use(checkedS))
-				return if disabled then theme.Colors.OutlineVariant else c
+				local c = Interaction.lerpColor(
+					use(theme.Colors.Outline),
+					use(theme.Colors.Primary),
+					use(checkedS),
+					use
+				)
+				return if disabled then use(theme.Colors.OutlineVariant) else c
 			end),
 			Thickness = 1.5,
 			Transparency = if disabled then 0.35 else 0,
@@ -176,7 +186,9 @@ return function(scope: Types.Scope, props: Types.CheckboxProps): Instance
 					BackgroundTransparency = 1,
 					FontFace = theme.Typography.Body.Font,
 					TextSize = theme.Typography.Body.Size,
-					TextColor3 = if disabled then theme.Colors.OnSurfaceVariant else theme.Colors.OnSurface,
+					TextColor3 = if disabled
+						then theme.Colors.OnSurfaceVariant
+						else theme.Colors.OnSurface,
 					TextTransparency = if disabled then 0.35 else 0,
 					Text = props.Label,
 					AutomaticSize = Enum.AutomaticSize.XY,

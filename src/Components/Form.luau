@@ -26,7 +26,11 @@ return function(scope: Types.Scope, props: FormProps): Instance
 		Size = props.Size or UDim2.new(1, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		LayoutOrder = props.LayoutOrder or 0,
-		Layout = { Kind = "List", Padding = theme.Metrics.SpaceMd, SortOrder = Enum.SortOrder.LayoutOrder },
+		Layout = {
+			Kind = "List",
+			Padding = theme.Metrics.SpaceMd,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		},
 		[Children] = {
 			if props.Title
 				then scope:TextLabel({

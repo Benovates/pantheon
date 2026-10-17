@@ -9,6 +9,7 @@ local Packages = script.Parent.Parent.Parent
 local Fusion = require(Packages.Fusion)
 local Types = require(script.Parent.Parent.Types)
 local resolveTheme = require(script.Parent.Parent.Internal.resolveTheme).resolveTheme
+local Focus = require(script.Parent.Parent.Internal.Focus)
 local CanvasFade = require(script.Parent.Parent.Internal.CanvasFade)
 local Layer = require(script.Parent.Parent.Internal.Layer)
 local Overlay = require(script.Parent.Overlay)
@@ -208,9 +209,6 @@ return function(scope: Types.Scope, props: Types.DialogProps): Instance
 			else
 				scale.Scale = 0.9 + 0.1 * t
 			end
-			if not CanvasFade.active({ Theme = theme }) then
-				panel.BackgroundTransparency = 1 - t
-			end
 
 			-- Pulse around t ~= 0.5 (as openS springs from 0 -> 1).
 			local pulse = math.clamp(1 - math.abs(2 * t - 1), 0, 1)
@@ -258,5 +256,7 @@ return function(scope: Types.Scope, props: Types.DialogProps): Instance
 	}) :: Frame
 
 	Layer.mount(scope, props, root)
+	Focus.trap(scope, root, open)
+	Focus.escape(scope, open, Focus.closer(props))
 	return root
 end
